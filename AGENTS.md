@@ -22,8 +22,10 @@
   testy w `tests/` odzwierciedlają te same obszary.
 - Obliczenia w `analysis/fit.py`, `analysis/metrics.py` i `analysis/packet.py`
   pozostają niezależne od sieci, poświadczeń i zapisu plików.
-- Polecenia uruchamiaj przez `python3 -m suunto_cloud <polecenie>` z katalogu
-  repozytorium. Rootowy `sync.py` zachowuje zgodność z istniejącym workflow.
+- W analizach treningów uruchamiaj aplikację zawsze przez Docker Compose.
+  Lokalny skill używa helpera `scripts/run-docker.sh` ze swojego katalogu.
+  Uruchamianie Pythona na hoście pozostaje dostępne do prac programistycznych
+  i testów; rootowy `sync.py` służy zgodności ze starszymi wywołaniami.
 - Konfiguracja i `.local/` nadal znajdują się w katalogu repozytorium;
   nie przenoś ich wraz z modułami ani nie twórz kopii poświadczeń.
 
