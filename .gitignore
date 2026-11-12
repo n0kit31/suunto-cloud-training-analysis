@@ -4,6 +4,7 @@ config.json
 .env
 .env.*
 !.env.example
+.npmrc
 credentials*.json
 tokens*.json
 *.pem

@@ -27,15 +27,19 @@ i zapisu plików. Polecenia obsługuje `suunto_cloud/cli.py`.
 
 ## Wymagania
 
+Dla uruchomienia lokalnego:
+
 - Python 3.9+ na macOS lub Linuksie, z dostępną strefą `Europe/Warsaw`.
 - Node.js i pakiet `fit-file-parser` do dekodowania FIT.
 - Aplikacja OAuth oraz subskrypcja Developer API w [Suunto API Zone](https://apizone.suunto.com/how-to-start).
 
 ## Konfiguracja
 
-Polecenia wykonuj w katalogu repozytorium. Utwórz lokalną konfigurację:
+Polecenia wykonuj w katalogu repozytorium. Zainstaluj zależności dekodera FIT
+i utwórz lokalną konfigurację:
 
 ```sh
+npm ci --ignore-scripts --no-audit --no-fund
 cp -n config.example.json config.json
 ```
 
@@ -67,6 +71,17 @@ Obecna wersja pobiera jedną stronę listy treningów, bez eksportu całej histo
 Pozostałe polecenia: `workouts`, `track`, `analyze` i `access`.
 Pomoc: `python3 -m suunto_cloud --help` lub `python3 -m suunto_cloud sync --help`.
 Dotychczasowe `python3 sync.py ...` nadal działa przez mały wrapper zgodności.
+
+## Docker
+
+Dockerfile zawiera środowisko Python/Node.js oraz zależności dekodera FIT.
+Compose montuje konfigurację i dane poza obrazem. Przygotowanie katalogów,
+UID/GID i autoryzacji opisuje [instrukcja Docker](docs/docker.md).
+
+```sh
+docker compose build
+docker compose run --rm suunto sync --date 2026-01-15 --analysis --brief
+```
 
 ## Testy
 

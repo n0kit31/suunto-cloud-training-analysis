@@ -9,6 +9,8 @@ config.json
 .env.*
 **/.env
 **/.env.*
+.npmrc
+**/.npmrc
 credentials*.json
 **/credentials*.json
 tokens*.json

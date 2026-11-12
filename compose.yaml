@@ -1,0 +1,45 @@
+name: suunto-cloud
+
+services:
+  suunto:
+    image: suunto-cloud-training-analysis:local
+    build:
+      context: .
+      target: app
+    user: "${SUUNTO_UID:-1000}:${SUUNTO_GID:-1000}"
+    init: true
+    stdin_open: true
+    tty: true
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m,mode=1777
+    environment:
+      SUUNTO_OAUTH_BIND_HOST: 0.0.0.0
+    ports:
+      - "127.0.0.1:8765:8765"
+    volumes:
+      - type: bind
+        source: ./config.json
+        target: /app/suunto-cloud/config.json
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./.local
+        target: /app/suunto-cloud/.local
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ../reports
+        target: /app/reports
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ../visualizations
+        target: /app/visualizations
+        bind:
+          create_host_path: false

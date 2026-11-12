@@ -13,6 +13,19 @@ from suunto_cloud.storage import local
 
 
 class OAuthTests(unittest.TestCase):
+    def test_callback_defaults_to_loopback(self):
+        with patch.dict(oauth.os.environ, {}, clear=True):
+            self.assertEqual(oauth.callback_address(8765), ('127.0.0.1', 8765))
+
+    def test_container_callback_can_listen_on_published_interface(self):
+        with patch.dict(oauth.os.environ, {'SUUNTO_OAUTH_BIND_HOST': '0.0.0.0'}):
+            self.assertEqual(oauth.callback_address(8765), ('0.0.0.0', 8765))
+
+    def test_callback_rejects_unexpected_bind_host(self):
+        with patch.dict(oauth.os.environ, {'SUUNTO_OAUTH_BIND_HOST': 'unexpected.example'}):
+            with self.assertRaises(ValueError):
+                oauth.callback_address(8765)
+
     def test_valid_callback_decodes_code(self):
         self.assertEqual(oauth.parse_callback("/callback?state=expected&code=a%2Bb", "expected", "/callback"), "a+b")
 

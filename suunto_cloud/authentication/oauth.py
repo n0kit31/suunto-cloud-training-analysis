@@ -137,6 +137,13 @@ def save_tokens(tokens, filename='tokens.json'):
     return private_json(private_directory() / filename, tokens)
 
 
+def callback_address(port):
+    host = os.environ.get('SUUNTO_OAUTH_BIND_HOST', '127.0.0.1')
+    if host not in {'127.0.0.1', '0.0.0.0'}:
+        raise ValueError('SUUNTO_OAUTH_BIND_HOST musi być 127.0.0.1 lub 0.0.0.0.')
+    return host, port
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--settings", action="store_true", help="Pokaż ustawienia, bez logowania")
@@ -152,7 +159,7 @@ def main(argv=None):
             or redirect.username or redirect.password or not redirect.path):
         raise ValueError("Callback musi mieć postać http://127.0.0.1:PORT/ścieżka.")
     state = secrets.token_urlsafe(32)
-    with HTTPServer(("127.0.0.1", redirect.port), callback_handler(state, config["redirect_uri"])) as server:
+    with HTTPServer(callback_address(redirect.port), callback_handler(state, config["redirect_uri"])) as server:
         server.timeout = 1
         server.callback_received = False
         credentials_path = private_directory() / 'credentials.json'

@@ -26,3 +26,14 @@
   repozytorium. Rootowy `sync.py` zachowuje zgodność z istniejącym workflow.
 - Konfiguracja i `.local/` nadal znajdują się w katalogu repozytorium;
   nie przenoś ich wraz z modułami ani nie twórz kopii poświadczeń.
+
+# Docker
+
+- Dockerfile kopiuje wyłącznie kod, metadane zależności i licencję; konfiguracja
+  oraz `.local/` są montowane przy uruchomieniu i nie należą do obrazu.
+- Compose uruchamia CLI jako użytkownik hosta wskazany przez `SUUNTO_UID` oraz
+  `SUUNTO_GID`; przed pracą z istniejącymi plikami ustaw je z `id -u` i `id -g`.
+- Callback OAuth kontenera może słuchać na `0.0.0.0` tylko przy publikacji portu
+  na loopback hosta. Domyślne uruchomienie poza kontenerem pozostaje na loopback.
+- Etap `test` Dockerfile uruchamia testy offline; końcowy etap `app` nie zawiera
+  katalogu testów. Nie deklaruj udanego buildu bez jego faktycznej weryfikacji.
