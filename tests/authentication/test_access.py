@@ -2,7 +2,6 @@ import base64
 import io
 import json
 from pathlib import Path
-import sys
 import tempfile
 import time
 import unittest
@@ -10,8 +9,8 @@ from unittest.mock import MagicMock, patch
 from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-import access
+from suunto_cloud.authentication import access
+from suunto_cloud.storage import local
 
 
 class AccessTests(unittest.TestCase):
@@ -19,7 +18,7 @@ class AccessTests(unittest.TestCase):
         self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
         self.root = Path(self.directory.name)
-        self.patch = patch.object(access, 'ROOT', self.root)
+        self.patch = patch.object(local, 'ROOT', self.root)
         self.patch.start()
         self.addCleanup(self.patch.stop)
         self.env = patch.dict(access.os.environ, {}, clear=True)
@@ -79,7 +78,7 @@ class AccessTests(unittest.TestCase):
         before = (access.private_directory() / 'tokens.json').read_bytes()
         with patch.object(access, 'build_opener', return_value=opener), self.assertRaises(access.AccessError) as error:
             access.get_access_token()
-        self.assertIn('oauth.py', str(error.exception))
+        self.assertIn('suunto_cloud oauth', str(error.exception))
         self.assertNotIn('do-not-print-secret', str(error.exception))
         self.assertEqual((access.private_directory() / 'tokens.json').read_bytes(), before)
 

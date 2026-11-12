@@ -1,9 +1,6 @@
-from pathlib import Path
-import sys
 import unittest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from analyze_fit import timer_intervals
+from suunto_cloud.analysis.fit import timer_intervals
 
 
 class TimerTests(unittest.TestCase):

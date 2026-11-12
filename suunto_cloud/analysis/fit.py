@@ -1,13 +1,9 @@
-#!/usr/bin/env python3
 """Derive pause intervals and lap summaries without interpolating missing samples."""
 
 from datetime import datetime
-import json
-from pathlib import Path
-import sys
 from zoneinfo import ZoneInfo
 
-from analysis_details import additional_details
+from suunto_cloud.analysis.metrics import additional_details
 
 
 def stamp(value):
@@ -95,9 +91,3 @@ def summarize(data):
             result['altitude_change_around_60s_before_hr_peak_m'] = peaks[0]['altitude'] - reference['altitude']
     result['additional_metrics'] = additional_details(data, timer)
     return result
-
-
-if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        raise SystemExit('Użycie: python3 analyze_fit.py trening.decoded.json')
-    print(json.dumps(summarize(json.loads(Path(sys.argv[1]).read_text())), ensure_ascii=False, indent=2))

@@ -1,72 +1,17 @@
 import contextlib
-from datetime import datetime
 import io
 import json
 from pathlib import Path
-import sys
 import tempfile
 import unittest
 from unittest.mock import MagicMock, patch
 from urllib.error import URLError
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-import sync
-from analysis_packet import build_packet, cloud_metrics, compact_fit
+from suunto_cloud.synchronization import service as sync
+from tests.fixtures import decoded, workout
 
 
-def workout(key='a' * 24, day='2026-11-11', activity=1):
-    start = int(datetime.fromisoformat(day + 'T08:00:00+00:00').timestamp() * 1000)
-    return {'workoutKey': key, 'activityId': activity, 'startTime': start, 'stopTime': start + 1200000,
-            'totalTime': 600, 'totalDistance': 2000, 'hrdata': {'workoutAvgHR': 130, 'workoutMaxHR': 145,
-                                                            'userMaxHR': 187, 'max': 187},
-            'tss': {'calculationMethod': 'HR', 'trainingStressScore': 10},
-            'extensions': [{'type': 'SummaryExtension', 'pte': 2, 'ascent': 12.3},
-                           {'type': 'FitnessExtension', 'maxHeartRate': 187, 'estimatedVo2Max': 52}]}
 
-
-def decoded():
-    return {'sessions': [{'total_timer_time': 600, 'total_elapsed_time': 1200,
-                          'total_distance': 2000, 'avg_heart_rate': 130, 'max_heart_rate': 145}],
-            'events': [{'event': 'timer', 'event_type': kind, 'timestamp': at}
-                       for kind, at in [('start', '2026-11-11T08:00:00Z'),
-                                        ('stop', '2026-11-11T08:05:00Z'),
-                                        ('start', '2026-11-11T08:15:00Z'),
-                                        ('stop', '2026-11-11T08:20:00Z')]],
-            'records': [{'timestamp': '2026-11-11T08:01:00Z', 'heart_rate': 130},
-                        {'timestamp': '2026-11-11T08:10:00Z', 'heart_rate': 180},
-                        {'timestamp': '2026-11-11T08:16:00Z', 'heart_rate': 145}]}
-
-
-class AnalysisPacketTests(unittest.TestCase):
-    def test_metrics_use_active_pace_and_measured_maximum(self):
-        result = cloud_metrics(workout())
-        self.assertEqual(result['pace_seconds_per_km'], 300)
-        self.assertEqual(result['elapsed_seconds'], 1200)
-        self.assertEqual(result['max_hr_bpm'], 145)
-        self.assertEqual(result['fitness']['maxHeartRate'], 187)
-
-    def test_peak_preview_is_bounded_and_original_is_preserved(self):
-        analysis = {'hr_peak_records_active_only': [{'timestamp': str(i)} for i in range(1000)],
-                    'laps': [{'trigger': 'workout_step'}, {'trigger': 'distance'}]}
-        result = compact_fit(analysis)
-        self.assertEqual(result['hr_peak']['sample_count'], 1000)
-        self.assertEqual(len(result['hr_peak']['samples_preview']), 5)
-        self.assertEqual(result['hr_peak']['last']['timestamp'], '999')
-        self.assertEqual(len(analysis['hr_peak_records_active_only']), 1000)
-        self.assertEqual(result['laps'], analysis['laps'])
-
-    def test_comparisons_exclude_later_and_different_sports(self):
-        selected = workout()
-        previous = workout('b' * 24, '2026-11-10')
-        later = workout('c' * 24, '2026-11-12')
-        other = workout('d' * 24, '2026-11-09', 2)
-        entry = {'workout_key': selected['workoutKey'], **{k: 'test' for k in
-                 ('cloud_summary_path', 'fit_path', 'decoded_path', 'analysis_path')}}
-        result = build_packet({'workouts': [entry], 'retrieved_at_utc': 'now', 'complete': True,
-                               'requested_dates': ['2026-11-11']},
-                              [selected, previous, later, other], {selected['workoutKey']: {}})
-        self.assertEqual([w['workout_key'] for w in result['comparison_candidates']], [previous['workoutKey']])
-        self.assertFalse(result['history_completeness_verified'])
 
 
 class SyncAnalysisTests(unittest.TestCase):

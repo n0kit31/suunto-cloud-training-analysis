@@ -1,36 +1,10 @@
-from datetime import datetime, timedelta, timezone
-from pathlib import Path
-import sys
 import unittest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from analyze_fit import summarize
-from analysis_details import active_samples
+from suunto_cloud.analysis.fit import summarize
+from suunto_cloud.analysis.metrics import active_samples
 
 
-def fixture():
-    origin = datetime(2026, 11, 5, 16, tzinfo=timezone.utc)
-    at = lambda n: (origin + timedelta(seconds=n)).isoformat().replace('+00:00', 'Z')
-    rows = []
-    for n in range(150):
-        work = n < 60
-        rows.append({'timestamp': at(n), 'heart_rate': 160 if work else 160 - (n - 60) / 2,
-                     'speed': 4 if work else 2, 'cadence': 100 if work else 90,
-                     'stance_time': 210 if work else 280, 'vertical_oscillation': 60 if work else 70,
-                     'altitude': 50 + n / 100, 'distance': 4 * n if work else 240 + 2 * (n - 60),
-                     'estimate': 14000 + n})
-    laps = [{'event': 'lap', 'lap_trigger': 'distance', 'start_time': at(0), 'timestamp': at(150),
-             'total_distance': 420, 'total_timer_time': 150},
-            {'event': 'workout_step', 'lap_trigger': 'fitness_equipment', 'start_time': at(0),
-             'timestamp': at(60), 'total_distance': 240, 'total_timer_time': 60},
-            {'event': 'workout_step', 'lap_trigger': 'fitness_equipment', 'start_time': at(60),
-             'timestamp': at(150), 'total_distance': 180, 'total_timer_time': 90}]
-    return {'sessions': [{'start_time': at(0), 'timestamp': at(150), 'sport': 'running'}],
-            'events': [{'event': 'timer', 'event_type': 'start', 'timestamp': at(0)},
-                       {'event': 'timer', 'event_type': 'stop', 'timestamp': at(150)}],
-            'records': rows, 'laps': laps,
-            'field_descriptions': [{'field_name': 'estimate', 'units': 's',
-                                    'suuntoplus_field_label': 'Marathon time(est)'}]}
+from tests.fixtures import fixture
 
 
 class AdditionalMetricsTests(unittest.TestCase):

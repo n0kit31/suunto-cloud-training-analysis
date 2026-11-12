@@ -15,3 +15,14 @@
   sekretów. Nie wypisuj znalezionych wartości w terminalu ani w odpowiedzi.
 - `.gitignore` i `.dockerignore` muszą wykluczać dane prywatne. Nie obchodź tych
   reguł przez `git add -f` ani kopiowanie sekretów do innej lokalizacji w repo.
+
+# Struktura kodu
+
+- Kod aplikacji jest w `suunto_cloud/`, podzielony według odpowiedzialności;
+  testy w `tests/` odzwierciedlają te same obszary.
+- Obliczenia w `analysis/fit.py`, `analysis/metrics.py` i `analysis/packet.py`
+  pozostają niezależne od sieci, poświadczeń i zapisu plików.
+- Polecenia uruchamiaj przez `python3 -m suunto_cloud <polecenie>` z katalogu
+  repozytorium. Rootowy `sync.py` zachowuje zgodność z istniejącym workflow.
+- Konfiguracja i `.local/` nadal znajdują się w katalogu repozytorium;
+  nie przenoś ich wraz z modułami ani nie twórz kopii poświadczeń.

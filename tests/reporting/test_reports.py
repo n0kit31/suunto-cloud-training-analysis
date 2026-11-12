@@ -1,17 +1,15 @@
 from datetime import datetime, timedelta, timezone
 import os
 from pathlib import Path
-import sys
 import tempfile
 import unittest
 from unittest.mock import patch
 import xml.etree.ElementTree as ET
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from analysis_outputs import CHART_MARKER, cleanup_charts, pace_from_speed, pace_series, thin, write_outputs
-from analysis_packet import cloud_metrics
-from analyze_fit import summarize
-from test_analysis_details import fixture
+from suunto_cloud.reporting.reports import CHART_MARKER, cleanup_charts, pace_from_speed, pace_series, thin, write_outputs
+from suunto_cloud.analysis.packet import cloud_metrics
+from suunto_cloud.analysis.fit import summarize
+from tests.fixtures import fixture
 
 
 class OutputTests(unittest.TestCase):
@@ -36,7 +34,7 @@ class OutputTests(unittest.TestCase):
         self.assertEqual([v for _, v in series], [5, 5])
 
     def test_default_produces_no_chart_and_preserves_written_assessment(self):
-        with patch('analysis_outputs.chart_svg', side_effect=AssertionError('Unexpected chart')):
+        with patch('suunto_cloud.reporting.reports.chart_svg', side_effect=AssertionError('Unexpected chart')):
             out = write_outputs(self.root, self.cloud, self.analysis, self.data, self.entry, 'first')
             self.assertIsNone(out['chart_path'])
             self.assertFalse((self.root / 'visualizations').exists())

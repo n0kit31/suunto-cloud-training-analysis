@@ -7,8 +7,8 @@ import math
 from pathlib import Path
 from statistics import median, mean
 
-from access import private_json
-from analysis_details import active_samples, number, seconds
+from suunto_cloud.storage.local import private_json
+from suunto_cloud.analysis.metrics import active_samples, number, seconds
 
 START = '<!-- suunto-generated:start -->'
 END = '<!-- suunto-generated:end -->'

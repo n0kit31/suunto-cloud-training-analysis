@@ -1,16 +1,9 @@
-import importlib.util
 import io
-from pathlib import Path
-import sys
 import unittest
 from unittest.mock import MagicMock, patch
 from urllib.error import HTTPError
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
-spec = importlib.util.spec_from_file_location('fetch_track', ROOT / 'fetch_track.py')
-track = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(track)
+from suunto_cloud.downloads import tracks as track
 
 
 class FetchTrackTests(unittest.TestCase):

@@ -1,9 +1,6 @@
-from pathlib import Path
-import sys
 import unittest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from analysis_packet import distance_blocks
+from suunto_cloud.analysis.packet import distance_blocks
 
 
 class DistanceBlocksTests(unittest.TestCase):

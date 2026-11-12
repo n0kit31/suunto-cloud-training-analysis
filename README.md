@@ -8,6 +8,23 @@ Wykresy SVG są opcjonalne.
 Dane z oficjalnego Suunto MCP można dołączyć przez zewnętrzną integrację.
 Obecne skrypty pobierają dane z Cloud API; repozytorium nie zawiera klienta MCP.
 
+## Struktura
+
+Kod w `suunto_cloud/` jest podzielony według odpowiedzialności:
+
+| Katalog | Odpowiedzialność |
+| --- | --- |
+| `authentication/` | OAuth, klucze i autoryzacja zapytań |
+| `downloads/` | Pobieranie podsumowań treningów i plików FIT |
+| `analysis/` | Obliczenia metryk i przygotowanie pakietu analizy |
+| `reporting/` | Raporty Markdown/JSON i wykresy SVG |
+| `synchronization/` | Koordynacja pobierania, analizy i raportowania |
+| `storage/` | Ścieżki konfiguracji i bezpieczny zapis lokalny |
+| `fit/` | Dekoder FIT i eksport GPX w Node.js |
+
+Testy w `tests/` odzwierciedlają ten podział. Obliczenia są niezależne od API
+i zapisu plików. Polecenia obsługuje `suunto_cloud/cli.py`.
+
 ## Wymagania
 
 - Python 3.9+ na macOS lub Linuksie, z dostępną strefą `Europe/Warsaw`.
@@ -27,8 +44,8 @@ Domyślny callback to `http://127.0.0.1:8765/callback`; musi odpowiadać ustawie
 aplikacji w API Zone. Następnie autoryzuj konto i skonfiguruj klucze:
 
 ```sh
-python3 oauth.py
-python3 access.py --configure
+python3 -m suunto_cloud oauth
+python3 -m suunto_cloud access --configure
 ```
 
 Klucze podawaj na interaktywnym, niewidocznym wejściu. Lokalna konfiguracja,
@@ -39,7 +56,7 @@ tokeny i pobrane dane są wykluczone z Git oraz kontekstu budowania Dockera.
 Pobierz i przeanalizuj treningi z wybranego dnia:
 
 ```sh
-python3 sync.py --date 2026-01-15 --analysis --brief
+python3 -m suunto_cloud sync --date 2026-01-15 --analysis --brief
 ```
 
 Daty dotyczą strefy `Europe/Warsaw`; `--date` można powtarzać.
@@ -47,10 +64,14 @@ Dodaj `--charts`, aby wygenerować wykres. Surowe dane i analizy są w `.local/`
 raporty w `../reports/`, a wykresy w `../visualizations/`.
 Obecna wersja pobiera jedną stronę listy treningów, bez eksportu całej historii.
 
+Pozostałe polecenia: `workouts`, `track`, `analyze` i `access`.
+Pomoc: `python3 -m suunto_cloud --help` lub `python3 -m suunto_cloud sync --help`.
+Dotychczasowe `python3 sync.py ...` nadal działa przez mały wrapper zgodności.
+
 ## Testy
 
 ```sh
-python3 -m unittest discover -s tests -v
+python3 -m unittest discover -s tests -t . -v
 ```
 
 Testy korzystają z danych syntetycznych i nie wymagają połączenia z API.

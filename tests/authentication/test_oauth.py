@@ -1,4 +1,3 @@
-import importlib.util
 import base64
 import io
 import json
@@ -9,9 +8,8 @@ from unittest.mock import MagicMock, patch
 from urllib.error import HTTPError
 from urllib.parse import parse_qs
 
-spec = importlib.util.spec_from_file_location("suunto_oauth", Path(__file__).resolve().parents[1] / "oauth.py")
-oauth = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(oauth)
+from suunto_cloud.authentication import oauth
+from suunto_cloud.storage import local
 
 
 class OAuthTests(unittest.TestCase):
@@ -38,7 +36,7 @@ class OAuthTests(unittest.TestCase):
             oauth.parse_callback("/callback?error=access_denied", "expected", "/callback")
 
     def test_token_files_are_private_and_replaceable(self):
-        with tempfile.TemporaryDirectory() as directory, patch.object(oauth, "ROOT", Path(directory)):
+        with tempfile.TemporaryDirectory() as directory, patch.object(local, "ROOT", Path(directory)):
             destination = oauth.save_tokens({"access_token": "test-only-token"})
             self.assertEqual(destination.stat().st_mode & 0o777, 0o600)
             self.assertEqual(destination.parent.stat().st_mode & 0o777, 0o700)

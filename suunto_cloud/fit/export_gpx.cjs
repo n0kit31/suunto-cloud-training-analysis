@@ -126,7 +126,7 @@ module.exports = { trackFromRecords, convert, loadParser, privateWrite };
 if (require.main === module) {
   const [input, output] = process.argv.slice(2);
   if (!input || !output) {
-    process.stderr.write('Użycie: node fit_to_gpx.cjs trening.fit trasa.gpx\n');
+    process.stderr.write('Użycie: node suunto_cloud/fit/export_gpx.cjs trening.fit trasa.gpx\n');
     process.exitCode = 1;
   } else {
     convert(input, output).then(summary => {

@@ -6,17 +6,15 @@ import base64
 import getpass
 import json
 import os
-from pathlib import Path
 import secrets
 import sys
-import tempfile
 import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, urlencode, urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
-ROOT = Path(__file__).resolve().parent
+from suunto_cloud.storage.local import config_path, private_directory, private_json
 AUTHORIZE_URL = "https://cloudapi-oauth.suunto.com/oauth/authorize"
 TOKEN_URL = "https://cloudapi-oauth.suunto.com/oauth/token"
 
@@ -136,29 +134,15 @@ def exchange_code(config, secret, code):
 
 
 def save_tokens(tokens, filename='tokens.json'):
-    directory = ROOT / ".local"
-    directory.mkdir(mode=0o700, exist_ok=True)
-    directory.chmod(0o700)
-    destination = directory / filename
-    temporary = None
-    try:
-        with tempfile.NamedTemporaryFile(mode="w", dir=directory, delete=False) as f:
-            temporary = Path(f.name)
-            json.dump(tokens, f, indent=2)
-            f.write("\n")
-        temporary.replace(destination)
-    finally:
-        if temporary is not None:
-            temporary.unlink(missing_ok=True)
-    return destination
+    return private_json(private_directory() / filename, tokens)
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--settings", action="store_true", help="Pokaż ustawienia, bez logowania")
     parser.add_argument("--prompt-secret", action="store_true", help="Wpisz sekret ręcznie, pomijając SUUNTO_CLIENT_SECRET")
-    args = parser.parse_args()
-    config = json.loads((ROOT / "config.json").read_text())
+    args = parser.parse_args(argv)
+    config = json.loads(config_path().read_text())
     if args.settings:
         print(json.dumps(config, indent=2))
         return
@@ -171,7 +155,7 @@ def main():
     with HTTPServer(("127.0.0.1", redirect.port), callback_handler(state, config["redirect_uri"])) as server:
         server.timeout = 1
         server.callback_received = False
-        credentials_path = ROOT / '.local/credentials.json'
+        credentials_path = private_directory() / 'credentials.json'
         saved = json.loads(credentials_path.read_text()) if credentials_path.is_file() else {}
         if not isinstance(saved, dict) or saved.get('client_id') != config['client_id']:
             saved = {}
@@ -207,15 +191,20 @@ def main():
     print(f"Autoryzacja zakończona. Tokeny zapisano lokalnie: {destination}")
 
 
-if __name__ == "__main__":
+def run(argv=None):
     try:
-        main()
+        main(argv)
     except KeyboardInterrupt:
         print("\nPrzerwano.", file=sys.stderr)
-        sys.exit(130)
+        return 130
     except TokenExchangeError as exc:
         print(str(exc), file=sys.stderr)
-        sys.exit(1)
+        return 1
     except (OSError, ValueError, URLError, EOFError) as exc:
         print(f"Błąd: {exc}", file=sys.stderr)
-        sys.exit(1)
+        return 1
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(run())
