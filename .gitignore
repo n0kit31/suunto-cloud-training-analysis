@@ -1,0 +1,36 @@
+# Local configuration, credentials, OAuth tokens and downloaded data.
+.local/
+config.json
+.env
+.env.*
+!.env.example
+credentials*.json
+tokens*.json
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Personal training data and generated outputs (also outside .local).
+*.fit
+*.gpx
+*.decoded.json
+*.analysis.json
+reports/
+visualizations/
+exports/
+TRAINING*.md
+*.log
+*.bak
+*.tmp
+
+# Local dependencies and caches.
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+.DS_Store

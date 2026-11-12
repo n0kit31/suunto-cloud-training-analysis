@@ -1,8 +1,24 @@
-# Suunto Cloud API — zapisany dostęp i pobieranie danych
+# Suunto Cloud API — pobieranie i analiza treningów
 
-Stan zweryfikowany 11.11.2026: zapisane klucze pozwoliły odświeżyć istniejący
-OAuth i pobrać listę oraz FIT biegu 10.11 i spaceru 11.11. Po wykonaniu polecenia
-w terminalu użytkownika oba FIT poprawnie zdekodowano, a manifest ma `complete=true`.
+Narzędzie CLI do autoryzacji Suunto Cloud API, pobierania podsumowań i plików
+FIT oraz obliczania metryk treningu. Kod, testy i przykładowa konfiguracja są
+oddzielone od lokalnych poświadczeń i danych sportowca.
+
+Oficjalny Suunto MCP jest drugim, zewnętrznym źródłem danych. Obecne skrypty
+obsługują Cloud API i FIT; połączenie ich wyników z odczytami MCP wykonuje agent
+mający dostęp do tej integracji. Repozytorium nie zawiera serwera ani klienta
+MCP, jego autoryzacji ani osobistego kontekstu treningowego.
+
+## Wymagania
+
+- Python 3.9 lub nowszy, z dostępną strefą czasową `Europe/Warsaw`.
+- macOS lub Linux: blokada odświeżania tokenów korzysta z `fcntl`.
+- Node.js oraz `fit-file-parser` do dekodowania FIT i eksportu GPX. Dekoder
+  najpierw szuka lokalnego pakietu, następnie biblioteki z SuuntoPlus Editor
+  zainstalowanego w rozszerzeniach VS Code.
+- Własna aplikacja OAuth i subskrypcja Developer API w Suunto API Zone.
+
+Wszystkie poniższe polecenia wykonuj w katalogu repozytorium `suunto-cloud`.
 
 ## Konfiguracja po sklonowaniu repozytorium
 
@@ -27,17 +43,14 @@ wyklucza konfigurację, cały `.local/`, pliki `.env`, FIT/GPX i raporty.
 obrazu. `.gitignore` nie usuwa plików, które wcześniej dodano już do Git;
 przed pierwszym commitem sprawdź listę plików i zawartość zmian.
 
-Poniższe przykłady poleceń wykonuj z katalogu nadrzędnego względem `suunto-cloud`.
-
 ## Zwykłe pobranie do analizy
 
-Z katalogu projektu:
-
 ```sh
-python3 suunto-cloud/sync.py --date 2026-11-10 --date 2026-11-11 --analysis --brief
+python3 sync.py --date 2026-01-15 --date 2026-01-16 --analysis --brief
 ```
 
-Podaj daty aktywności w Europe/Warsaw; `--date` można powtarzać. Polecenie:
+Zastąp przykładowe daty dniami swoich aktywności w Europe/Warsaw; `--date` można
+powtarzać. Polecenie:
 
 1. Odczytuje zapisane klucze i tokeny, bez pytań o nie.
 2. Automatycznie odświeża access token przed wygaśnięciem lub jednokrotnie
@@ -53,7 +66,7 @@ Podaj daty aktywności w Europe/Warsaw; `--date` można powtarzać. Polecenie:
    i maksymalnie trzema wcześniejszymi sesjami tego samego sportu do porównania.
 7. Oblicza także mechanikę aktywnych próbek, zmiany HR w kolejnych wolniejszych
    krokach oraz dostępność kanałów SuuntoPlus. Zapisuje raporty danych w
-   `reports/suunto-RRRR-MM-DD-HHMMSS.md` i `.json`; tekst oceny poza blokiem
+   `../reports/suunto-RRRR-MM-DD-HHMMSS.md` i `.json`; tekst oceny poza blokiem
    `suunto-generated` jest zachowywany przy odświeżaniu raportu.
 8. `--brief` zwraca tylko krótki widok z tabelą `lap_columns`/`lap_rows`, bez
    usuwania pełnych danych z `.local/analysis.json` i plików źródłowych.
@@ -71,7 +84,7 @@ pakiet nie zastępuje sprawdzenia zgodności ID z MCP. Czasy etapów zapisano
 w `timings_seconds` manifestu. Bez `--analysis` dotychczasowy tryb działa
 bez zmian; `--analysis` nie można łączyć z `--no-decode`.
 
-Od 12.11 długie zapisy z rozłącznymi kilometrowymi okrążeniami mają również
+Długie zapisy z rozłącznymi kilometrowymi okrążeniami mają również
 `distance_blocks`: grupy 5 km, dwie równe części pełnych kilometrów i resztę.
 HR/moc są ważone aktywnym czasem okrążeń, mechanika liczbą wspólnych próbek;
 pokrycie brakujących HR/mocy jest jawne. Nie są to oficjalne połówki zawodów
@@ -85,7 +98,7 @@ SuuntoPlus mogą być również w `fit.session`, a pełne przebiegi, np. Maratho
 estimator, i definicje ich jednostek pozostają w `*.decoded.json`. Brakujące
 wartości pozostają puste; pakiet nie wylicza automatycznie progów ani dryfu HR.
 
-To jedna bieżąca paczka listy API (obecnie 50 rekordów), nie eksport całej
+To jedna bieżąca paczka listy API, nie eksport całej
 historii. Gdy wybranych dat w niej nie ma, skrypt zgłasza brak. Nie udaje,
 że stara lokalna kopia jest świeżym odczytem. FIT zawiera także dane podczas
 pauz; do analizy ruchu należy używać zdarzeń timera i czasów aktywnych okrążeń.
@@ -111,24 +124,31 @@ zapisane wartości dla bieżącego procesu.
 Status bez ujawniania kluczy i bez zapytań sieciowych:
 
 ```sh
-python3 suunto-cloud/access.py
+python3 access.py
 ```
 
-Jednorazowa konfiguracja lub poprawienie kluczy w interaktywnym terminalu:
+Przy pierwszym uruchomieniu autoryzuj konto przez przeglądarkę:
 
 ```sh
-python3 suunto-cloud/access.py --configure
+python3 oauth.py
+```
+
+Skrypt poprosi o Client secret aplikacji i zapisze tokeny lokalnie. Następnie
+skonfiguruj oba klucze w interaktywnym terminalu:
+
+```sh
+python3 access.py --configure
 ```
 
 Skrypt pyta o oba klucze na niewidocznym wejściu. Nie wpisuj ich jako argumentów
 polecenia. Można też dodać `--configure` do `sync.py`. Sprawdzenie samego
-odświeżania OAuth: `python3 suunto-cloud/access.py --refresh`.
+odświeżania OAuth: `python3 access.py --refresh`.
 
 Jeśli Suunto odrzuci refresh token (`invalid_grant`), konieczne jest ponowne
 udzielenie dostępu przez przeglądarkę:
 
 ```sh
-python3 suunto-cloud/oauth.py
+python3 oauth.py
 ```
 
 `oauth.py` wykorzystuje zapisany Client secret. Opcja `--prompt-secret` pozwala
@@ -140,12 +160,16 @@ konto sportowca z aplikacji Suunto. Nie zapisuje się hasła konta Suunto.
 ## Pozostałe polecenia
 
 ```sh
-python3 suunto-cloud/fetch_workouts.py
-python3 suunto-cloud/fetch_track.py --date 2026-11-10
-python3 suunto-cloud/fetch_track.py --input /sciezka/do/trening.fit
-python3 suunto-cloud/analyze_fit.py suunto-cloud/.local/tracks/2026-11-10-181609.decoded.json
-python3 -m unittest discover -s suunto-cloud/tests -v
+python3 fetch_workouts.py
+python3 fetch_track.py --date 2026-01-15
+python3 fetch_track.py --input /sciezka/do/trening.fit
+python3 analyze_fit.py .local/tracks/RRRR-MM-DD-HHMMSS.decoded.json
+python3 -m unittest discover -s tests -v
 ```
+
+Testy używają danych syntetycznych i mocków; nie wymagają konta Suunto,
+poświadczeń ani połączenia z API. Nie zastępują testu integracji z API
+i rzeczywistym dekoderem FIT.
 
 `fetch_workouts.py` pobiera samą listę, a `fetch_track.py` również korzysta
 z zapisanej autoryzacji i automatycznego odświeżania. Konwersja FIT wymaga
@@ -157,29 +181,16 @@ Przekierowanie pobrania FIT jest ograniczone do HTTPS w domenach Suunto/Azure
 Blob, bez przekazywania do adresu pobrania nagłówków OAuth i subskrypcji.
 Nieudane odświeżenie lub nieprawidłowa odpowiedź nie nadpisuje działających tokenów.
 
-## Ograniczenie środowiska agenta
+## Katalogi danych
 
-11.11 bezpośrednie żądania sieciowe agenta nadal zatrzymywały się na DNS,
-a host dostępu przeglądarkowego był niedostępny. Ten sam skrypt działał
-w zwykłym terminalu użytkownika. Zapisanie kluczy i automatyczne odświeżanie
-nie usuwa tego ograniczenia środowiska. Użytkownik upoważnił agenta do
-uruchomienia powyższego polecenia w jego zwykłej konsoli, jeśli jest dostępne
-narzędzie i pozwalają na to uprawnienia środowiska. Dopiero gdy agent nie może
-tego wykonać, potrzebne jest uruchomienie przez użytkownika. Kluczy nie trzeba
-ponownie podawać. Agent następnie odczytuje lokalne pliki i łączy je z MCP.
+Kod odczytuje `config.json` i zapisuje `.local/` względem katalogu skryptów.
+Raporty powstają w `../reports/`, a wykresy w `../visualizations/`, obok
+katalogu repozytorium. Lokalny skill i `TRAINING.md` nie są częścią repozytorium.
+
+Konfiguracja, dane i tokeny nie należą do obrazu aplikacji. Przy uruchamianiu
+w kontenerze wymagają osobnych montowań, w tym zapisywalnego miejsca na tokeny
+odnawiane przez OAuth. `.dockerignore` przygotowuje wykluczenia danych
+prywatnych; repozytorium nie zawiera jeszcze Dockerfile ani konfiguracji Compose.
 
 Oficjalne informacje: [Suunto — How to start](https://apizone.suunto.com/how-to-start),
 [Suunto — FAQ](https://apizone.suunto.com/faq).
-
-
-## Reguła Codex i forma polecenia — zweryfikowano 12.11.2026
-
-W lokalnym Codex istnieje wąska reguła allow dla prefiksu python3 i pełnej ścieżki sync.py. Aby z niej skorzystać, uruchamiaj bezpośrednio:
-
-```sh
-python3 /Users/mkrzyzanowski/Projects/suunto/suunto-cloud/sync.py --date 2026-11-10 --analysis
-```
-
-Nie dodawaj do tego wywołania przekierowań powłoki (`>`, `2>`), potoków, zmiennych ani wrappera `zsh -lc`. W teście 12.11 bezpośrednia komenda miała decyzję allow; wersja z przekierowaniami była traktowana jako cała komenda powłoki i nie pasowała do reguły. Uruchomienie prostej komendy z domyślnymi uprawnieniami zakończyło się sukcesem. Wynik jest już zapisywany w `.local/analysis.json`, więc przekierowanie stdout nie jest potrzebne. Parametry daty można zmieniać i powtarzać zgodnie z zakresem analizy.
-
-Przy granular.sandbox_approval=false jawny request require_escalated jest automatycznie odrzucany, zanim trafi do recenzenta Auto-review. Nie zmieniaj tej polityki, aby naprawiać niepasującą formę komendy; stosuj istniejące, zatwierdzone wywołanie. Nie rozszerzaj reguły na całą powłokę ani dowolne skrypty Python. Brak sieci przy innej formie wywołania nie dowodzi awarii DNS ani błędnych kluczy Suunto.
