@@ -1,5 +1,6 @@
 """Generate reusable factual reports and portable SVG charts in the sync process."""
 
+from bisect import bisect_left, bisect_right
 from collections import defaultdict
 from datetime import datetime, timezone, timedelta
 from html import escape
@@ -53,6 +54,21 @@ def segments(points, gap):
     return result
 
 
+def moving_average(points, window=15, gap=2):
+    """Centered sample mean in a time window, separately for each observed segment."""
+    result = []
+    for group in segments(points, gap):
+        times = [t for t, _ in group]
+        sums = [0]
+        for _, value in group:
+            sums.append(sums[-1] + value)
+        for when, _ in group:
+            first = bisect_left(times, when - window / 2)
+            last = bisect_right(times, when + window / 2)
+            result.append((when, (sums[last] - sums[first]) / (last - first)))
+    return result
+
+
 def thin(points, limit):
     """Preserve chronological bucket extrema instead of smoothing the signal."""
     if len(points) <= limit:
@@ -71,16 +87,26 @@ def chart_svg(data, analysis, cloud):
     rows = active_samples(data, analysis['timer'])
     if not rows:
         return None
-    origin = seconds(data['sessions'][0].get('start_time') or analysis['timer']['active_segments'][0]['start'])
-    end = max(rows[-1][0], seconds(data['sessions'][0].get('timestamp') or analysis['timer']['active_segments'][-1]['end']))
-    total = max(1, end - origin)
-    hr = [(t - origin, r['heart_rate']) for t, r in rows if number(r.get('heart_rate'))]
-    altitude = [(t - origin, r['altitude']) for t, r in rows if number(r.get('altitude'))]
-    pace = pace_series(rows, origin)
+    intervals = [(seconds(s['start']), seconds(s['end'])) for s in analysis['timer']['active_segments']]
+
+    def active_time(when):
+        return sum(max(0, min(when, end) - start) for start, end in intervals)
+
+    total = max(1, sum(end - start for start, end in intervals))
+    active_rows = [(active_time(t), r) for t, r in rows]
+    # Smooth on original timestamps so pauses and missing measurements separate windows.
+    hr_observed = [(t, r['heart_rate']) for t, r in rows if number(r.get('heart_rate'))]
+    hr_times = [t for t, _ in hr_observed]
+    hr = []
+    for start, end in intervals:
+        observed = hr_observed[bisect_left(hr_times, start):bisect_left(hr_times, end)]
+        hr.extend((active_time(t), value) for t, value in moving_average(observed))
+    altitude = [(t, r['altitude']) for t, r in active_rows if number(r.get('altitude'))]
+    pace = pace_series(active_rows, 0)
     panels = []
     if hr:
         lo, hi = math.floor(min(v for _, v in hr) / 10) * 10, math.ceil(max(v for _, v in hr) / 10) * 10
-        panels.append(('Tętno (uderzenia/min)', segments(hr, 2), lo, max(lo + 10, hi), '#b52f3c', False))
+        panels.append(('Tętno (uderzenia/min) · średnia krocząca 15 s', [hr], lo, max(lo + 10, hi), '#b52f3c', False))
     if pace:
         lo = max(0.5, math.floor(min(v for _, v in pace) * 2) / 2)
         hi = max(lo + 1, min(15, math.ceil(max(v for _, v in pace))))
@@ -96,18 +122,22 @@ def chart_svg(data, analysis, cloud):
     pw = width - left - right
     x = lambda t: left + t / total * pw
     date = datetime.fromisoformat(cloud['start_local']).strftime('%d.%m.%Y %H:%M')
-    out = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
-           f'viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">', CHART_MARKER,
-           f'<title id="title">Przebieg treningu {date}</title>',
-           '<desc id="desc">Aktywne obserwacje. Szare pasma oznaczają pauzy timera. '
-           'Tempo to mediana w oknach 10 s; linie nie łączą długich luk. Oś czasu obejmuje pauzy.</desc>',
-           f'<rect width="{width}" height="{height}" fill="#ffffff"/>',
-           '<g font-family="Arial, sans-serif" fill="#17212b">',
-           f'<text x="85" y="35" font-size="25">Przebieg treningu · {date}</text>',
-           '<text x="85" y="65" font-size="17">Niebieskie pasma: odcinek przed wolniejszym krokiem treningu · szare: pauzy</text>']
     lap_by_index = {i: lap for i, lap in enumerate(data.get('laps', []), 1)}
     work_laps = [lap_by_index[r['work_lap_index']]
                  for r in analysis['additional_metrics']['slower_next_lap_hr_changes']]
+    subtitle = 'Oś czasu: aktywny trening'
+    if work_laps:
+        subtitle += ' · niebieskie pasma: odcinek przed wolniejszym krokiem treningu'
+    out = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
+           f'viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">', CHART_MARKER,
+           f'<title id="title">Przebieg treningu {date}</title>',
+           '<desc id="desc">Oś czasu aktywnego treningu. '
+           'Tętno: wyśrodkowana średnia krocząca 15 s, luki połączone liniowo na wykresie. '
+           'Tempo to mediana w oknach 10 s; tempo i wysokość zachowują luki pomiaru.</desc>',
+           f'<rect width="{width}" height="{height}" fill="#ffffff"/>',
+           '<g font-family="Arial, sans-serif" fill="#17212b">',
+           f'<text x="85" y="35" font-size="25">Przebieg treningu · {date}</text>',
+           f'<text x="85" y="65" font-size="17">{subtitle}</text>']
     for index, (title, groups, lo, hi, color, inverted) in enumerate(panels):
         top = 130 + index * spacing
         y = lambda v: top + ((v - lo) if inverted else (hi - v)) / (hi - lo) * ph
@@ -115,11 +145,8 @@ def chart_svg(data, analysis, cloud):
                     f'width="{pw}" height="{ph}"/></clipPath></defs>',
                     f'<text x="{left}" y="{top - 25}" font-size="19">{escape(title)}</text>'])
         for lap in work_laps:
-            x1, x2 = x(seconds(lap['start_time']) - origin), x(seconds(lap['timestamp']) - origin)
+            x1, x2 = x(active_time(seconds(lap['start_time']))), x(active_time(seconds(lap['timestamp'])))
             out.append(f'<rect x="{x1:.2f}" y="{top}" width="{x2 - x1:.2f}" height="{ph}" fill="#e8f0f8"/>')
-        for pause in analysis['timer']['pauses']:
-            x1, x2 = x(seconds(pause['start']) - origin), x(seconds(pause['end']) - origin)
-            out.append(f'<rect x="{x1:.2f}" y="{top}" width="{x2 - x1:.2f}" height="{ph}" fill="#dce1e6"/>')
         for tick in range(6):
             v = lo + tick * (hi - lo) / 5
             label = duration(v * 60).removesuffix(',0') if inverted else display(v, 0)
@@ -136,9 +163,9 @@ def chart_svg(data, analysis, cloud):
             coords = ' '.join(f'{x(t):.2f},{y(v):.2f}' for t, v in points)
             out.append(f'<polyline points="{coords}" fill="none" stroke="{color}" stroke-width="1.8" '
                        f'clip-path="url(#panel-{index})" stroke-linejoin="round"/>')
-        out.append(f'<text x="{left+pw/2}" y="{top+ph+49}" font-size="16" text-anchor="middle">Czas od startu (min)</text>')
-    out.extend([f'<text x="85" y="{height-15}" font-size="15">Tempo: mediana 10 s, oś do 15 min/km. '
-                'Bez próbek z pauz; redukcja punktów zachowuje skrajne wartości.</text>', '</g></svg>'])
+        out.append(f'<text x="{left+pw/2}" y="{top+ph+49}" font-size="16" text-anchor="middle">Czas aktywnego treningu (min)</text>')
+    out.extend([f'<text x="85" y="{height-15}" font-size="15">Tętno: średnia 15 s, luki połączone liniowo. '
+                'Tempo: mediana 10 s, oś do 15 min/km.</text>', '</g></svg>'])
     return '\n'.join(out) + '\n'
 
 
@@ -197,6 +224,10 @@ def report_body(cloud, analysis, entry, retrieved, chart):
                   f"oryginalny FIT: `{entry['fit_path']}`, SHA-256 `{entry['fit_sha256']}`."])
     if chart:
         lines.extend(['', f'[Przebieg tętna, tempa i wysokości]({chart})'])
+        lines.extend(['', 'Wykres HR: wyśrodkowana średnia krocząca 15 s z dostępnych próbek (±7,5 s), '
+                      'liczona osobno dla ciągłych odcinków pomiaru. Luki >2 s i pauzy rozdzielają okna. '
+                      'Luki w linii tętna połączono liniowo wyłącznie na wykresie. '
+                      'Wartości HR w tabelach i analizie pochodzą z danych źródłowych.'])
     return '\n'.join(lines)
 
 

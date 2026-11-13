@@ -66,7 +66,19 @@ python3 -m suunto_cloud sync --date 2026-01-15 --analysis --brief
 Daty dotyczą strefy `Europe/Warsaw`; `--date` można powtarzać.
 Dodaj `--charts`, aby wygenerować wykres. Surowe dane i analizy są w `.local/`,
 raporty w `../reports/`, a wykresy w `../visualizations/`.
+Wykresy korzystają z czasu aktywnego treningu: pauzy są wycięte z osi i nie
+mają osobnych oznaczeń. Braki pomiarów tempa i wysokości pozostają przerwami w linii.
+Linię tętna wygładza wyśrodkowana średnia krocząca 15 s z dostępnych próbek,
+liczona osobno dla ciągłych odcinków pomiaru. Luki w tętnie łączone są liniowo
+wyłącznie na wykresie, dzięki czemu krzywa jest ciągła. Statystyki HR pochodzą
+z danych źródłowych.
 Obecna wersja pobiera jedną stronę listy treningów, bez eksportu całej historii.
+
+Istniejący wykres można odtworzyć bez ponownego pobierania danych:
+
+```sh
+python3 -m suunto_cloud charts ../reports/suunto-2026-01-15-080000.json
+```
 
 Pozostałe polecenia: `workouts`, `track`, `analyze` i `access`.
 Pomoc: `python3 -m suunto_cloud --help` lub `python3 -m suunto_cloud sync --help`.

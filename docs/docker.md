@@ -83,6 +83,18 @@ z systemem plików obrazu tylko do odczytu i osobnymi montowaniami danych.
 Oficjalny Suunto MCP pozostaje zewnętrzną integracją agenta. Obraz obsługuje
 bezpośrednie Cloud API i FIT; nie przejmuje autoryzacji MCP z aplikacji hosta.
 
+## Helper projektu
+
+Helper `../skills/suunto-training-analysis/scripts/run-docker.sh` ustawia UID/GID
+i katalog Compose. Polecenie `build` przebudowuje obraz aplikacji po zmianie
+kodu. Polecenie `charts` odtwarza wykres z istniejącego raportu i próbek FIT,
+bez ponownego pobierania danych:
+
+```sh
+sh ../skills/suunto-training-analysis/scripts/run-docker.sh build
+sh ../skills/suunto-training-analysis/scripts/run-docker.sh charts /app/reports/suunto-2026-01-15-080000.json
+```
+
 ## Weryfikacja obrazu
 
 ```sh
