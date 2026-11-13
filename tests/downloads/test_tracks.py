@@ -26,7 +26,7 @@ class FetchTrackTests(unittest.TestCase):
         opener = MagicMock()
         opener.open.return_value = io.BytesIO(b'<html>login</html>')
         with patch.object(track, 'build_opener', return_value=opener):
-            with self.assertRaisesRegex(ValueError, 'binarnego pliku FIT'):
+            with self.assertRaisesRegex(ValueError, 'binary FIT file'):
                 track.fetch_fit('a' * 24, 'test-token', 'test-key')
 
     def test_redirect_does_not_receive_credentials(self):

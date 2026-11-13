@@ -24,11 +24,11 @@ from suunto_cloud.reporting.reports import write_outputs, cleanup_charts
 
 def sync(dates, decode=True, analysis=False, brief=False, charts=False):
     if analysis and not decode:
-        raise ValueError('Tryb --analysis wymaga dekodowania FIT; usuń --no-decode.')
+        raise ValueError('--analysis requires FIT decoding; remove --no-decode.')
     if brief and not analysis:
-        raise ValueError('Tryb --brief wymaga --analysis.')
+        raise ValueError('--brief requires --analysis.')
     if charts and not analysis:
-        raise ValueError('Tryb --charts wymaga --analysis.')
+        raise ValueError('--charts requires --analysis.')
     started = perf_counter()
 
     def progress(message):
@@ -52,7 +52,7 @@ def sync(dates, decode=True, analysis=False, brief=False, charts=False):
     manifest_path = private_directory() / 'sync.json'
     private_json(manifest_path, manifest)
     if not selected:
-        raise AccessError('Brak treningów dla wskazanych dat w świeżej odpowiedzi API. Nie zastąpiono ich starym zapisem.')
+        raise AccessError('No workouts for the requested dates in the fresh API response. Cached data was not substituted.')
     failed = False
     analyses = {}
     for start, workout in sorted(selected, key=lambda item: item[0]):
@@ -68,7 +68,7 @@ def sync(dates, decode=True, analysis=False, brief=False, charts=False):
                  'cloud_summary_path': str(summary_path), 'fit_downloaded': False, 'decoded': False}
         manifest['workouts'].append(entry)
         private_json(manifest_path, manifest)
-        progress(f'Pobieram FIT: {start.date()}, {workout.get("totalDistance", 0) / 1000:.3f} km...')
+        progress(f'Downloading FIT: {start.date()}, {workout.get("totalDistance", 0) / 1000:.3f} km...')
         try:
             fit_started = perf_counter()
             content = authorized_call(lambda token, subkey: fetch_fit(key, token, subkey))
@@ -81,7 +81,7 @@ def sync(dates, decode=True, analysis=False, brief=False, charts=False):
                 result = subprocess.run(['node', str(SCRIPTS_DIRECTORY / 'decode.cjs'), str(fit_path), str(decoded_path)],
                                         check=False, capture_output=True)
                 if result.returncode:
-                    raise AccessError('FIT zapisany, lecz dekoder nie zakończył pracy. Sprawdź Node.js i fit-file-parser.')
+                    raise AccessError('FIT saved, but decoding failed. Check Node.js and fit-file-parser.')
                 # Do not mark decoding successful merely because an old output file exists.
                 decoded = json.loads(decoded_path.read_text())
                 entry.update({'decoded': True, 'decoded_path': str(decoded_path)})
@@ -91,12 +91,12 @@ def sync(dates, decode=True, analysis=False, brief=False, charts=False):
                     try:
                         analyses[key] = summarize(decoded)
                     except (KeyError, IndexError, TypeError) as error:
-                        raise AccessError('FIT zdekodowano, lecz brakuje danych wymaganych do analizy.') from error
+                        raise AccessError('FIT decoded, but data required for analysis is missing.') from error
                     analysis_path = fit_path.with_suffix('.analysis.json')
                     private_json(analysis_path, analyses[key])
                     entry.update({'analyzed': True, 'analysis_path': str(analysis_path)})
                     entry['timings_seconds']['analysis'] = round(perf_counter() - analyze_started, 4)
-            progress(f'Zapisano FIT{ " i pełne próbki JSON" if decode else ""}: {start.date()}.')
+            progress(f'Saved FIT{ " and full JSON samples" if decode else ""}: {start.date()}.')
         except (AccessError, OSError, ValueError, URLError) as error:
             entry['error'] = safe_error(error)
             failed = True
@@ -123,27 +123,27 @@ def sync(dates, decode=True, analysis=False, brief=False, charts=False):
     manifest['timings_seconds']['total'] = round(perf_counter() - started, 4)
     private_json(manifest_path, manifest)
     if missing:
-        print('Brak wskazanych dat w bieżącej paczce API: ' + ', '.join(missing), file=sys.stderr)
+        print('Requested dates missing from the current API response: ' + ', '.join(missing), file=sys.stderr)
     if not manifest['complete']:
-        raise AccessError('Pobieranie niepełne. Szczegóły bez kluczy zapisano w .local/sync.json.')
+        raise AccessError('Download incomplete. Details without credentials saved to .local/sync.json.')
     if packet is not None:
         print(json.dumps(brief_packet(packet) if brief else packet, ensure_ascii=False, separators=(',', ':')))
     else:
-        progress(f'Gotowe: {len(selected)} aktywności. Manifest: {manifest_path}')
+        progress(f'Completed: {len(selected)} activities. Manifest: {manifest_path}')
     return manifest
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--date', action='append', required=True, help='Data Europe/Warsaw; można podać wielokrotnie')
-    parser.add_argument('--configure', action='store_true', help='Najpierw jednorazowo zapisz klucze')
-    parser.add_argument('--no-decode', action='store_true', help='Zapisz FIT bez dekodowania do JSON')
+    parser.add_argument('--date', action='append', required=True, help='Date in Europe/Warsaw; may be repeated')
+    parser.add_argument('--configure', action='store_true', help='Save credentials first using one-time setup')
+    parser.add_argument('--no-decode', action='store_true', help='Save FIT without decoding it to JSON')
     parser.add_argument('--analysis', action='store_true',
-                        help='Pobierz i przeanalizuj FIT; wypisz tylko zwięzły pakiet JSON dla analizy')
+                        help='Download and analyze FIT; print only the analysis JSON packet')
     parser.add_argument('--brief', action='store_true',
-                        help='Z --analysis wypisz krótki widok; pełne dane i raporty pozostają w plikach')
+                        help='With --analysis, print a brief view; full data and reports are saved to files')
     parser.add_argument('--charts', action='store_true',
-                        help='Z --analysis generuj także wykresy; wyłącznie na prośbę użytkownika')
+                        help='With --analysis, also generate charts; only when requested by the user')
     args = parser.parse_args(argv)
     for day in args.date:
         date.fromisoformat(day)  # Validate before credentials/network requests.
@@ -156,7 +156,7 @@ def run(argv=None):
     try:
         main(argv)
     except KeyboardInterrupt:
-        print('\nPrzerwano.', file=sys.stderr)
+        print('\nInterrupted.', file=sys.stderr)
         return 130
     except (AccessError, OSError, ValueError, URLError, EOFError) as error:
         print(safe_error(error), file=sys.stderr)

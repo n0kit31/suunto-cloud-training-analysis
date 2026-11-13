@@ -20,11 +20,11 @@ def duration(value):
     if not number(value):
         return '—'
     value = round(value, 1)
-    return f'{int(value // 60)}:{value % 60:04.1f}'.replace('.', ',')
+    return f'{int(value // 60)}:{value % 60:04.1f}'
 
 
 def display(value, digits=1):
-    return '—' if value is None else f'{value:.{digits}f}'.replace('.', ',') if number(value) else str(value)
+    return '—' if value is None else f'{value:.{digits}f}' if number(value) else str(value)
 
 
 def pace_from_speed(speed):
@@ -106,37 +106,37 @@ def chart_svg(data, analysis, cloud):
     panels = []
     if hr:
         lo, hi = math.floor(min(v for _, v in hr) / 10) * 10, math.ceil(max(v for _, v in hr) / 10) * 10
-        panels.append(('Tętno (uderzenia/min) · średnia krocząca 15 s', [hr], lo, max(lo + 10, hi), '#b52f3c', False))
+        panels.append(('Heart rate (bpm) · 15 s moving average', [hr], lo, max(lo + 10, hi), '#b52f3c', False))
     if pace:
         lo = max(0.5, math.floor(min(v for _, v in pace) * 2) / 2)
         hi = max(lo + 1, min(15, math.ceil(max(v for _, v in pace))))
-        panels.append(('Tempo (min/km) · mediana 10 s', segments(pace, 15), lo, hi, '#24679c', True))
+        panels.append(('Pace (min/km) · 10 s median', segments(pace, 15), lo, hi, '#24679c', True))
     if altitude:
         lo = math.floor(min(v for _, v in altitude) / 10) * 10
         hi = max(lo + 10, math.ceil(max(v for _, v in altitude) / 10) * 10)
-        panels.append(('Wysokość (m n.p.m.)', segments(altitude, 2), lo, hi, '#27704d', False))
+        panels.append(('Elevation (m above sea level)', segments(altitude, 2), lo, hi, '#27704d', False))
     if not panels:
         return None
     width, left, right, ph, spacing = 1200, 85, 40, 170, 250
     height = 130 + len(panels) * spacing
     pw = width - left - right
     x = lambda t: left + t / total * pw
-    date = datetime.fromisoformat(cloud['start_local']).strftime('%d.%m.%Y %H:%M')
+    date = datetime.fromisoformat(cloud['start_local']).strftime('%Y-%m-%d %H:%M')
     lap_by_index = {i: lap for i, lap in enumerate(data.get('laps', []), 1)}
     work_laps = [lap_by_index[r['work_lap_index']]
                  for r in analysis['additional_metrics']['slower_next_lap_hr_changes']]
-    subtitle = 'Oś czasu: aktywny trening'
+    subtitle = 'Time axis: active workout time'
     if work_laps:
-        subtitle += ' · niebieskie pasma: odcinek przed wolniejszym krokiem treningu'
+        subtitle += ' · blue bands: interval before a slower workout step'
     out = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
            f'viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">', CHART_MARKER,
-           f'<title id="title">Przebieg treningu {date}</title>',
-           '<desc id="desc">Oś czasu aktywnego treningu. '
-           'Tętno: wyśrodkowana średnia krocząca 15 s, luki połączone liniowo na wykresie. '
-           'Tempo to mediana w oknach 10 s; tempo i wysokość zachowują luki pomiaru.</desc>',
+           f'<title id="title">Workout overview {date}</title>',
+           '<desc id="desc">Active workout time axis. '
+           'Heart rate: centered 15 s moving average, with gaps connected linearly on the chart. '
+           'Pace: median in 10 s windows. Pace and elevation retain measurement gaps.</desc>',
            f'<rect width="{width}" height="{height}" fill="#ffffff"/>',
            '<g font-family="Arial, sans-serif" fill="#17212b">',
-           f'<text x="85" y="35" font-size="25">Przebieg treningu · {date}</text>',
+           f'<text x="85" y="35" font-size="25">Workout overview · {date}</text>',
            f'<text x="85" y="65" font-size="17">{subtitle}</text>']
     for index, (title, groups, lo, hi, color, inverted) in enumerate(panels):
         top = 130 + index * spacing
@@ -149,7 +149,7 @@ def chart_svg(data, analysis, cloud):
             out.append(f'<rect x="{x1:.2f}" y="{top}" width="{x2 - x1:.2f}" height="{ph}" fill="#e8f0f8"/>')
         for tick in range(6):
             v = lo + tick * (hi - lo) / 5
-            label = duration(v * 60).removesuffix(',0') if inverted else display(v, 0)
+            label = duration(v * 60).removesuffix('.0') if inverted else display(v, 0)
             out.extend([f'<line x1="{left}" y1="{y(v):.2f}" x2="{width-right}" y2="{y(v):.2f}" stroke="#dce1e6"/>',
                         f'<text x="{left-12}" y="{y(v)+5:.2f}" font-size="16" text-anchor="end">{label}</text>'])
         step = max(60, math.ceil(total / 600) * 60)
@@ -163,26 +163,26 @@ def chart_svg(data, analysis, cloud):
             coords = ' '.join(f'{x(t):.2f},{y(v):.2f}' for t, v in points)
             out.append(f'<polyline points="{coords}" fill="none" stroke="{color}" stroke-width="1.8" '
                        f'clip-path="url(#panel-{index})" stroke-linejoin="round"/>')
-        out.append(f'<text x="{left+pw/2}" y="{top+ph+49}" font-size="16" text-anchor="middle">Czas aktywnego treningu (min)</text>')
-    out.extend([f'<text x="85" y="{height-15}" font-size="15">Tętno: średnia 15 s, luki połączone liniowo. '
-                'Tempo: mediana 10 s, oś do 15 min/km.</text>', '</g></svg>'])
+        out.append(f'<text x="{left+pw/2}" y="{top+ph+49}" font-size="16" text-anchor="middle">Active workout time (min)</text>')
+    out.extend([f'<text x="85" y="{height-15}" font-size="15">Heart rate: 15 s average, gaps connected linearly. '
+                'Pace: 10 s median, axis up to 15 min/km.</text>', '</g></svg>'])
     return '\n'.join(out) + '\n'
 
 
 def report_body(cloud, analysis, entry, retrieved, chart):
     summary, details = cloud['summary'], analysis['additional_metrics']
-    lines = [f"Pobranie: {retrieved}; strefa Europe/Warsaw; ID `{cloud['workout_key']}`.", '',
-             '| Metryka | Wartość |', '| --- | --- |',
-             f"| Dystans | {display(cloud['distance_m'] / 1000, 3)} km |",
-             f"| Czas aktywny / elapsed | {duration(cloud['active_seconds'])} / {duration(cloud['elapsed_seconds'])} |",
-             f"| Tempo aktywne | {duration(cloud['pace_seconds_per_km'])}/km |",
-             f"| HR średnie / maksymalne | {cloud['avg_hr_bpm']} / {cloud['max_hr_bpm']} |",
-             f"| Podejścia / zejścia | {display(cloud['ascent_m'])} / {display(cloud['descent_m'])} m |",
+    lines = [f"Retrieved: {retrieved}; timezone Europe/Warsaw; ID `{cloud['workout_key']}`.", '',
+             '| Metric | Value |', '| --- | --- |',
+             f"| Distance | {display(cloud['distance_m'] / 1000, 3)} km |",
+             f"| Active / elapsed time | {duration(cloud['active_seconds'])} / {duration(cloud['elapsed_seconds'])} |",
+             f"| Active pace | {duration(cloud['pace_seconds_per_km'])}/km |",
+             f"| Average / maximum HR | {cloud['avg_hr_bpm']} / {cloud['max_hr_bpm']} |",
+             f"| Ascent / descent | {display(cloud['ascent_m'])} / {display(cloud['descent_m'])} m |",
              f"| TSS | {display((cloud['tss'] or {}).get('trainingStressScore'), 3)}; {(cloud['tss'] or {}).get('calculationMethod')} |",
-             f"| PTE / VO₂max estymowane | {display(summary.get('pte'))} / {display((cloud['fitness'] or {}).get('estimatedVo2Max'))} |",
-             '', '## Międzyczasy i mechanika', '',
-             'Wybrano jeden rozłączny rodzaj okrążeń. Tempo z czasu aktywnego i dystansu; mechanika z dostępnych wspólnych próbek.', '',
-             '| Okr. | m | Czas | Tempo/km | HR śr./maks. | W | +m/−m | Kroki/min | Kontakt ms | Oscylacja cm | Krok m (wyliczony) |',
+             f"| PTE / estimated VO₂max | {display(summary.get('pte'))} / {display((cloud['fitness'] or {}).get('estimatedVo2Max'))} |",
+             '', '## Laps and running mechanics', '',
+             'One non-overlapping lap type was selected. Pace uses active time and distance; mechanics use available paired samples.', '',
+             '| Lap | m | Time | Pace/km | Avg/max HR | W | +m/−m | Steps/min | Contact ms | Oscillation cm | Estimated step m |',
              '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |']
     by_index = {l['index']: l for l in analysis['laps']}
     for samples in details['lap_samples']:
@@ -193,41 +193,41 @@ def report_body(cloud, analysis, entry, retrieved, chart):
                      f"{display(lap['avg_power_w'], 0)} | {display(lap['ascent_m'])}/{display(lap['descent_m'])} | "
                      f"{display(m.get('cadence_steps_per_min'))} | {display(m.get('ground_contact_ms'))} | "
                      f"{display(m.get('vertical_oscillation_cm'), 2)} | {display(m.get('estimated_step_length_m'), 3)} |")
-    lines.extend(['', '## Pauzy i HR po zwolnieniu', ''])
+    lines.extend(['', '## Pauses and HR after slowing down', ''])
     for pause in analysis['timer']['pauses']:
-        lines.append(f"- {pause['start']}–{pause['end']}: {duration(pause['seconds'])}; powód nieznany.")
+        lines.append(f"- {pause['start']}–{pause['end']}: {duration(pause['seconds'])}; reason unknown.")
     if not analysis['timer']['pauses']:
-        lines.append('Brak pauz potwierdzonych zdarzeniami timera.')
+        lines.append('No pauses confirmed by timer events.')
     for recovery in details['slower_next_lap_hr_changes']:
-        lines.append(f"- Okrążenie {recovery['work_lap_index']} → {recovery['slower_next_lap_index']}: "
-                     f"zmiana HR po 60 s {display(recovery['hr_drop_after_60_seconds'], 0)}/min; "
-                     f"pauza w następnym kroku: {recovery['pause_in_next_lap']}. To nie test kliniczny HRR.")
-    lines.extend(['', '## Intensywność i dane uzupełniające', ''])
+        lines.append(f"- Lap {recovery['work_lap_index']} → {recovery['slower_next_lap_index']}: "
+                     f"HR drop after 60 s: {display(recovery['hr_drop_after_60_seconds'], 0)} bpm; "
+                     f"pause in the next step: {recovery['pause_in_next_lap']}. This is not a clinical HRR test.")
+    lines.extend(['', '## Intensity and additional data', ''])
     hr_zones = ((cloud.get('intensity') or {}).get('zones') or {}).get('heartRate', {})
     for name, zone in hr_zones.items():
         value = zone.get('totalTime')
         if number(value):
-            lines.append(f"- HR {name}: {duration(value)}; dolna granica {display(zone.get('lowerLimit'), 0)}/min.")
+            lines.append(f"- HR {name}: {duration(value)}; lower limit {display(zone.get('lowerLimit'), 0)} bpm.")
     zone_sense = (cloud.get('zone_sense') or {}).get('zones', {})
     if zone_sense:
-        lines.append('- ZoneSense (osobna klasyfikacja, bez procentów czasu aktywnego): ' + '; '.join(
+        lines.append('- ZoneSense (separate classification; no percentages of active time): ' + '; '.join(
             f'{key}: {duration(value / 1000)}' for key, value in zone_sense.items()
             if key.endswith('Ms') and number(value)))
     for channel in details['suuntoplus_channels']:
-        lines.append(f"- SuuntoPlus {channel['label']}: jednostka `{channel['unit']}`, "
-                     f"{channel['active_sample_count']} aktywnych próbek, ostatnia wartość "
-                     f"{display(channel['last_active_value'], 3)}, wynik sesji {display(channel['session_value'], 3)}.")
-    lines.extend(['', 'Estymatory czasu maratonu opisują projekcję aplikacji z tempa, nie maksymalne możliwości. '
-                  'TSS z różnych metod nie sumuje się. Progi mocy, jednostka korekty tempa, '
-                  'brakujące progi ZoneSense i artefakty R-R wymagają osobnej oceny przed interpretacją.', '',
-                  details['method'], '', 'Pełne dane, liczebności próbek i dodatkowe pola są w sąsiednim JSON; '
-                  f"oryginalny FIT: `{entry['fit_path']}`, SHA-256 `{entry['fit_sha256']}`."])
+        lines.append(f"- SuuntoPlus {channel['label']}: unit `{channel['unit']}`, "
+                     f"{channel['active_sample_count']} active samples, last value "
+                     f"{display(channel['last_active_value'], 3)}, session result {display(channel['session_value'], 3)}.")
+    lines.extend(['', 'Marathon time estimators project a finish time from pace; they do not measure maximum performance. '
+                  'Do not add TSS values calculated with different methods. Power thresholds, grade-adjusted pace units, '
+                  'missing ZoneSense thresholds, and R-R artifacts require separate assessment before interpretation.', '',
+                  details['method'], '', 'Full data, sample counts, and additional fields are in the adjacent JSON file; '
+                  f"original FIT: `{entry['fit_path']}`, SHA-256 `{entry['fit_sha256']}`."])
     if chart:
-        lines.extend(['', f'[Przebieg tętna, tempa i wysokości]({chart})'])
-        lines.extend(['', 'Wykres HR: wyśrodkowana średnia krocząca 15 s z dostępnych próbek (±7,5 s), '
-                      'liczona osobno dla ciągłych odcinków pomiaru. Luki >2 s i pauzy rozdzielają okna. '
-                      'Luki w linii tętna połączono liniowo wyłącznie na wykresie. '
-                      'Wartości HR w tabelach i analizie pochodzą z danych źródłowych.'])
+        lines.extend(['', f'[Heart rate, pace, and elevation chart]({chart})'])
+        lines.extend(['', 'HR chart: centered 15 s moving average of available samples (±7.5 s), '
+                      'calculated separately for continuous measurement segments. Gaps >2 s and pauses separate windows. '
+                      'Gaps in the heart rate line are connected linearly on the chart only. '
+                      'HR values in tables and analysis come from source data.'])
     return '\n'.join(lines)
 
 
@@ -235,7 +235,7 @@ def write_outputs(project, cloud, analysis, decoded, entry, retrieved, charts=Fa
     stem = datetime.fromisoformat(cloud['start_local']).strftime('%Y-%m-%d-%H%M%S')
     reports, chart_dir = project / 'reports', project / 'visualizations'
     reports.mkdir(exist_ok=True)
-    chart = chart_dir / f'suunto-{stem}-przebieg.svg'
+    chart = chart_dir / f'suunto-{stem}-overview.svg'
     svg = chart_svg(decoded, analysis, cloud) if charts else None
     if svg:
         chart_dir.mkdir(exist_ok=True)
@@ -243,7 +243,7 @@ def write_outputs(project, cloud, analysis, decoded, entry, retrieved, charts=Fa
     markdown, json_path = reports / f'suunto-{stem}.md', reports / f'suunto-{stem}.json'
     body = report_body(cloud, analysis, entry, retrieved, str(chart) if svg else None)
     block = f'{START}\n{body}\n{END}'
-    previous = markdown.read_text() if markdown.exists() else f'# Trening {stem}\n\n'
+    previous = markdown.read_text() if markdown.exists() else f'# Workout {stem}\n\n'
     if START in previous and END in previous:
         before, tail = previous.split(START, 1)
         _, after = tail.split(END, 1)

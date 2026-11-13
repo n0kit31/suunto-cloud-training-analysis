@@ -67,9 +67,9 @@ class OutputTests(unittest.TestCase):
             self.assertIsNone(out['chart_path'])
             self.assertFalse((self.root / 'visualizations').exists())
             report = Path(out['markdown_path'])
-            report.write_text(report.read_text() + '\n## Ocena\nWłasna analiza użytkownika.\n')
+            report.write_text(report.read_text() + '\n## Assessment\nUser-written analysis.\n')
             write_outputs(self.root, self.cloud, self.analysis, self.data, self.entry, 'second')
-        self.assertIn('Własna analiza użytkownika.', report.read_text())
+        self.assertIn('User-written analysis.', report.read_text())
         self.assertEqual(report.read_text().count('<!-- suunto-generated:start -->'), 1)
 
     def test_chart_requires_opt_in_and_has_a_real_pace_line(self):
@@ -78,6 +78,8 @@ class OutputTests(unittest.TestCase):
         lines = [x for x in tree.iter() if x.tag.endswith('polyline')]
         self.assertTrue(any(x.attrib.get('clip-path') == 'url(#panel-1)' for x in lines))
         self.assertIn(CHART_MARKER, Path(out['chart_path']).read_text())
+        self.assertIn('Heart rate (bpm)', Path(out['chart_path']).read_text())
+        self.assertIn('| Distance | 0.420 km |', Path(out['markdown_path']).read_text())
         self.assertTrue(Path(out['json_path']).is_file())
 
     def test_reduction_retains_peaks_and_does_not_create_observations(self):
@@ -111,7 +113,7 @@ class OutputTests(unittest.TestCase):
         self.assertTrue(any(abs(x - (85 + 1075 * 60 / 120)) < .01 for x, _ in points))
         self.assertAlmostEqual(points[-1][0], 85 + 1075 * 119 / 120, places=2)
         self.assertFalse(any(x.attrib.get('fill') == '#dce1e6' for x in tree.iter()))
-        self.assertIn('Czas aktywnego treningu (min)', Path(out['chart_path']).read_text())
+        self.assertIn('Active workout time (min)', Path(out['chart_path']).read_text())
 
     def test_cleanup_only_removes_old_owned_files_and_keeps_current_and_symlink(self):
         now = datetime.now(timezone.utc)

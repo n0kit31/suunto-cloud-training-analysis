@@ -21,7 +21,7 @@ class CommandTests(unittest.TestCase):
             clean_root = Path(directory)
             shutil.copytree(ROOT / 'suunto_cloud', clean_root / 'suunto_cloud',
                             ignore=shutil.ignore_patterns('__pycache__'))
-            for command in (None, 'sync', 'oauth', 'access', 'workouts', 'track', 'analyze'):
+            for command in (None, 'sync', 'oauth', 'access', 'workouts', 'track', 'analyze', 'charts'):
                 with self.subTest(command=command):
                     args = [sys.executable, '-m', 'suunto_cloud']
                     if command:

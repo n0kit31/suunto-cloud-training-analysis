@@ -22,16 +22,16 @@ TOKEN_URL = "https://cloudapi-oauth.suunto.com/oauth/token"
 def parse_callback(path, expected_state, callback_path):
     url = urlsplit(path)
     if url.path != callback_path:
-        raise FileNotFoundError("Nieznana ścieżka callback.")
+        raise FileNotFoundError("Unknown callback path.")
     query = parse_qs(url.query, keep_blank_values=True)
     states = query.get("state", [])
     if len(states) != 1 or not secrets.compare_digest(states[0].encode(), expected_state.encode()):
-        raise ValueError("Nieprawidłowy state. Użyj linku z bieżącego uruchomienia.")
+        raise ValueError("Invalid OAuth state. Use the link from the current run.")
     if "error" in query:
         return None
     codes = query.get("code", [])
     if len(codes) != 1 or not codes[0]:
-        raise ValueError("Brak jednoznacznego kodu autoryzacji.")
+        raise ValueError("Expected exactly one nonempty authorization code.")
     return codes[0]
 
 
@@ -49,7 +49,7 @@ def callback_handler(state, redirect_uri):
         def do_GET(self):
             try:
                 if self.headers.get("Host") != redirect.netloc:
-                    raise ValueError("Nieprawidłowy adres callback.")
+                    raise ValueError("Invalid callback address.")
                 code = parse_callback(self.path, state, redirect.path)
             except (FileNotFoundError, ValueError) as exc:
                 status = 404 if isinstance(exc, FileNotFoundError) else 400
@@ -59,8 +59,8 @@ def callback_handler(state, redirect_uri):
                 self.server.authorization_code = code
                 status = 200
                 message = (
-                    "Odebrano kod Suunto. Wróć do terminala, aby sprawdzić wynik wymiany na token."
-                    if code else "Autoryzacja nie została udzielona. Wróć do terminala."
+                    "Suunto authorization code received. Return to the terminal to check the token exchange result."
+                    if code else "Authorization was not granted. Return to the terminal."
                 )
             body = message.encode("utf-8")
             self.send_response(status)
@@ -89,20 +89,20 @@ def token_error_message(exc):
         error = payload.get("error") if isinstance(payload, dict) else None
     except (ValueError, UnicodeError):
         error = None
-    message = f"Wymiana kodu na token: HTTP {exc.code} z {TOKEN_URL}."
+    message = f"Authorization code exchange: HTTP {exc.code} from {TOKEN_URL}."
     if error in {"invalid_client", "invalid_grant", "invalid_request", "unauthorized_client", "unauthorized"}:
-        message += f" Kod OAuth: {error}."
+        message += f" OAuth error: {error}."
     if error == "invalid_grant":
-        message += " Uruchom skrypt ponownie po nowy kod i sprawdź zgodność Redirect URI z panelem."
+        message += " Run the command again for a new code and check that the Redirect URI matches the application settings."
     elif exc.code == 401 or error in {"invalid_client", "unauthorized_client"}:
         message += (
-            " Sprawdź parę Client ID + Client secret w OAuth application settings."
-            " Client secret to sekret aplikacji, odrębny od hasła API Zone, hasła Suunto App"
-            " oraz kluczy Primary/Secondary Developer API."
-            " Konto API Zone może być inne niż konto połączone z zegarkiem."
+            " Check the Client ID + Client secret pair in OAuth application settings."
+            " The client secret is an application credential, separate from the API Zone password,"
+            " Suunto App password, and Primary/Secondary Developer API keys."
+            " The API Zone account may differ from the account connected to the watch."
         )
     else:
-        message += " Sprawdź konfigurację OAuth i spróbuj ponownie z nowego linku."
+        message += " Check the OAuth configuration and try again using a new link."
     return message
 
 
@@ -127,7 +127,7 @@ def exchange_code(config, secret, code):
         raise TokenExchangeError(token_error_message(exc)) from None
     if (not isinstance(tokens, dict) or not isinstance(tokens.get("access_token"), str)
             or not tokens["access_token"]):
-        raise ValueError("Suunto nie zwróciło access_token.")
+        raise ValueError("Suunto did not return an access_token.")
     tokens["received_at_unix"] = int(time.time())
     tokens["client_id"] = config["client_id"]
     return tokens
@@ -140,14 +140,14 @@ def save_tokens(tokens, filename='tokens.json'):
 def callback_address(port):
     host = os.environ.get('SUUNTO_OAUTH_BIND_HOST', '127.0.0.1')
     if host not in {'127.0.0.1', '0.0.0.0'}:
-        raise ValueError('SUUNTO_OAUTH_BIND_HOST musi być 127.0.0.1 lub 0.0.0.0.')
+        raise ValueError('SUUNTO_OAUTH_BIND_HOST must be 127.0.0.1 or 0.0.0.0.')
     return host, port
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--settings", action="store_true", help="Pokaż ustawienia, bez logowania")
-    parser.add_argument("--prompt-secret", action="store_true", help="Wpisz sekret ręcznie, pomijając SUUNTO_CLIENT_SECRET")
+    parser.add_argument("--settings", action="store_true", help="Show settings without signing in")
+    parser.add_argument("--prompt-secret", action="store_true", help="Enter the secret manually, ignoring SUUNTO_CLIENT_SECRET")
     args = parser.parse_args(argv)
     config = json.loads(config_path().read_text())
     if args.settings:
@@ -157,7 +157,7 @@ def main(argv=None):
     if (redirect.scheme != "http" or redirect.hostname != "127.0.0.1"
             or not redirect.port or redirect.query or redirect.fragment
             or redirect.username or redirect.password or not redirect.path):
-        raise ValueError("Callback musi mieć postać http://127.0.0.1:PORT/ścieżka.")
+        raise ValueError("Callback must use the format http://127.0.0.1:PORT/path.")
     state = secrets.token_urlsafe(32)
     with HTTPServer(callback_address(redirect.port), callback_handler(state, config["redirect_uri"])) as server:
         server.timeout = 1
@@ -168,47 +168,47 @@ def main(argv=None):
             saved = {}
         secret = None if args.prompt_secret else (os.environ.get("SUUNTO_CLIENT_SECRET") or saved.get('client_secret'))
         if secret:
-            print("Client secret: używam zapisanej konfiguracji lub zmiennej środowiskowej.", flush=True)
+            print("Client secret: using saved configuration or an environment variable.", flush=True)
         else:
-            secret = getpass.getpass("Client secret aplikacji z OAuth application settings (nie hasło konta): ")
+            secret = getpass.getpass("Application client secret from OAuth application settings (not the account password): ")
         if not secret:
-            raise ValueError("Client secret jest wymagany.")
+            raise ValueError("Client secret is required.")
         url = AUTHORIZE_URL + "?" + urlencode({
             "response_type": "code",
             "client_id": config["client_id"],
             "redirect_uri": config["redirect_uri"],
             "state": state,
         })
-        print(f"Client ID aplikacji: {config['client_id']}", flush=True)
-        print("Otwórz poniższy link na tym komputerze i autoryzuj konto Suunto App:", flush=True)
-        print("W przeglądarce użyj konta z aplikacji na telefonie, połączonego z zegarkiem.", flush=True)
+        print(f"Application Client ID: {config['client_id']}", flush=True)
+        print("Open the following link on this computer and authorize your Suunto App account:", flush=True)
+        print("In the browser, use the account from the phone app connected to your watch.", flush=True)
         print(url, flush=True)
-        print("Oczekiwanie na callback (10 minut)...", flush=True)
+        print("Waiting for callback (10 minutes)...", flush=True)
         deadline = time.monotonic() + 600
         while not server.callback_received and time.monotonic() < deadline:
             server.handle_request()
         if not server.callback_received:
-            raise TimeoutError("Nie otrzymano callback w ciągu 10 minut.")
+            raise TimeoutError("No callback received within 10 minutes.")
         if server.authorization_code is None:
-            raise ValueError("Suunto zgłosiło odmowę lub błąd autoryzacji.")
-        print("Odebrano poprawny callback. Wymiana kodu na token...", flush=True)
+            raise ValueError("Suunto denied authorization or reported an authorization error.")
+        print("Valid callback received. Exchanging authorization code for tokens...", flush=True)
         tokens = exchange_code(config, secret, server.authorization_code)
         destination = save_tokens(tokens)
         save_tokens({**saved, 'client_id': config['client_id'], 'client_secret': secret}, 'credentials.json')
-    print(f"Autoryzacja zakończona. Tokeny zapisano lokalnie: {destination}")
+    print(f"Authorization completed. Tokens saved locally: {destination}")
 
 
 def run(argv=None):
     try:
         main(argv)
     except KeyboardInterrupt:
-        print("\nPrzerwano.", file=sys.stderr)
+        print("\nInterrupted.", file=sys.stderr)
         return 130
     except TokenExchangeError as exc:
         print(str(exc), file=sys.stderr)
         return 1
     except (OSError, ValueError, URLError, EOFError) as exc:
-        print(f"Błąd: {exc}", file=sys.stderr)
+        print(f"Error: {exc}", file=sys.stderr)
         return 1
     return 0
 

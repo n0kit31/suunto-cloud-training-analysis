@@ -10,7 +10,7 @@ from suunto_cloud.reporting.reports import cleanup_charts, write_outputs
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('report', type=Path, help='Zapisany raport JSON w katalogu reports')
+    parser.add_argument('report', type=Path, help='Saved JSON report in the reports directory')
     args = parser.parse_args(argv)
     report = json.loads(args.report.read_text())
     decoded = json.loads(Path(report['source']['decoded_path']).read_text())
@@ -25,9 +25,9 @@ def run(argv=None):
     try:
         main(argv)
     except KeyboardInterrupt:
-        print('\nPrzerwano.', file=sys.stderr)
+        print('\nInterrupted.', file=sys.stderr)
         return 130
     except (OSError, ValueError, KeyError, TypeError) as error:
-        print(f'Nie wygenerowano wykresów ({type(error).__name__}).', file=sys.stderr)
+        print(f'Chart generation failed ({type(error).__name__}).', file=sys.stderr)
         return 1
     return 0

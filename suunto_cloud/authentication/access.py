@@ -24,7 +24,7 @@ class AccessError(RuntimeError):
 def load_config():
     config = json.loads(config_path().read_text())
     if not isinstance(config, dict) or not isinstance(config.get('client_id'), str) or not config['client_id']:
-        raise AccessError('Brak Client ID w config.json.')
+        raise AccessError('Missing Client ID in config.json.')
     return config
 
 
@@ -33,15 +33,15 @@ def load_credentials():
     path = private_directory() / 'credentials.json'
     credentials = json.loads(path.read_text()) if path.is_file() else {}
     if not isinstance(credentials, dict):
-        raise AccessError('Nieprawidłowy format credentials.json.')
+        raise AccessError('Invalid credentials.json format.')
     if credentials and credentials.get('client_id') != config['client_id']:
-        raise AccessError('Zapisane klucze należą do innego Client ID. Uruchom python3 -m suunto_cloud access --configure.')
+        raise AccessError('Saved credentials belong to a different Client ID. Run python3 -m suunto_cloud access --configure.')
     for field, variable in [('client_secret', 'SUUNTO_CLIENT_SECRET'),
                              ('subscription_key', 'SUUNTO_SUBSCRIPTION_KEY')]:
         if os.environ.get(variable):
             credentials[field] = os.environ[variable].strip()
         if field in credentials and not isinstance(credentials[field], str):
-            raise AccessError('Nieprawidłowy format zapisanych kluczy.')
+            raise AccessError('Invalid saved credential format.')
     credentials['client_id'] = config['client_id']
     return credentials
 
@@ -50,30 +50,30 @@ def configure():
     config = load_config()
     path = private_directory() / 'credentials.json'
     if not sys.stdin.isatty():
-        raise AccessError('Konfigurację uruchom w swoim interaktywnym terminalu; nie podawaj kluczy jako argumentów.')
-    print('Jednorazowa konfiguracja Suunto. Wpisywane klucze nie będą widoczne.')
-    print('Client secret i Primary/Secondary Key pochodzą z profilu https://apizone.suunto.com/profile')
+        raise AccessError('Run configuration in your interactive terminal; do not pass credentials as arguments.')
+    print('One-time Suunto setup. Credential input is hidden.')
+    print('Get the client secret and Primary/Secondary Key from https://apizone.suunto.com/profile')
     credentials = {'client_id': config['client_id']}
-    for field, prompt in [('client_secret', 'Client secret z OAuth application settings: '),
-                           ('subscription_key', 'Primary lub Secondary Key z subskrypcji Developer API: ')]:
+    for field, prompt in [('client_secret', 'Client secret from OAuth application settings: '),
+                           ('subscription_key', 'Primary or Secondary Key from the Developer API subscription: ')]:
         value = getpass.getpass(prompt).strip()
         if not value:
-            raise AccessError('Oba klucze są wymagane; nie zmieniono pliku konfiguracji.')
+            raise AccessError('Both credentials are required; the configuration file was not changed.')
         credentials[field] = value
     private_json(path, credentials)
-    print('Zapisano klucze w .local/credentials.json (0600, katalog 0700, poza Git).')
-    print('To potwierdza zapis. Połączenie i poprawność kluczy sprawdzi polecenie sync.py.')
+    print('Credentials saved to .local/credentials.json (0600, directory 0700, excluded from Git).')
+    print('This confirms local storage. The sync command checks connectivity and credential validity.')
 
 
 def load_tokens():
     path = private_directory() / 'tokens.json'
     if not path.is_file():
-        raise AccessError('Brak zapisanych tokenów. Uruchom python3 -m suunto_cloud oauth.')
+        raise AccessError('No saved tokens. Run python3 -m suunto_cloud oauth.')
     tokens = json.loads(path.read_text())
     if not isinstance(tokens, dict) or tokens.get('client_id') != load_config()['client_id']:
-        raise AccessError('Token i konfiguracja mają różne Client ID. Wymagana jest autoryzacja python3 -m suunto_cloud oauth.')
+        raise AccessError('Token and configuration Client IDs differ. Authorize again with python3 -m suunto_cloud oauth.')
     if not isinstance(tokens.get('access_token'), str) or not tokens['access_token']:
-        raise AccessError('Brak poprawnego access tokenu. Wymagana jest autoryzacja python3 -m suunto_cloud oauth.')
+        raise AccessError('No valid access token. Authorize with python3 -m suunto_cloud oauth.')
     return tokens
 
 
@@ -88,10 +88,10 @@ def is_current(tokens, now=None):
 def refresh_tokens(tokens, credentials):
     refresh = tokens.get('refresh_token')
     if not isinstance(refresh, str) or not refresh:
-        raise AccessError('Brak refresh tokenu. Wymagana jest ponowna autoryzacja python3 -m suunto_cloud oauth.')
+        raise AccessError('Missing refresh token. Authorize again with python3 -m suunto_cloud oauth.')
     secret = credentials.get('client_secret')
     if not secret:
-        raise AccessError('Brak zapisanego Client secret. Uruchom python3 -m suunto_cloud access --configure.')
+        raise AccessError('No saved client secret. Run python3 -m suunto_cloud access --configure.')
     basic = base64.b64encode(f"{credentials['client_id']}:{secret}".encode()).decode('ascii')
     request = Request(TOKEN_URL, data=urlencode({
         'grant_type': 'refresh_token', 'refresh_token': refresh,
@@ -110,19 +110,19 @@ def refresh_tokens(tokens, credentials):
                 result = {}
         error = result.get('error') if isinstance(result, dict) else None
         if error == 'invalid_grant':
-            raise AccessError('Refresh token został odrzucony. Uruchom python3 -m suunto_cloud oauth po nową zgodę; nie wklejaj tokenów do rozmowy.') from None
+            raise AccessError('Refresh token rejected. Run python3 -m suunto_cloud oauth to authorize again; do not paste tokens into chat.') from None
         if error == 'invalid_client' or exc.code == 401:
-            raise AccessError('Odświeżanie OAuth: sprawdź Client secret i Client ID; python3 -m suunto_cloud access --configure pozwala poprawić zapis.') from None
-        raise AccessError(f'Odświeżanie OAuth nie powiodło się: HTTP {exc.code}. Tokeny pozostają bez zmian.') from None
+            raise AccessError('OAuth refresh: check the client secret and Client ID; update saved credentials with python3 -m suunto_cloud access --configure.') from None
+        raise AccessError(f'OAuth refresh failed: HTTP {exc.code}. Tokens were not changed.') from None
     if not isinstance(result, dict) or not isinstance(result.get('access_token'), str) or not result['access_token']:
-        raise AccessError('Nieprawidłowa odpowiedź odświeżania. Tokeny pozostają bez zmian.')
+        raise AccessError('Invalid refresh response. Tokens were not changed.')
     try:
         expires = int(result.get('expires_in', 0))
     except (ValueError, TypeError):
         expires = 0
     if expires <= 0 or ('refresh_token' in result and
                         (not isinstance(result['refresh_token'], str) or not result['refresh_token'])):
-        raise AccessError('Nieprawidłowy czas ważności lub refresh token. Tokeny pozostają bez zmian.')
+        raise AccessError('Invalid expiry or refresh token. Tokens were not changed.')
     # Some servers rotate refresh tokens; others omit the unchanged token.
     updated = {**tokens, **result, 'expires_in': expires,
                'received_at_unix': int(time.time()), 'client_id': credentials['client_id']}
@@ -147,7 +147,7 @@ def authorized_call(operation):
     credentials = load_credentials()
     key = credentials.get('subscription_key', '').strip()
     if not key:
-        raise AccessError('Brak zapisanego klucza Developer API. Uruchom python3 -m suunto_cloud access --configure.')
+        raise AccessError('No saved Developer API key. Run python3 -m suunto_cloud access --configure.')
     token = get_access_token()
     try:
         return operation(token, key)
@@ -157,7 +157,7 @@ def authorized_call(operation):
         with exc:
             body = exc.read(4096).decode('utf-8', errors='replace').lower()
         if 'subscription' in body and ('invalid' in body or 'missing' in body):
-            raise AccessError('Cloud API odrzuciło klucz subskrypcji; sprawdź go przez python3 -m suunto_cloud access --configure.') from None
+            raise AccessError('Cloud API rejected the subscription key; check it with python3 -m suunto_cloud access --configure.') from None
     token = get_access_token(force=True, rejected_token=token)
     return operation(token, key)  # One retry only; never an infinite refresh loop.
 
@@ -176,24 +176,24 @@ def status():
 
 def safe_error(error):
     if isinstance(error, HTTPError):
-        return f'Suunto: HTTP {error.code}. Sprawdź autoryzację, subskrypcję lub limit API.'
+        return f'Suunto: HTTP {error.code}. Check authorization, subscription, or API rate limits.'
     if isinstance(error, URLError):
-        return 'Brak połączenia z Suunto (DNS/sieć/TLS). Żadne klucze nie zostały wypisane.'
+        return 'Cannot connect to Suunto (DNS/network/TLS). No credentials were displayed.'
     if isinstance(error, AccessError):
         return str(error)
-    return f'Nie zakończono operacji ({type(error).__name__}); dane autoryzacji nie są wyświetlane.'
+    return f'Operation failed ({type(error).__name__}); authentication data is not displayed.'
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--configure', action='store_true', help='Jednorazowo wpisz i zapisz oba klucze na niewidocznym wejściu')
-    parser.add_argument('--refresh', action='store_true', help='Sprawdź odświeżenie zapisanych tokenów')
+    parser.add_argument('--configure', action='store_true', help='Enter and save both credentials once using hidden input')
+    parser.add_argument('--refresh', action='store_true', help='Check refresh of saved tokens')
     args = parser.parse_args(argv)
     if args.configure:
         configure()
     if args.refresh:
         get_access_token(force=True)
-        print('Odświeżenie OAuth zakończone i zapisane lokalnie.')
+        print('OAuth refresh completed and saved locally.')
     status()
 
 
@@ -201,7 +201,7 @@ def run(argv=None):
     try:
         main(argv)
     except KeyboardInterrupt:
-        print('\nPrzerwano.', file=sys.stderr)
+        print('\nInterrupted.', file=sys.stderr)
         return 130
     except (AccessError, OSError, ValueError, URLError, EOFError) as exc:
         print(safe_error(exc), file=sys.stderr)

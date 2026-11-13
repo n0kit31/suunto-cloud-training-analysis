@@ -1,12 +1,13 @@
 # Docker
 
-Obraz zawiera Python 3.13, Node.js 24 i zależności dekodera FIT. Na hoście
-wystarczy Docker Desktop lub Docker Engine z Compose; Python i Node.js nie są
-potrzebne. Kontener udostępnia te same polecenia CLI co uruchomienie lokalne.
+The image includes Python 3.13, Node.js 24, and FIT decoder dependencies.
+The host only needs Docker Desktop or Docker Engine with Compose; Python and
+Node.js are not required. The container provides the same CLI commands as
+local execution.
 
-## Przygotowanie
+## Setup
 
-W katalogu repozytorium:
+From the repository directory:
 
 ```sh
 export SUUNTO_UID="$(id -u)" SUUNTO_GID="$(id -g)"
@@ -14,15 +15,15 @@ mkdir -p .local ../reports ../visualizations
 cp -n config.example.json config.json
 ```
 
-Jeśli konfiguracja już istnieje, zostanie zachowana. W nowym `config.json`
-uzupełnij `client_id` aplikacji z Suunto API Zone. Callback powinien pozostać
-`http://127.0.0.1:8765/callback` i odpowiadać ustawieniom aplikacji w API Zone.
+Existing configuration is preserved. In a new `config.json`, enter the
+application's `client_id` from Suunto API Zone. Keep the callback at
+`http://127.0.0.1:8765/callback`, matching the application settings in API Zone.
 
-Zmienne UID/GID ustawiaj w każdej nowej sesji terminala przed uruchamianiem
-Compose. Dzięki temu kontener ma dostęp do prywatnych plików użytkownika i
-zapisuje wyniki z właściwym właścicielem. Domyślne UID/GID obrazu to `1000:1000`.
+Set UID/GID in each new terminal session before running Compose. This lets the
+container access the user's private files and save results with the correct
+ownership. The image's default UID/GID is `1000:1000`.
 
-## Budowanie i użycie
+## Build and usage
 
 ```sh
 docker compose build
@@ -30,77 +31,78 @@ docker compose run --rm suunto --help
 docker compose run --rm suunto sync --date 2026-01-15 --analysis --brief
 ```
 
-Zastąp przykładową datę dniem swojej aktywności; `--date` można powtarzać.
-Dla wykresów dodaj `--charts`. Obraz ma lokalny tag
-`suunto-cloud-training-analysis:local`; budowanie nie publikuje go w rejestrze.
+Replace the example date with your activity date; `--date` may be repeated.
+Add `--charts` for charts. The image uses the local tag
+`suunto-cloud-training-analysis:local`; building does not publish it to a registry.
 
-## Autoryzacja
+## Authorization
 
-Jeśli projekt ma już zapisane `credentials.json` i `tokens.json` w `.local/`,
-kontener korzysta z nich i automatycznie odnawia tokeny. Pierwsze logowanie
-można w całości przeprowadzić w kontenerze:
+If `credentials.json` and `tokens.json` already exist in `.local/`, the container
+uses them and refreshes tokens automatically. Initial sign-in can run entirely
+inside the container:
 
 ```sh
 docker compose run --rm --service-ports suunto oauth
 docker compose run --rm suunto access --configure
 ```
 
-Otwórz wydrukowany link na komputerze z Dockerem i zaloguj się do konta Suunto.
-Klucze wpisujesz interaktywnie na niewidocznym wejściu. Zostają zapisane
-w lokalnym `.local/`.
+Open the printed link on the computer running Docker and sign in to your Suunto
+account. Enter credentials interactively using hidden input. They are saved
+locally in `.local/`.
 
-Opcja `--service-ports` publikuje callback wyłącznie na `127.0.0.1:8765` hosta.
-Wewnątrz kontenera serwer nasłuchuje na `0.0.0.0`, aby przekierowanie portu
-działało; kontrola adresu callback, nagłówka Host i OAuth state pozostaje aktywna.
-Pozostałe polecenia nie wymagają publikowania portów.
+The `--service-ports` option publishes the callback only on the host's
+`127.0.0.1:8765`. Inside the container, the server listens on `0.0.0.0` so port
+forwarding works; callback address, Host header, and OAuth state checks remain
+active. Other commands do not require published ports.
 
-Status bez wypisywania kluczy:
+Check status without displaying credentials:
 
 ```sh
 docker compose run --rm suunto access
 ```
 
-Po odrzuceniu refresh tokenu ponów polecenie `oauth` z `--service-ports`.
+If the refresh token is rejected, run `oauth` again with `--service-ports`.
 
-## Dane i poświadczenia
+## Data and credentials
 
-| Ścieżka hosta | Ścieżka kontenera | Dostęp |
+| Host path | Container path | Access |
 | --- | --- | --- |
-| `config.json` | `/app/suunto-cloud/config.json` | Odczyt |
-| `.local/` | `/app/suunto-cloud/.local/` | Odczyt i zapis |
-| `../reports/` | `/app/reports/` | Odczyt i zapis |
-| `../visualizations/` | `/app/visualizations/` | Odczyt i zapis |
+| `config.json` | `/app/suunto-cloud/config.json` | Read-only |
+| `.local/` | `/app/suunto-cloud/.local/` | Read/write |
+| `../reports/` | `/app/reports/` | Read/write |
+| `../visualizations/` | `/app/visualizations/` | Read/write |
 
-Usunięcie kontenera przez `--rm` zachowuje dane na hoście. Ścieżki zapisane
-w manifestach i JSON-ach wskazują lokalizacje kontenera; tabela pokazuje ich
-odpowiedniki na hoście.
+Removing the container with `--rm` preserves host data. Paths stored in manifests
+and JSON files refer to container locations; the table maps them to host paths.
 
-Dockerfile kopiuje wyłącznie kod, zależności i licencję. `.dockerignore`
-wyklucza lokalną konfigurację, `.local/`, `.env`, `.npmrc`, klucze i dane
-treningowe z kontekstu budowania. Compose uruchamia CLI bez uprawnień roota,
-z systemem plików obrazu tylko do odczytu i osobnymi montowaniami danych.
+The Dockerfile copies only code, dependencies, and the license. `.dockerignore`
+excludes local configuration, `.local/`, `.env`, `.npmrc`, credentials, and
+workout data from the build context. Compose runs the CLI as a non-root user
+with a read-only image filesystem and separate data mounts.
 
-Oficjalny Suunto MCP pozostaje zewnętrzną integracją agenta. Obraz obsługuje
-bezpośrednie Cloud API i FIT; nie przejmuje autoryzacji MCP z aplikacji hosta.
+The official Suunto MCP remains an external agent integration. The image handles
+direct Cloud API and FIT access; it does not use the host application's MCP
+authorization.
 
-## Helper projektu
+## Project helper
 
-Helper `../skills/suunto-training-analysis/scripts/run-docker.sh` ustawia UID/GID
-i katalog Compose. Polecenie `build` przebudowuje obraz aplikacji po zmianie
-kodu. Polecenie `charts` odtwarza wykres z istniejącego raportu i próbek FIT,
-bez ponownego pobierania danych:
+The `../skills/suunto-training-analysis/scripts/run-docker.sh` helper sets UID/GID
+and the Compose directory. Its `build` command rebuilds the application image
+after code changes. The `charts` command regenerates a chart from an existing
+report and FIT samples without downloading data again:
 
 ```sh
 sh ../skills/suunto-training-analysis/scripts/run-docker.sh build
 sh ../skills/suunto-training-analysis/scripts/run-docker.sh charts /app/reports/suunto-2026-01-15-080000.json
 ```
 
-## Weryfikacja obrazu
+## Image verification
 
 ```sh
 sh scripts/docker/test-image.sh
 ```
 
-Skrypt buduje etap `test` z testami offline, następnie obraz aplikacji,
-sprawdza CLI bez sieci i potwierdza brak konfiguracji oraz danych prywatnych
-w obrazie. Nie korzysta z Twoich poświadczeń ani z API Suunto.
+The script builds the `test` stage with offline tests, then the application
+image, checks the CLI without network access, and verifies that the image
+contains no private configuration or runtime data. It does not use your
+credentials or call Suunto API.

@@ -89,8 +89,8 @@ class OAuthTests(unittest.TestCase):
     def test_invalid_grant_is_distinguished_from_application_credentials(self):
         error = HTTPError(oauth.TOKEN_URL, 400, "Bad Request", {}, io.BytesIO(b'{"error":"invalid_grant"}'))
         message = oauth.token_error_message(error)
-        self.assertIn("nowy kod", message)
-        self.assertNotIn("Sprawdź parę Client ID", message)
+        self.assertIn("new code", message)
+        self.assertNotIn("Check the Client ID", message)
 
 
 if __name__ == "__main__":

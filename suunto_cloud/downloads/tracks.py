@@ -31,12 +31,12 @@ def choose_workout(records, selected_date=None, workout_key=None):
             day = date.fromisoformat(selected_date)
             matches = [w for w in matches if datetime.fromtimestamp(w['startTime'] / 1000, ZoneInfo('Europe/Warsaw')).date() == day]
     if not matches:
-        raise ValueError('Nie znaleziono treningu ze śladem GPS w zapisanej liście.')
+        raise ValueError('No workout with a GPS track found in the saved list.')
     if (selected_date or workout_key) and len(matches) != 1:
-        raise ValueError('Znaleziono kilka treningów; wybierz konkretny --workout-key z workouts.json.')
+        raise ValueError('Multiple workouts found; select a specific --workout-key from workouts.json.')
     workout = max(matches, key=lambda w: w['startTime'])
     if not re.fullmatch(r'[0-9a-fA-F]{24}', workout.get('workoutKey', '')):
-        raise ValueError('Nieprawidłowy workoutKey w zapisanej odpowiedzi API.')
+        raise ValueError('Invalid workoutKey in the saved API response.')
     return workout
 
 
@@ -59,15 +59,15 @@ def fetch_fit(workout_key, access_token, subscription_key):
         host = parsed.hostname or ''
         if (parsed.scheme != 'https' or parsed.username or parsed.password
                 or not (host.endswith('.blob.core.windows.net') or host.endswith('.suunto.com'))):
-            raise ValueError('Nieobsługiwane przekierowanie pobierania FIT.')
+            raise ValueError('Unsupported FIT download redirect.')
         # A signed download URL is fetched without either authentication header.
         response = opener.open(Request(location, headers={'Accept': 'application/octet-stream'}), timeout=30)
     with response:
         data = response.read(64 * 1024 * 1024 + 1)
     if len(data) > 64 * 1024 * 1024:
-        raise ValueError('Odpowiedź przekroczyła limit 64 MiB.')
+        raise ValueError('Response exceeded the 64 MiB limit.')
     if len(data) < 12 or data[8:12] != b'.FIT':
-        raise ValueError('Suunto nie zwróciło binarnego pliku FIT; nie zapisano odpowiedzi jako trasy.')
+        raise ValueError('Suunto did not return a binary FIT file; the response was not saved as a track.')
     return data
 
 
@@ -88,13 +88,13 @@ def save_fit(destination, data):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     selection = parser.add_mutually_exclusive_group()
-    selection.add_argument('--date', help='Data treningu w Europe/Warsaw, np. 2026-11-03')
-    selection.add_argument('--workout-key', help='workoutKey z lokalnej listy treningów')
-    selection.add_argument('--input', type=Path, help='Konwertuj lokalny FIT bez wywołania API')
-    parser.add_argument('--fit-only', action='store_true', help='Zapisz sam FIT, bez konwersji do GPX')
+    selection.add_argument('--date', help='Workout date in Europe/Warsaw, e.g. 2026-11-03')
+    selection.add_argument('--workout-key', help='workoutKey from the local workout list')
+    selection.add_argument('--input', type=Path, help='Convert a local FIT file without calling the API')
+    parser.add_argument('--fit-only', action='store_true', help='Save only the FIT file, without GPX conversion')
     args = parser.parse_args(argv)
     if not args.fit_only and not shutil.which('node'):
-        raise ValueError('Brak Node.js, wymaganego przez lokalny dekoder FIT. Możesz użyć --fit-only.')
+        raise ValueError('Node.js is required for the local FIT decoder. You can use --fit-only instead.')
     output_dir = private_directory() / 'tracks'
     if args.input:
         fit_path = args.input.resolve(strict=True)
@@ -107,31 +107,31 @@ def main(argv=None):
         stem = local_start.strftime('%Y-%m-%d-%H%M%S')
         fit_path = output_dir / (stem + '.fit')
         gpx_path = output_dir / (stem + '.gpx')
-        print(f"Pobieram FIT treningu {local_start.isoformat()}, {workout.get('totalDistance', 0) / 1000:.3f} km...", flush=True)
+        print(f"Downloading workout FIT: {local_start.isoformat()}, {workout.get('totalDistance', 0) / 1000:.3f} km...", flush=True)
         data = authorized_call(lambda token, key: fetch_fit(workout['workoutKey'], token, key))
         save_fit(fit_path, data)
-        print(f'Zapisano FIT: {fit_path}', flush=True)
+        print(f'FIT saved to: {fit_path}', flush=True)
     if not args.fit_only:
         result = subprocess.run(['node', str(SCRIPTS_DIRECTORY / 'export_gpx.cjs'), str(fit_path), str(gpx_path)], check=False)
         if result.returncode:
-            raise ValueError(f'Konwersja GPX nie powiodła się. Oryginalny FIT pozostaje w {fit_path}.')
+            raise ValueError(f'GPX conversion failed. The original FIT is saved at {fit_path}.')
 
 
 def run(argv=None):
     try:
         main(argv)
     except KeyboardInterrupt:
-        print('\nPrzerwano.', file=sys.stderr)
+        print('\nInterrupted.', file=sys.stderr)
         return 130
     except HTTPError as exc:
         with exc:
             body = exc.read(4096).decode('utf-8', errors='replace').lower()
-        hint = 'Sprawdź ważność tokenu i subskrypcję Developer API.'
+        hint = 'Check token validity and the Developer API subscription.'
         if 'operationnotfound' in body or exc.code == 404:
-            hint = 'Endpoint FIT v3 nie jest dostępny. Potrzebny jest Request URL operacji export-workout-fit z panelu API Zone.'
+            hint = 'The FIT v3 endpoint is unavailable. Use the Request URL for export-workout-fit from API Zone.'
         elif 'ratelimitexceeded' in body or exc.code == 429:
-            hint = 'Osiągnięto limit API. Ponów próbę później.'
-        print(f'Pobieranie FIT: HTTP {exc.code}. {hint}', file=sys.stderr)
+            hint = 'API rate limit reached. Try again later.'
+        print(f'FIT download: HTTP {exc.code}. {hint}', file=sys.stderr)
         return 1
     except (AccessError, OSError, ValueError, URLError, EOFError) as exc:
         # Avoid exposing signed redirect URLs or request headers through errors.
