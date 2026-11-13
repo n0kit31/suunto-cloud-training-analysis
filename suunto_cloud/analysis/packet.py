@@ -1,22 +1,21 @@
 """Small analysis input assembled from fresh Cloud summaries and decoded FIT."""
 
-from datetime import datetime
-from zoneinfo import ZoneInfo
+from suunto_cloud.timezones import local_timestamp, timezone_name
 
 
-def cloud_metrics(workout):
+def cloud_metrics(workout, zone=None):
     extensions = {item['type']: item for item in workout.get('extensions', [])}
     summary = extensions.get('SummaryExtension', {})
     distance = workout.get('totalDistance')
     duration = workout.get('totalTime')
     start, stop = workout.get('startTime'), workout.get('stopTime')
-    zone = ZoneInfo('Europe/Warsaw')
     hr = workout.get('hrdata') or {}
     return {
         'workout_key': workout['workoutKey'],
         'activity_id': workout.get('activityId'),
-        'start_local': datetime.fromtimestamp(start / 1000, zone).isoformat(),
-        'stop_local': datetime.fromtimestamp(stop / 1000, zone).isoformat() if stop is not None else None,
+        'timezone': timezone_name(zone),
+        'start_local': local_timestamp(start / 1000, zone).isoformat(),
+        'stop_local': local_timestamp(stop / 1000, zone).isoformat() if stop is not None else None,
         'distance_m': distance,
         'active_seconds': duration,
         'elapsed_seconds': (stop - start) / 1000 if stop is not None else None,
@@ -57,7 +56,7 @@ def compact_fit(analysis):
     }
 
 
-def build_packet(manifest, records, analyses):
+def build_packet(manifest, records, analyses, zone=None):
     by_key = {workout['workoutKey']: workout for workout in records}
     selected = [by_key[entry['workout_key']] for entry in manifest['workouts']]
     workouts = []
@@ -69,7 +68,7 @@ def build_packet(manifest, records, analyses):
         blocks = distance_blocks([lap for lap in fit.get('laps', []) if lap['index'] in indices],
                                  {s['lap_index']: s for s in details.get('lap_samples', [])})
         workouts.append({
-            'cloud': cloud_metrics(by_key[key]),
+            'cloud': cloud_metrics(by_key[key], zone),
             'fit': fit,
             'distance_blocks': blocks,
             'files': {field: entry[field] for field in
@@ -81,10 +80,11 @@ def build_packet(manifest, records, analyses):
         before = min(w['startTime'] for w in selected if w.get('activityId') == activity_id)
         candidates = sorted((w for w in records if w.get('activityId') == activity_id
                              and w['startTime'] < before), key=lambda w: w['startTime'], reverse=True)
-        comparisons.extend(cloud_metrics(w) for w in candidates[:3])
+        comparisons.extend(cloud_metrics(w, zone) for w in candidates[:3])
     return {
         'retrieved_at_utc': manifest['retrieved_at_utc'],
         'requested_dates': manifest['requested_dates'],
+        'timezone': timezone_name(zone),
         'complete': manifest['complete'],
         'workout_keys': [entry['workout_key'] for entry in manifest['workouts']],
         'cloud_packet_count': len(records),

@@ -18,6 +18,7 @@ assert not (root / "config.json").exists(), "Local configuration found in image"
 assert not any((root / ".local").iterdir()), "Private runtime data found in image"
 assert not (root / ".git").exists(), "Git history found in image"
 assert not (root / "tests").exists(), "Test files found in application image"
-assert ZoneInfo("Europe/Warsaw").key == "Europe/Warsaw"
+for name in ("UTC", "America/New_York", "Asia/Tokyo"):
+    assert ZoneInfo(name).key == name
 print("Image checks passed: non-root user, timezone data, no private configuration or runtime data.")
 '

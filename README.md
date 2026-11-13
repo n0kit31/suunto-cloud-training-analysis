@@ -23,6 +23,7 @@ The current tools download data from Cloud API; this repository has no MCP clien
 - [Project structure](#structure)
 - [Requirements](#requirements)
 - [Local setup](#local-setup)
+- [Time zones](#time-zones)
 - [Usage and commands](#usage)
 - [Docker reference](#docker)
 - [Tests and CI](#tests)
@@ -49,7 +50,8 @@ mkdir -p .local ../reports ../visualizations
 cp -n config.example.json config.json
 ```
 
-Set your application's `client_id` in `config.json`. Its redirect URI must match
+Set your application's `client_id` and your local IANA `timezone` in
+`config.json` (for example, `America/New_York`). The redirect URI must match
 `http://127.0.0.1:8765/callback` in API Zone. Then build and authorize:
 
 ```sh
@@ -119,7 +121,7 @@ access and file storage. Commands are handled by `suunto_cloud/cli.py`.
 
 For local execution:
 
-- Python 3.9+ on macOS or Linux, with the `Europe/Warsaw` timezone available.
+- Python 3.9+ on macOS or Linux, with time zone data available for the user's local time zone.
 - Node.js and the `fit-file-parser` package for FIT decoding.
 - An OAuth application and Developer API subscription in [Suunto API Zone](https://apizone.suunto.com/how-to-start).
 
@@ -146,6 +148,35 @@ python3 -m suunto_cloud access --configure
 Enter credentials interactively using hidden input. Local configuration,
 tokens, and downloaded data are excluded from Git and the Docker build context.
 
+## Time zones
+
+Workout dates, local timestamps, filenames, and reports use the time zone of
+the person running the analysis. The selection order is:
+
+1. The `SUUNTO_TIMEZONE` environment variable.
+2. The `timezone` setting in `config.json`.
+3. The `TZ` environment variable.
+4. The local system time zone when no explicit setting is provided.
+
+Use an IANA time zone name. For example:
+
+```json
+{
+  "client_id": "YOUR_SUUNTO_CLIENT_ID",
+  "redirect_uri": "http://127.0.0.1:8765/callback",
+  "timezone": "America/New_York"
+}
+```
+
+Set `timezone` to `null` to use the environment or system default. Conversions
+apply the offset and daylight saving rules for the workout date.
+
+For Docker, set `timezone` in `config.json` or export `SUUNTO_TIMEZONE` or `TZ`
+before running Compose. Both environment variables are passed to the container;
+without them or a configured zone, the container uses its own system zone,
+normally UTC. Regenerating charts from a saved report retains that report's
+recorded local timestamps.
+
 ## Usage
 
 Download and analyze workouts from a selected date:
@@ -154,7 +185,7 @@ Download and analyze workouts from a selected date:
 python3 -m suunto_cloud sync --date 2026-01-15 --analysis --brief
 ```
 
-Dates use the `Europe/Warsaw` timezone; `--date` may be repeated.
+Dates use the [user's selected time zone](#time-zones); `--date` may be repeated.
 Add `--charts` to generate a chart. Raw data and analyses are in `.local/`,
 reports in `../reports/`, and charts in `../visualizations/`.
 Charts use active workout time: pauses are removed from the time axis and have

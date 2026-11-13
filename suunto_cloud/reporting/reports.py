@@ -171,7 +171,8 @@ def chart_svg(data, analysis, cloud):
 
 def report_body(cloud, analysis, entry, retrieved, chart):
     summary, details = cloud['summary'], analysis['additional_metrics']
-    lines = [f"Retrieved: {retrieved}; timezone Europe/Warsaw; ID `{cloud['workout_key']}`.", '',
+    zone = cloud.get('timezone') or datetime.fromisoformat(cloud['start_local']).tzname()
+    lines = [f"Retrieved: {retrieved}; timezone {zone}; ID `{cloud['workout_key']}`.", '',
              '| Metric | Value |', '| --- | --- |',
              f"| Distance | {display(cloud['distance_m'] / 1000, 3)} km |",
              f"| Active / elapsed time | {duration(cloud['active_seconds'])} / {duration(cloud['elapsed_seconds'])} |",

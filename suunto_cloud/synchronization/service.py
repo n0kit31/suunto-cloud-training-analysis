@@ -10,10 +10,10 @@ import subprocess
 import sys
 from time import perf_counter
 from urllib.error import URLError
-from zoneinfo import ZoneInfo
 
 from suunto_cloud.authentication.access import AccessError, authorized_call, configure, safe_error
-from suunto_cloud.storage.local import ROOT, private_directory, private_json
+from suunto_cloud.storage.local import ROOT, private_directory, private_json, user_timezone
+from suunto_cloud.timezones import local_timestamp, timezone_name
 from suunto_cloud.fit import SCRIPTS_DIRECTORY
 from suunto_cloud.downloads.workouts import fetch_workouts, save_workouts, workout_records
 from suunto_cloud.downloads.tracks import choose_workout, fetch_fit, save_fit
@@ -22,7 +22,7 @@ from suunto_cloud.analysis.packet import build_packet, brief_packet, cloud_metri
 from suunto_cloud.reporting.reports import write_outputs, cleanup_charts
 
 
-def sync(dates, decode=True, analysis=False, brief=False, charts=False):
+def sync(dates, decode=True, analysis=False, brief=False, charts=False, zone=None):
     if analysis and not decode:
         raise ValueError('--analysis requires FIT decoding; remove --no-decode.')
     if brief and not analysis:
@@ -41,13 +41,14 @@ def sync(dates, decode=True, analysis=False, brief=False, charts=False):
     save_workouts(data)  # Only replace the cache after a successful, validated API response.
     selected = []
     for workout in records:
-        start = datetime.fromtimestamp(workout['startTime'] / 1000, ZoneInfo('Europe/Warsaw'))
+        start = local_timestamp(workout['startTime'] / 1000, zone)
         if start.date() in wanted:
             selected.append((start, workout))
     found = {start.date() for start, _ in selected}
     missing = sorted(str(day) for day in wanted - found)
     manifest = {'retrieved_at_utc': datetime.now(timezone.utc).isoformat(),
-                'requested_dates': sorted(dates), 'missing_dates': missing, 'workouts': [], 'complete': False}
+                'requested_dates': sorted(dates), 'timezone': timezone_name(zone),
+                'missing_dates': missing, 'workouts': [], 'complete': False}
     manifest['timings_seconds'] = {'list': round(perf_counter() - started, 4)}
     manifest_path = private_directory() / 'sync.json'
     private_json(manifest_path, manifest)
@@ -89,7 +90,7 @@ def sync(dates, decode=True, analysis=False, brief=False, charts=False):
                 if analysis:
                     analyze_started = perf_counter()
                     try:
-                        analyses[key] = summarize(decoded)
+                        analyses[key] = summarize(decoded, zone)
                     except (KeyError, IndexError, TypeError) as error:
                         raise AccessError('FIT decoded, but data required for analysis is missing.') from error
                     analysis_path = fit_path.with_suffix('.analysis.json')
@@ -110,13 +111,13 @@ def sync(dates, decode=True, analysis=False, brief=False, charts=False):
         for entry in manifest['workouts']:
             output_started = perf_counter()
             key = entry['workout_key']
-            entry['outputs'] = write_outputs(ROOT.parent, cloud_metrics(by_key[key]), analyses[key],
+            entry['outputs'] = write_outputs(ROOT.parent, cloud_metrics(by_key[key], zone), analyses[key],
                                              json.loads(Path(entry['decoded_path']).read_text()),
                                              entry, manifest['retrieved_at_utc'], charts=charts)
             entry['timings_seconds']['outputs'] = round(perf_counter() - output_started, 4)
         manifest['removed_old_charts'] = cleanup_charts(
             ROOT.parent / 'visualizations', {entry['outputs']['chart_path'] for entry in manifest['workouts']}) if charts else []
-        packet = build_packet(manifest, records, analyses)
+        packet = build_packet(manifest, records, analyses, zone)
         packet_path = private_directory() / 'analysis.json'
         private_json(packet_path, packet)
         manifest['analysis_packet_path'] = str(packet_path)
@@ -135,7 +136,7 @@ def sync(dates, decode=True, analysis=False, brief=False, charts=False):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--date', action='append', required=True, help='Date in Europe/Warsaw; may be repeated')
+    parser.add_argument('--date', action='append', required=True, help="Date in the user's time zone; may be repeated")
     parser.add_argument('--configure', action='store_true', help='Save credentials first using one-time setup')
     parser.add_argument('--no-decode', action='store_true', help='Save FIT without decoding it to JSON')
     parser.add_argument('--analysis', action='store_true',
@@ -147,9 +148,10 @@ def main(argv=None):
     args = parser.parse_args(argv)
     for day in args.date:
         date.fromisoformat(day)  # Validate before credentials/network requests.
+    zone = user_timezone()
     if args.configure:
         configure()
-    sync(args.date, decode=not args.no_decode, analysis=args.analysis, brief=args.brief, charts=args.charts)
+    sync(args.date, decode=not args.no_decode, analysis=args.analysis, brief=args.brief, charts=args.charts, zone=zone)
 
 
 def run(argv=None):

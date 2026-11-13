@@ -6,13 +6,15 @@ from pathlib import Path
 import sys
 
 from suunto_cloud.analysis.fit import summarize
+from suunto_cloud.storage.local import user_timezone
+from suunto_cloud.timezones import TimeZoneError
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('input', type=Path, help='Decoded FIT data in JSON format')
     args = parser.parse_args(argv)
-    print(json.dumps(summarize(json.loads(args.input.read_text())), ensure_ascii=False, indent=2))
+    print(json.dumps(summarize(json.loads(args.input.read_text()), user_timezone()), ensure_ascii=False, indent=2))
 
 
 def run(argv=None):
@@ -21,6 +23,9 @@ def run(argv=None):
     except KeyboardInterrupt:
         print('\nInterrupted.', file=sys.stderr)
         return 130
+    except TimeZoneError as error:
+        print(str(error), file=sys.stderr)
+        return 1
     except (OSError, ValueError, KeyError, TypeError) as error:
         print(f'Analysis failed ({type(error).__name__}).', file=sys.stderr)
         return 1

@@ -6,9 +6,11 @@ import tempfile
 import unittest
 from unittest.mock import MagicMock, patch
 from urllib.error import URLError
+from zoneinfo import ZoneInfo
 
 from suunto_cloud.synchronization import service as sync
 from tests.fixtures import decoded, workout
+from suunto_cloud.timezones import TimeZoneError
 
 
 
@@ -96,6 +98,24 @@ class SyncAnalysisTests(unittest.TestCase):
         with contextlib.redirect_stdout(io.StringIO()):
             manifest = sync.sync(['2026-11-11'], analysis=True, charts=True)
         self.assertTrue(Path(manifest['workouts'][0]['outputs']['chart_path']).is_file())
+
+    def test_user_timezone_is_consistent_in_selection_filenames_and_reports(self):
+        with contextlib.redirect_stdout(io.StringIO()):
+            manifest = sync.sync(['2026-11-10'], analysis=True, zone=ZoneInfo('Pacific/Honolulu'))
+        entry = manifest['workouts'][0]
+        self.assertEqual(manifest['timezone'], 'Pacific/Honolulu')
+        self.assertEqual(entry['date'], '2026-11-10')
+        self.assertEqual(Path(entry['fit_path']).name, '2026-11-10-220000.fit')
+        packet = json.loads((self.root / 'analysis.json').read_text())
+        self.assertEqual(packet['workouts'][0]['cloud']['start_local'], '2026-11-10T22:00:00-10:00')
+        self.assertEqual(packet['workouts'][0]['fit']['timezone'], 'Pacific/Honolulu')
+        self.assertIn('timezone Pacific/Honolulu;', Path(entry['outputs']['markdown_path']).read_text())
+
+    def test_invalid_timezone_is_rejected_before_network_access(self):
+        with patch.object(sync, 'user_timezone', side_effect=TimeZoneError('Unknown time zone.')):
+            with self.assertRaises(TimeZoneError):
+                sync.main(['--date', '2026-11-11'])
+        self.fetch_list.assert_not_called()
 
 
 if __name__ == '__main__':

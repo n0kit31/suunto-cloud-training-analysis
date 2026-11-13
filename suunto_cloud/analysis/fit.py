@@ -1,17 +1,17 @@
 """Derive pause intervals and lap summaries without interpolating missing samples."""
 
 from datetime import datetime
-from zoneinfo import ZoneInfo
 
 from suunto_cloud.analysis.metrics import additional_details
+from suunto_cloud.timezones import timezone_name
 
 
 def stamp(value):
     return datetime.fromisoformat(value.replace('Z', '+00:00'))
 
 
-def local_time(value):
-    return stamp(value).astimezone(ZoneInfo('Europe/Warsaw')).isoformat()
+def local_time(value, zone=None):
+    return stamp(value).astimezone(zone).isoformat()
 
 
 def timer_intervals(events):
@@ -46,7 +46,7 @@ def timer_intervals(events):
             'pause_seconds_from_rounded_events': sum(p['seconds'] for p in pauses)}
 
 
-def summarize(data):
+def summarize(data, zone=None):
     session = data['sessions'][0]
     timer = timer_intervals(data.get('events', []))
     segments = [(stamp(p['start']), stamp(p['end'])) for p in timer['active_segments']]
@@ -65,15 +65,15 @@ def summarize(data):
         distance = lap.get('total_distance', 0)
         elapsed = lap.get('total_elapsed_time')
         duration = lap.get('total_timer_time')
-        laps.append({'index': index, 'trigger': lap.get('lap_trigger'), 'start_local': local_time(lap['start_time']),
-                     'end_local': local_time(lap['timestamp']), 'distance_m': distance,
+        laps.append({'index': index, 'trigger': lap.get('lap_trigger'), 'start_local': local_time(lap['start_time'], zone),
+                     'end_local': local_time(lap['timestamp'], zone), 'distance_m': distance,
                      'active_seconds': duration, 'elapsed_seconds': elapsed,
                      'pace_seconds_per_km': duration / (distance / 1000) if distance and duration is not None else None,
                      'avg_hr': lap.get('avg_heart_rate'), 'max_hr': lap.get('max_heart_rate'),
                      'avg_power_w': lap.get('avg_power'), 'ascent_m': lap.get('total_ascent'),
                      'descent_m': lap.get('total_descent')})
     rr_count = sum(len(row['time']) if isinstance(row.get('time'), list) else 0 for row in data.get('hrv', []))
-    result = {'session': session, 'timer': timer, 'laps': laps, 'record_count': len(records),
+    result = {'session': session, 'timezone': timezone_name(zone), 'timer': timer, 'laps': laps, 'record_count': len(records),
               'active_hr_sample_count': len(measured), 'active_hr_arithmetic_mean':
                   sum(r['heart_rate'] for r in measured) / len(measured) if measured else None,
               'hr_peak_records_active_only': peaks, 'hrv_message_count': len(data.get('hrv', [])),

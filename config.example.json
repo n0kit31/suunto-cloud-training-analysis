@@ -1,4 +1,5 @@
 {
   "client_id": "YOUR_SUUNTO_CLIENT_ID",
-  "redirect_uri": "http://127.0.0.1:8765/callback"
+  "redirect_uri": "http://127.0.0.1:8765/callback",
+  "timezone": null
 }

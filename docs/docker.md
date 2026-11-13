@@ -16,7 +16,8 @@ cp -n config.example.json config.json
 ```
 
 Existing configuration is preserved. In a new `config.json`, enter the
-application's `client_id` from Suunto API Zone. Keep the callback at
+application's `client_id` from Suunto API Zone and set `timezone` to your local
+IANA time zone name, such as `America/New_York`. Keep the callback at
 `http://127.0.0.1:8765/callback`, matching the application settings in API Zone.
 
 Set UID/GID in each new terminal session before running Compose. This lets the
@@ -36,6 +37,11 @@ Add `--charts` for charts. The image uses the local tag
 `suunto-cloud-training-analysis:local`; building does not publish it to a registry.
 
 ## Authorization
+
+For local dates in Docker, configure your time zone in `config.json` or export
+`SUUNTO_TIMEZONE` or `TZ` before running Compose. The container otherwise uses
+its own system zone, normally UTC. See [time zone selection](../README.md#time-zones)
+for precedence and examples.
 
 If `credentials.json` and `tokens.json` already exist in `.local/`, the container
 uses them and refreshes tokens automatically. Initial sign-in can run entirely

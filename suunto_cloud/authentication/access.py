@@ -15,6 +15,7 @@ from urllib.request import Request, build_opener
 
 from suunto_cloud.authentication.oauth import NoRedirect, TOKEN_URL
 from suunto_cloud.storage.local import config_path, private_directory, private_json
+from suunto_cloud.timezones import TimeZoneError
 
 
 class AccessError(RuntimeError):
@@ -179,7 +180,7 @@ def safe_error(error):
         return f'Suunto: HTTP {error.code}. Check authorization, subscription, or API rate limits.'
     if isinstance(error, URLError):
         return 'Cannot connect to Suunto (DNS/network/TLS). No credentials were displayed.'
-    if isinstance(error, AccessError):
+    if isinstance(error, (AccessError, TimeZoneError)):
         return str(error)
     return f'Operation failed ({type(error).__name__}); authentication data is not displayed.'
 

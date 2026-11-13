@@ -1,7 +1,9 @@
 import io
+from datetime import datetime, timezone
 import unittest
 from unittest.mock import MagicMock, patch
 from urllib.error import HTTPError
+from zoneinfo import ZoneInfo
 
 from suunto_cloud.downloads import tracks as track
 
@@ -21,6 +23,13 @@ class FetchTrackTests(unittest.TestCase):
         workout['extensionTypes'] = ['SUMMARY']
         with self.assertRaises(ValueError):
             track.choose_workout([workout])
+
+    def test_date_selection_uses_the_users_calendar_day(self):
+        workout = self.workout()
+        workout['startTime'] = int(datetime(2026, 11, 3, 23, 30, tzinfo=timezone.utc).timestamp() * 1000)
+        self.assertEqual(track.choose_workout([workout], '2026-11-04', zone=ZoneInfo('Asia/Tokyo')), workout)
+        with self.assertRaises(ValueError):
+            track.choose_workout([workout], '2026-11-04', zone=ZoneInfo('UTC'))
 
     def test_non_fit_response_is_rejected(self):
         opener = MagicMock()

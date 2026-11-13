@@ -19,6 +19,8 @@ services:
       - /tmp:rw,noexec,nosuid,size=64m,mode=1777
     environment:
       SUUNTO_OAUTH_BIND_HOST: 0.0.0.0
+      SUUNTO_TIMEZONE: "${SUUNTO_TIMEZONE:-}"
+      TZ: "${TZ:-}"
     ports:
       - "127.0.0.1:8765:8765"
     volumes:

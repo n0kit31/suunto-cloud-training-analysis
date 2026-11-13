@@ -5,11 +5,27 @@ import os
 from pathlib import Path
 import tempfile
 
+from suunto_cloud.timezones import TimeZoneError, resolve_timezone
+
 ROOT = Path(__file__).resolve().parents[2]
 
 
 def config_path():
     return ROOT / 'config.json'
+
+
+def user_timezone():
+    name = os.environ.get('SUUNTO_TIMEZONE', '').strip()
+    if not name:
+        path = config_path()
+        config = json.loads(path.read_text()) if path.is_file() else {}
+        if not isinstance(config, dict):
+            raise TimeZoneError('Time zone configuration requires a JSON object in config.json.')
+        name = config.get('timezone')
+        if name is not None and not isinstance(name, str):
+            raise TimeZoneError('The timezone setting must be an IANA time zone name or null.')
+        name = (name or '').strip() or os.environ.get('TZ', '').strip().lstrip(':')
+    return resolve_timezone(name)
 
 
 def private_directory():

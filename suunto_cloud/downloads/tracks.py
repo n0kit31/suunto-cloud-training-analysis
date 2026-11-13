@@ -2,7 +2,7 @@
 """Download a recorded workout FIT and convert its actual GPS points to GPX."""
 
 import argparse
-from datetime import date, datetime
+from datetime import date
 import json
 from pathlib import Path
 import re
@@ -13,23 +13,23 @@ import tempfile
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
 from urllib.request import Request, build_opener
-from zoneinfo import ZoneInfo
 
 from suunto_cloud.downloads.workouts import workout_records
 from suunto_cloud.authentication.oauth import NoRedirect
 from suunto_cloud.authentication.access import AccessError, authorized_call, safe_error
-from suunto_cloud.storage.local import private_directory
+from suunto_cloud.storage.local import private_directory, user_timezone
+from suunto_cloud.timezones import local_timestamp
 from suunto_cloud.fit import SCRIPTS_DIRECTORY
 
 
-def choose_workout(records, selected_date=None, workout_key=None):
+def choose_workout(records, selected_date=None, workout_key=None, zone=None):
     if workout_key:
         matches = [w for w in records if w.get('workoutKey') == workout_key]
     else:
         matches = [w for w in records if 'LOCATIONSTREAM' in w.get('extensionTypes', [])]
         if selected_date:
             day = date.fromisoformat(selected_date)
-            matches = [w for w in matches if datetime.fromtimestamp(w['startTime'] / 1000, ZoneInfo('Europe/Warsaw')).date() == day]
+            matches = [w for w in matches if local_timestamp(w['startTime'] / 1000, zone).date() == day]
     if not matches:
         raise ValueError('No workout with a GPS track found in the saved list.')
     if (selected_date or workout_key) and len(matches) != 1:
@@ -88,7 +88,7 @@ def save_fit(destination, data):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     selection = parser.add_mutually_exclusive_group()
-    selection.add_argument('--date', help='Workout date in Europe/Warsaw, e.g. 2026-11-03')
+    selection.add_argument('--date', help="Workout date in the user's time zone, e.g. 2026-11-03")
     selection.add_argument('--workout-key', help='workoutKey from the local workout list')
     selection.add_argument('--input', type=Path, help='Convert a local FIT file without calling the API')
     parser.add_argument('--fit-only', action='store_true', help='Save only the FIT file, without GPX conversion')
@@ -101,9 +101,10 @@ def main(argv=None):
         output_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
         gpx_path = output_dir / (fit_path.stem + '.gpx')
     else:
+        zone = user_timezone()
         records = workout_records(json.loads((private_directory() / 'workouts.json').read_text()))
-        workout = choose_workout(records, args.date, args.workout_key)
-        local_start = datetime.fromtimestamp(workout['startTime'] / 1000, ZoneInfo('Europe/Warsaw'))
+        workout = choose_workout(records, args.date, args.workout_key, zone)
+        local_start = local_timestamp(workout['startTime'] / 1000, zone)
         stem = local_start.strftime('%Y-%m-%d-%H%M%S')
         fit_path = output_dir / (stem + '.fit')
         gpx_path = output_dir / (stem + '.gpx')
