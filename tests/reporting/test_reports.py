@@ -58,7 +58,8 @@ class OutputTests(unittest.TestCase):
         out = write_outputs(self.root, self.cloud, self.analysis, self.data, self.entry, 'now',
                             charts=True, hr_range=(120, 180))
         tree = ET.parse(out['chart_path'])
-        hr_lines = [x for x in tree.iter() if x.attrib.get('clip-path') == 'url(#panel-0)']
+        hr_lines = [x for x in tree.iter() if x.tag.endswith('polyline')
+                    and x.attrib.get('clip-path') == 'url(#panel-0)']
         heights = {float(pair.split(',')[1]) for line in hr_lines for pair in line.attrib['points'].split()}
         self.assertEqual(heights, {130, 300})
 
@@ -90,7 +91,7 @@ class OutputTests(unittest.TestCase):
         self.assertEqual(reduced, sorted(reduced))
         self.assertTrue(set(reduced).issubset(points))
 
-    def test_chart_removes_pause_time_and_connects_hr_gaps_only(self):
+    def test_chart_removes_pause_time_and_connects_hr_and_pace_gaps(self):
         at = lambda n: self.data['records'][n]['timestamp']
         self.data['events'][1:1] = [
             {'event': 'timer', 'event_type': 'stop', 'timestamp': at(60)},
@@ -98,18 +99,25 @@ class OutputTests(unittest.TestCase):
         ]
         for row in self.data['records'][20:25]:
             del row['heart_rate']
+            del row['speed']
             del row['altitude']
         self.analysis = summarize(self.data)
         out = write_outputs(self.root, self.cloud, self.analysis, self.data, self.entry, 'now', charts=True)
         tree = ET.parse(out['chart_path'])
-        hr_lines = [x for x in tree.iter() if x.attrib.get('clip-path') == 'url(#panel-0)']
+        hr_lines = [x for x in tree.iter() if x.tag.endswith('polyline')
+                    and x.attrib.get('clip-path') == 'url(#panel-0)']
         self.assertEqual(len(hr_lines), 1)
-        altitude_lines = [x for x in tree.iter() if x.attrib.get('clip-path') == 'url(#panel-2)']
+        pace_lines = [x for x in tree.iter() if x.tag.endswith('polyline')
+                      and x.attrib.get('clip-path') == 'url(#panel-1)']
+        self.assertEqual(len(pace_lines), 1)
+        altitude_lines = [x for x in tree.iter() if x.tag.endswith('polyline')
+                          and x.attrib.get('clip-path') == 'url(#panel-2)']
         self.assertEqual(len(altitude_lines), 2)
         points = [tuple(map(float, pair.split(',')))
                   for line in hr_lines for pair in line.attrib['points'].split()]
         self.assertEqual(len(points), 115)
         self.assertNotIn('heart_rate', self.data['records'][22])
+        self.assertNotIn('speed', self.data['records'][22])
         # At 90 elapsed seconds, only 60 active seconds have passed (out of 120).
         self.assertTrue(any(abs(x - (85 + 1075 * 60 / 120)) < .01 for x, _ in points))
         self.assertAlmostEqual(points[-1][0], 85 + 1075 * 119 / 120, places=2)

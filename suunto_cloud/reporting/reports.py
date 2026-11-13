@@ -69,6 +69,30 @@ def moving_average(points, window=15, gap=2):
     return result
 
 
+def moving_median(points, window=15, gap=2):
+    """Centered median within each continuous measurement segment."""
+    result = []
+    for group in segments(points, gap):
+        times = [t for t, _ in group]
+        for when, _ in group:
+            first = bisect_left(times, when - window / 2)
+            last = bisect_right(times, when + window / 2)
+            result.append((when, median(value for _, value in group[first:last])))
+    return result
+
+
+def doubled_range(groups, minimum_span, nonnegative=False):
+    """Double the plotted min-max span around its midpoint."""
+    values = [value for group in groups for _, value in group]
+    low, high = min(values), max(values)
+    middle = (low + high) / 2
+    span = max(high - low, minimum_span)
+    low = middle - span
+    if nonnegative:
+        low = max(0, low)
+    return low, low + 2 * span
+
+
 def thin(points, limit):
     """Preserve chronological bucket extrema instead of smoothing the signal."""
     if len(points) <= limit:
@@ -93,7 +117,6 @@ def chart_svg(data, analysis, cloud, hr_range=None):
         return sum(max(0, min(when, end) - start) for start, end in intervals)
 
     total = max(1, sum(end - start for start, end in intervals))
-    active_rows = [(active_time(t), r) for t, r in rows]
     # Smooth on original timestamps so pauses and missing measurements separate windows.
     hr_observed = [(t, r['heart_rate']) for t, r in rows if number(r.get('heart_rate'))]
     hr_times = [t for t, _ in hr_observed]
@@ -101,20 +124,29 @@ def chart_svg(data, analysis, cloud, hr_range=None):
     for start, end in intervals:
         observed = hr_observed[bisect_left(hr_times, start):bisect_left(hr_times, end)]
         hr.extend((active_time(t), value) for t, value in moving_average(observed))
-    altitude = [(t, r['altitude']) for t, r in active_rows if number(r.get('altitude'))]
-    pace = pace_series(active_rows, 0)
+    def smoothed_groups(field, smooth, transform=lambda value: value):
+        observed = [(t, transform(r[field])) for t, r in rows if number(r.get(field))]
+        observed = [(t, value) for t, value in observed if number(value)]
+        times = [t for t, _ in observed]
+        mapped = []
+        for start, end in intervals:
+            group = observed[bisect_left(times, start):bisect_left(times, end)]
+            mapped.extend((active_time(t), value) for t, value in smooth(group))
+        return segments(mapped, 2)
+
+    altitude = smoothed_groups('altitude', moving_average)
+    pace = smoothed_groups('speed', moving_median, pace_from_speed)
     panels = []
     if hr:
         lo, hi = hr_range if hr_range is not None else (65, 190)
         panels.append(('Heart rate (bpm) · 15 s moving average', [hr], lo, hi, '#b52f3c', False))
     if pace:
-        lo = max(0.5, math.floor(min(v for _, v in pace) * 2) / 2)
-        hi = max(lo + 1, min(15, math.ceil(max(v for _, v in pace))))
-        panels.append(('Pace (min/km) · 10 s median', segments(pace, 15), lo, hi, '#24679c', True))
+        lo, hi = doubled_range(pace, minimum_span=0.5, nonnegative=True)
+        continuous_pace = [point for group in pace for point in group]
+        panels.append(('Pace (min/km) · 15 s moving median', [continuous_pace], lo, hi, '#24679c', True))
     if altitude:
-        lo = math.floor(min(v for _, v in altitude) / 10) * 10
-        hi = max(lo + 10, math.ceil(max(v for _, v in altitude) / 10) * 10)
-        panels.append(('Elevation (m above sea level)', segments(altitude, 2), lo, hi, '#27704d', False))
+        lo, hi = doubled_range(altitude, minimum_span=1)
+        panels.append(('Elevation (m above sea level) · 15 s moving average', altitude, lo, hi, '#27704d', False))
     if not panels:
         return None
     width, left, right, ph, spacing = 1200, 85, 40, 170, 250
@@ -133,7 +165,12 @@ def chart_svg(data, analysis, cloud, hr_range=None):
            f'<title id="title">Workout overview {date}</title>',
            '<desc id="desc">Active workout time axis. '
            'Heart rate: centered 15 s moving average, with gaps connected linearly on the chart. '
-           'Pace: median in 10 s windows. Pace and elevation retain measurement gaps.</desc>',
+           'Pace: centered 15 s moving median. Elevation: centered 15 s moving average. '
+           'Smoothing resets at pauses and gaps over 2 s. Pace gaps are connected linearly on the chart only; '
+           'elevation retains measurement gaps. '
+           'Pace and elevation axes double the smoothed min-max span around its midpoint; '
+           'pace is bounded below by zero. Minimum data spans: 0.5 min/km and 1 m. '
+           'Colored areas extend from each line to the bottom of its panel.</desc>',
            f'<rect width="{width}" height="{height}" fill="#ffffff"/>',
            '<g font-family="Arial, sans-serif" fill="#17212b">',
            f'<text x="85" y="35" font-size="25">Workout overview · {date}</text>',
@@ -149,7 +186,7 @@ def chart_svg(data, analysis, cloud, hr_range=None):
             out.append(f'<rect x="{x1:.2f}" y="{top}" width="{x2 - x1:.2f}" height="{ph}" fill="#e8f0f8"/>')
         for tick in range(6):
             v = lo + tick * (hi - lo) / 5
-            label = duration(v * 60).removesuffix('.0') if inverted else display(v, 0)
+            label = duration(round(v * 60)).removesuffix('.0') if inverted else display(v, 0)
             out.extend([f'<line x1="{left}" y1="{y(v):.2f}" x2="{width-right}" y2="{y(v):.2f}" stroke="#dce1e6"/>',
                         f'<text x="{left-12}" y="{y(v)+5:.2f}" font-size="16" text-anchor="end">{label}</text>'])
         step = max(60, math.ceil(total / 600) * 60)
@@ -161,11 +198,14 @@ def chart_svg(data, analysis, cloud, hr_range=None):
             if len(points) < 2:
                 continue
             coords = ' '.join(f'{x(t):.2f},{y(v):.2f}' for t, v in points)
+            area = f'{x(points[0][0]):.2f},{top+ph} {coords} {x(points[-1][0]):.2f},{top+ph}'
+            out.append(f'<polygon points="{area}" fill="{color}" fill-opacity="0.25" '
+                       f'clip-path="url(#panel-{index})"/>')
             out.append(f'<polyline points="{coords}" fill="none" stroke="{color}" stroke-width="1.8" '
                        f'clip-path="url(#panel-{index})" stroke-linejoin="round"/>')
         out.append(f'<text x="{left+pw/2}" y="{top+ph+49}" font-size="16" text-anchor="middle">Active workout time (min)</text>')
-    out.extend([f'<text x="85" y="{height-15}" font-size="15">Heart rate: 15 s average, gaps connected linearly. '
-                'Pace: 10 s median, axis up to 15 min/km.</text>', '</g></svg>'])
+    out.extend([f'<text x="85" y="{height-15}" font-size="15">HR: 15 s mean. Pace: 15 s median. '
+                'Elevation: 15 s mean. Pace/elevation axes: doubled min-max span. HR/pace gaps connected.</text>', '</g></svg>'])
     return '\n'.join(out) + '\n'
 
 
@@ -229,6 +269,12 @@ def report_body(cloud, analysis, entry, retrieved, chart):
                       'calculated separately for continuous measurement segments. Gaps >2 s and pauses separate windows. '
                       'Gaps in the heart rate line are connected linearly on the chart only. '
                       'HR values in tables and analysis come from source data.'])
+        lines.extend(['', 'Pace chart: centered 15 s moving median. Elevation chart: centered 15 s moving average. '
+                      'Both reset at pauses and measurement gaps >2 s. Pace gaps are connected linearly '
+                      'on the chart only; elevation gaps remain visible. No source samples are added. '
+                      'Their axes use twice the smoothed min-max span around its midpoint, '
+                      'with minimum data spans of 0.5 min/km and 1 m. Pace bounds shift upward '
+                      'if needed to keep the lower limit nonnegative. Smoothing affects charts only.'])
     return '\n'.join(lines)
 
 
