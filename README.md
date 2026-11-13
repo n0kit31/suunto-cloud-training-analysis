@@ -8,6 +8,41 @@ are optional.
 Data from the official Suunto MCP can be added through an external integration.
 The current tools download data from Cloud API; this repository has no MCP client.
 
+## Example analysis: marathon
+
+A real marathon recording shared with the project owner's permission, analyzed
+from Suunto Cloud API summaries and FIT samples. Distance and time are watch
+measurements; the official race result has not been verified.
+
+| Metric | Result |
+| --- | --- |
+| Recorded distance | 42.320 km |
+| Active time | 3:25:27 |
+| Average pace | 4:51.3 min/km |
+| Average / maximum heart rate | 165 / 186 bpm |
+| Average / normalized power | 285.6 / 286.1 W |
+| Ascent / descent | 134.9 / 133.6 m |
+| Average cadence | 189.5 steps/min |
+| Average ground contact time | 240.4 ms |
+| Training stress score | 324.264 (HR method) |
+| Peak training effect | 5.0 |
+| Timer pauses | None |
+
+![Marathon analysis: continuous smoothed heart rate, pace, and elevation over active workout time](docs/examples/marathon-overview.svg)
+
+**Interpretation.** The first 21 km took 1:41:36.2 and the next 21 km took
+1:42:29.7, a difference of 53.5 seconds. These are equal-distance watch
+segments. Average heart rate rose from 157.7 to 171.3 bpm across those segments,
+while average power stayed close at 286.4 and 284.4 W. Pace remained broadly
+steady late in the race, with the final 320 m covered in 1:21.0 (4:13.1 min/km).
+The recording shows a sustained effort and a faster finish; it does not
+establish the cause of the heart rate increase.
+
+Heart rate uses a centered 15 s moving average; gaps are connected linearly
+for display only. Pace uses a 10 s median. Charts show active workout time,
+and summary statistics use source measurements. The example includes no GPS
+coordinates, account identifiers, or raw workout files.
+
 ## Structure
 
 Code in `suunto_cloud/` is organized by responsibility:

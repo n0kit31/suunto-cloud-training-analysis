@@ -6,12 +6,17 @@
 - Never add to Git or upload real keys, secrets, access tokens, refresh tokens,
   or authorization headers. This also applies to documentation, examples,
   tests, logs, and Docker images.
-- Use only unambiguous placeholders or synthetic data in examples.
+- Use only unambiguous placeholders or synthetic data in examples, except for
+  the explicitly approved documentation example below.
   `config.example.json` is a template; the actual `config.json` and all of
   `.local/` remain local and are ignored by Git.
 - Preserve existing configuration and tokens. Do not replace them with placeholders.
 - FIT files, GPX files, reports, and personal `TRAINING*.md` context stay outside
   the repository.
+- The user explicitly approved their marathon analysis as a README example.
+  That example may include aggregate metrics and chart-only SVGs in
+  `docs/examples/`. Omit account/workout identifiers, GPS coordinates,
+  credentials, raw FIT/GPX files, and full report JSON.
 - Before committing or pushing, check the staged files for secrets. Do not print
   any discovered values in the terminal or response.
 - `.gitignore` and `.dockerignore` must exclude private data. Do not bypass these
