@@ -83,7 +83,7 @@ def thin(points, limit):
     return [points[i] for i in sorted(indices)]
 
 
-def chart_svg(data, analysis, cloud):
+def chart_svg(data, analysis, cloud, hr_range=None):
     rows = active_samples(data, analysis['timer'])
     if not rows:
         return None
@@ -105,8 +105,8 @@ def chart_svg(data, analysis, cloud):
     pace = pace_series(active_rows, 0)
     panels = []
     if hr:
-        lo, hi = math.floor(min(v for _, v in hr) / 10) * 10, math.ceil(max(v for _, v in hr) / 10) * 10
-        panels.append(('Heart rate (bpm) · 15 s moving average', [hr], lo, max(lo + 10, hi), '#b52f3c', False))
+        lo, hi = hr_range if hr_range is not None else (65, 190)
+        panels.append(('Heart rate (bpm) · 15 s moving average', [hr], lo, hi, '#b52f3c', False))
     if pace:
         lo = max(0.5, math.floor(min(v for _, v in pace) * 2) / 2)
         hi = max(lo + 1, min(15, math.ceil(max(v for _, v in pace))))
@@ -232,12 +232,12 @@ def report_body(cloud, analysis, entry, retrieved, chart):
     return '\n'.join(lines)
 
 
-def write_outputs(project, cloud, analysis, decoded, entry, retrieved, charts=False):
+def write_outputs(project, cloud, analysis, decoded, entry, retrieved, charts=False, hr_range=None):
     stem = datetime.fromisoformat(cloud['start_local']).strftime('%Y-%m-%d-%H%M%S')
     reports, chart_dir = project / 'reports', project / 'visualizations'
     reports.mkdir(exist_ok=True)
     chart = chart_dir / f'suunto-{stem}-overview.svg'
-    svg = chart_svg(decoded, analysis, cloud) if charts else None
+    svg = chart_svg(decoded, analysis, cloud, hr_range=hr_range) if charts else None
     if svg:
         chart_dir.mkdir(exist_ok=True)
         chart.write_text(svg)

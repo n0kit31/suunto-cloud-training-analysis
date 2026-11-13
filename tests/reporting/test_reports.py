@@ -55,7 +55,8 @@ class OutputTests(unittest.TestCase):
             {'event': 'timer', 'event_type': 'start', 'timestamp': at(6)},
         ]
         self.analysis = summarize(self.data)
-        out = write_outputs(self.root, self.cloud, self.analysis, self.data, self.entry, 'now', charts=True)
+        out = write_outputs(self.root, self.cloud, self.analysis, self.data, self.entry, 'now',
+                            charts=True, hr_range=(120, 180))
         tree = ET.parse(out['chart_path'])
         hr_lines = [x for x in tree.iter() if x.attrib.get('clip-path') == 'url(#panel-0)']
         heights = {float(pair.split(',')[1]) for line in hr_lines for pair in line.attrib['points'].split()}

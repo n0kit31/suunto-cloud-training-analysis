@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import math
 from pathlib import Path
 import sys
 
@@ -11,12 +12,19 @@ from suunto_cloud.reporting.reports import cleanup_charts, write_outputs
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('report', type=Path, help='Saved JSON report in the reports directory')
+    parser.add_argument('--hr-range', nargs=2, type=float, metavar=('MIN', 'MAX'),
+                        help='Heart rate axis limits in bpm')
     args = parser.parse_args(argv)
+    if args.hr_range is not None:
+        lo, hi = args.hr_range
+        if not (math.isfinite(lo) and math.isfinite(hi) and 0 <= lo < hi):
+            parser.error('--hr-range requires finite limits with 0 <= MIN < MAX')
     report = json.loads(args.report.read_text())
     decoded = json.loads(Path(report['source']['decoded_path']).read_text())
     project = args.report.resolve().parent.parent
     outputs = write_outputs(project, report['cloud'], report['fit'], decoded,
-                            report['source'], report['retrieved_at_utc'], charts=True)
+                            report['source'], report['retrieved_at_utc'], charts=True,
+                            hr_range=args.hr_range)
     cleanup_charts(project / 'visualizations', {outputs['chart_path']})
     print(json.dumps(outputs, ensure_ascii=False))
 
