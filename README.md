@@ -1,5 +1,12 @@
 # Suunto Cloud Training Analysis
 
+[![CI](https://github.com/n0kit31/suunto-cloud-training-analisys/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/n0kit31/suunto-cloud-training-analisys/actions/workflows/ci.yml)
+[![Test count](docs/badges/tests.svg)](#tests)
+[![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](LICENSE)
+[![Python: 3.9+](https://img.shields.io/badge/Python-3.9%2B-3776AB?logo=python&logoColor=white)](#requirements)
+[![Node.js: 24](https://img.shields.io/badge/Node.js-24-339933?logo=nodedotjs&logoColor=white)](Dockerfile)
+[![Docker Compose](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](docs/docker.md)
+
 A CLI for downloading data from Suunto Cloud API and analyzing FIT files.
 Supports OAuth with automatic token refresh, GPX export, and JSON and Markdown
 reports with laps, heart rate, pace, pauses, and running mechanics. SVG charts
@@ -7,6 +14,54 @@ are optional.
 
 Data from the official Suunto MCP can be added through an external integration.
 The current tools download data from Cloud API; this repository has no MCP client.
+
+## Contents
+
+- [Highlights](#highlights)
+- [Quick start with Docker](#quick-start-with-docker)
+- [Marathon example](#example-analysis-marathon)
+- [Project structure](#structure)
+- [Requirements](#requirements)
+- [Local setup](#local-setup)
+- [Usage and commands](#usage)
+- [Docker reference](#docker)
+- [Tests and CI](#tests)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Highlights
+
+- Fetch workout summaries and original FIT files with automatic OAuth refresh.
+- Analyze pace, heart rate, power, laps, pauses, running mechanics, and SuuntoPlus fields.
+- Generate Markdown/JSON reports and portable SVG charts with smoothed heart rate.
+- Run in Docker while keeping credentials and raw workout files outside the image and Git.
+
+## Quick start with Docker
+
+You need Git, Docker with Compose, and a Suunto API Zone application with a
+Developer API subscription. Python and Node.js are included in the image.
+
+```sh
+git clone https://github.com/n0kit31/suunto-cloud-training-analisys.git
+cd suunto-cloud-training-analisys
+export SUUNTO_UID="$(id -u)" SUUNTO_GID="$(id -g)"
+mkdir -p .local ../reports ../visualizations
+cp -n config.example.json config.json
+```
+
+Set your application's `client_id` in `config.json`. Its redirect URI must match
+`http://127.0.0.1:8765/callback` in API Zone. Then build and authorize:
+
+```sh
+docker compose build
+docker compose run --rm --service-ports suunto oauth
+docker compose run --rm suunto access --configure
+docker compose run --rm -T suunto sync --date 2026-01-15 --analysis --brief
+```
+
+Replace the example date with your workout date. Add `--charts` to the last
+command to generate charts. Reports are saved in `../reports/` and charts in
+`../visualizations/`. See the [Docker guide](docs/docker.md) for details.
 
 ## Example analysis: marathon
 
@@ -68,7 +123,7 @@ For local execution:
 - Node.js and the `fit-file-parser` package for FIT decoding.
 - An OAuth application and Developer API subscription in [Suunto API Zone](https://apizone.suunto.com/how-to-start).
 
-## Setup
+## Local setup
 
 Run commands from the repository directory. Install FIT decoder dependencies
 and create the local configuration:
@@ -122,6 +177,20 @@ Other commands: `workouts`, `track`, `analyze`, and `access`.
 Help: `python3 -m suunto_cloud --help` or `python3 -m suunto_cloud sync --help`.
 The legacy `python3 sync.py ...` command still works through a compatibility wrapper.
 
+| Command | Purpose |
+| --- | --- |
+| `sync --date YYYY-MM-DD --analysis --brief` | Download fresh data and produce a concise analysis |
+| `sync --date YYYY-MM-DD --analysis --brief --charts` | Also generate charts |
+| `charts PATH_TO_REPORT.json` | Regenerate charts from saved data without API access |
+| `workouts` | Download the current workout list |
+| `track --workout-key WORKOUT_KEY` | Download a recorded FIT and export GPX |
+| `analyze PATH_TO_DECODED.json` | Analyze decoded FIT samples |
+| `oauth` | Authorize the Suunto account |
+| `access --configure` | Save credentials using hidden interactive input |
+
+Run commands as `docker compose run --rm suunto COMMAND`, or as
+`python3 -m suunto_cloud COMMAND` during local development.
+
 ## Docker
 
 The Dockerfile includes the Python/Node.js runtime and FIT decoder dependencies.
@@ -135,11 +204,39 @@ docker compose run --rm suunto sync --date 2026-01-15 --analysis --brief
 
 ## Tests
 
+The [CI workflow](.github/workflows/ci.yml) runs the offline suite on Python 3.9
+and 3.13 with Node.js 24, and separately builds and verifies the Docker images.
+It runs on pushes to `main`, pull requests, and manual dispatch. The CI badge
+reflects the GitHub Actions result and becomes available after the first run.
+
 ```sh
 python3 -m unittest discover -s tests -t . -v
 ```
 
-Tests use synthetic data and do not require API access.
+Tests use synthetic data and do not require Suunto credentials or API access.
+The test-count badge reports discovered test cases; CI checks that it matches
+the suite. After adding or removing tests, regenerate it with:
+
+```sh
+python3 scripts/update-test-badge.py
+python3 scripts/update-test-badge.py --check
+```
+
+The [Docker image checks](scripts/docker/test-image.sh) also run the suite in
+the container, exercise the CLI without network access, and verify that the
+final image contains no private configuration, runtime data, or test files.
+
+## Contributing
+
+Use [GitHub Issues](https://github.com/n0kit31/suunto-cloud-training-analisys/issues)
+for bug reports and suggestions, or submit a pull request with a focused change.
+Include reproduction steps and the relevant command when reporting a problem.
+
+Keep code, comments, documentation, and generated labels in English. Use
+synthetic data for tests and examples; the marathon illustration above is an
+explicitly approved exception. Before submitting, run the test suite and check
+the test-count badge. Keep credentials, OAuth tokens, raw workout files, and
+personal reports out of commits and issue attachments.
 
 ## License
 
