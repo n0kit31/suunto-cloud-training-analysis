@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/n0kit31/suunto-cloud-training-analisys/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/n0kit31/suunto-cloud-training-analisys/actions/workflows/ci.yml)
 [![Test count](docs/badges/tests.svg)](#tests)
+[![Release: 1.0.0](https://img.shields.io/badge/release-1.0.0-blue)](CHANGELOG.md)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](LICENSE)
 [![Python: 3.9+](https://img.shields.io/badge/Python-3.9%2B-3776AB?logo=python&logoColor=white)](#requirements)
 [![Node.js: 24](https://img.shields.io/badge/Node.js-24-339933?logo=nodedotjs&logoColor=white)](Dockerfile)
@@ -28,6 +29,7 @@ The current tools download data from Cloud API; this repository has no MCP clien
 - [Docker reference](#docker)
 - [Tests and CI](#tests)
 - [Contributing](#contributing)
+- [Releases and changelog](#releases)
 - [License](#license)
 
 ## Highlights
@@ -237,7 +239,8 @@ docker compose run --rm suunto sync --date 2026-01-15 --analysis --brief
 
 The [CI workflow](.github/workflows/ci.yml) runs the offline suite on Python 3.9
 and 3.13 with Node.js 24, and separately builds and verifies the Docker images.
-It runs on pushes to `main`, pull requests, and manual dispatch. The CI badge
+It runs on pushes to `main` and `develop`, version tags (`v*`), pull requests,
+and manual dispatch. The CI badge
 reflects the GitHub Actions result and becomes available after the first run.
 
 ```sh
@@ -268,6 +271,16 @@ synthetic data for tests and examples; the marathon illustration above is an
 explicitly approved exception. Before submitting, run the test suite and check
 the test-count badge. Keep credentials, OAuth tokens, raw workout files, and
 personal reports out of commits and issue attachments.
+
+## Releases
+
+**1.0.0** is the first stable release. See [CHANGELOG.md](CHANGELOG.md) for its
+features and release notes, and run `python3 -m suunto_cloud --version` to
+check the installed version.
+
+Stable releases are maintained on `main` and identified by version tags such
+as `v1.0.0`. Development of subsequent iterations takes place on `develop`,
+which starts from the same commit as the 1.0.0 release.
 
 ## License
 

@@ -16,6 +16,20 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class CommandTests(unittest.TestCase):
+    def test_version_matches_package_metadata_without_configuration(self):
+        expected = json.loads((ROOT / 'package.json').read_text())['version']
+        lock = json.loads((ROOT / 'package-lock.json').read_text())
+        self.assertEqual(lock['version'], expected)
+        self.assertEqual(lock['packages']['']['version'], expected)
+        with tempfile.TemporaryDirectory() as directory:
+            clean_root = Path(directory)
+            shutil.copytree(ROOT / 'suunto_cloud', clean_root / 'suunto_cloud',
+                            ignore=shutil.ignore_patterns('__pycache__'))
+            result = subprocess.run([sys.executable, '-m', 'suunto_cloud', '--version'],
+                                    cwd=clean_root, text=True, capture_output=True, timeout=10)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), f'suunto-cloud {expected}')
+
     def test_help_for_every_command_requires_no_config_or_network(self):
         with tempfile.TemporaryDirectory() as directory:
             clean_root = Path(directory)

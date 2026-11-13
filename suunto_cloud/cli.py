@@ -3,6 +3,8 @@
 import argparse
 from importlib import import_module
 
+from suunto_cloud import __version__
+
 
 COMMANDS = {
     'sync': ('suunto_cloud.synchronization.service', 'Download and analyze workouts'),
@@ -17,6 +19,7 @@ COMMANDS = {
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description='Download and analyze Suunto workouts.')
+    parser.add_argument('--version', action='version', version=f'suunto-cloud {__version__}')
     commands = parser.add_subparsers(dest='command', required=True)
     for name, (_, description) in COMMANDS.items():
         commands.add_parser(name, help=description, add_help=False)

@@ -10,6 +10,7 @@ RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund
 FROM python:3.13-slim-bookworm AS runtime
 
 LABEL org.opencontainers.image.title="Suunto Cloud Training Analysis" \
+      org.opencontainers.image.version="1.0.0" \
       org.opencontainers.image.licenses="GPL-3.0-or-later"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
