@@ -1,6 +1,6 @@
 # Suunto Cloud Training Analysis
 
-[![CI](https://github.com/n0kit31/suunto-cloud-training-analisys/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/n0kit31/suunto-cloud-training-analisys/actions/workflows/ci.yml)
+[![CI](https://github.com/n0kit31/suunto-cloud-training-analysis/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/n0kit31/suunto-cloud-training-analysis/actions/workflows/ci.yml)
 [![Test count](docs/badges/tests.svg)](#tests)
 [![Release: 1.0.0](https://img.shields.io/badge/release-1.0.0-blue)](CHANGELOG.md)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](LICENSE)
@@ -69,8 +69,8 @@ subscription approved for your intended use. See
 are included in the image.
 
 ```sh
-git clone https://github.com/n0kit31/suunto-cloud-training-analisys.git
-cd suunto-cloud-training-analisys
+git clone https://github.com/n0kit31/suunto-cloud-training-analysis.git
+cd suunto-cloud-training-analysis
 export SUUNTO_UID="$(id -u)" SUUNTO_GID="$(id -g)"
 mkdir -p .local ../reports ../visualizations
 cp -n config.example.json config.json
@@ -286,7 +286,7 @@ final image contains no private configuration, runtime data, or test files.
 
 ## Contributing
 
-Use [GitHub Issues](https://github.com/n0kit31/suunto-cloud-training-analisys/issues)
+Use [GitHub Issues](https://github.com/n0kit31/suunto-cloud-training-analysis/issues)
 for bug reports and suggestions, or submit a pull request with a focused change.
 Include reproduction steps and the relevant command when reporting a problem.
 
