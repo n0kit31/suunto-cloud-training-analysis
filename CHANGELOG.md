@@ -34,5 +34,5 @@ Suunto workouts, with local reports and portable charts.
 - Credentials, OAuth tokens, raw workout files, and personal reports remain outside the release.
 - Licensed under GNU GPL v3 or later (`GPL-3.0-or-later`).
 
-[Unreleased]: https://github.com/n0kit31/suunto-cloud-training-analisys/compare/v1.0.0...develop
-[1.0.0]: https://github.com/n0kit31/suunto-cloud-training-analisys/tree/v1.0.0
+[Unreleased]: https://github.com/n0kit31/suunto-cloud-training-analysis/compare/v1.0.0...develop
+[1.0.0]: https://github.com/n0kit31/suunto-cloud-training-analysis/tree/v1.0.0
