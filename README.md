@@ -215,12 +215,32 @@ Dates use the [user's selected time zone](#time-zones); `--date` may be repeated
 Add `--charts` to generate a chart. Raw data and analyses are in `.local/`,
 reports in `../reports/`, and charts in `../visualizations/`.
 Charts use active workout time: pauses are removed from the time axis and have
-no separate markers. Missing pace and elevation measurements remain gaps in
-the line. Heart rate is smoothed with a centered 15 s moving average of
-available samples, calculated separately for continuous measurement segments.
-Heart rate gaps are connected linearly on the chart only, producing a
-continuous curve. HR statistics come from source data. Reports use decimal
-points, and chart filenames end in `-overview.svg`.
+no separate markers. Heart rate uses a fixed 65–190 bpm axis (overridable with
+`charts --hr-range MIN MAX`). Other axes double the displayed min–max span,
+with minimum spans for flat data and nonnegative bounds for unsigned metrics.
+Smoothing uses centered 15 s windows and resets at pauses and measurement gaps
+over 2 s. Heart rate and pace gaps are connected linearly on the chart only;
+other measurement gaps remain visible. Source data and statistics are unchanged.
+
+Only metrics with available samples are included:
+
+| Metric | Presentation and smoothing |
+| --- | --- |
+| Heart rate / elevation | Filled line, 15 s moving mean |
+| Pace / speed | Filled line, 15 s moving median; min/km / km/h |
+| Running power | Filled line, 15 s moving mean, W |
+| Cadence | Observed dots with a 15 s median trend; steps/min for running/walking, rpm otherwise |
+| Ground contact | Observed dots with a 15 s median trend, ms |
+| Estimated single step length | Dots with a 15 s median trend; `30 * speed_mps / cadence_cycles_per_min`, using simultaneous positive samples |
+| Estimated terrain grade | Signed area around zero: green uphill, blue downhill; local rise/run over up to 50 m, then 15 s mean |
+
+Dot plots preserve observed variation without filling the area under it.
+Their axis ranges include the raw dots, and sample reduction preserves extrema.
+Grade uses actual endpoint observations within ±25 m, at least 20 m and three
+distinct distance samples. Windows do not cross pauses, missing inputs,
+distance resets, or recording/stationary gaps over 2 s. The grade axis includes
+zero. It is an estimate of local slope, rather than a surveyed measurement.
+Reports use decimal points, and chart filenames end in `-overview.svg`.
 The current version downloads one page of the workout list, not the complete
 history.
 

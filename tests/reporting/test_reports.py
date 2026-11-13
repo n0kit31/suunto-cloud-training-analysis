@@ -91,6 +91,48 @@ class OutputTests(unittest.TestCase):
         self.assertEqual(reduced, sorted(reduced))
         self.assertTrue(set(reduced).issubset(points))
 
+    def test_new_panels_use_units_and_styles_and_preserve_raw_dot_extrema(self):
+        for n, row in enumerate(self.data['records']):
+            row['power'] = 200 + n
+            del row['vertical_oscillation']  # Contact/cadence do not require this other metric.
+        self.data['records'][25]['cadence'] = 130
+        out = write_outputs(self.root, self.cloud, self.analysis, self.data, self.entry, 'now', charts=True)
+        tree = ET.parse(out['chart_path'])
+        panels = {x.attrib['data-metric']: x for x in tree.iter() if 'data-metric' in x.attrib}
+        self.assertEqual(set(panels), {'heart-rate', 'pace', 'elevation', 'power', 'cadence',
+                                       'ground-contact', 'step-length', 'speed', 'grade'})
+        for key in ('cadence', 'ground-contact', 'step-length'):
+            panel = panels[key]
+            self.assertEqual(panel.attrib['data-style'], 'scatter')
+            self.assertTrue(any(x.tag.endswith('circle') for x in panel))
+            self.assertFalse(any(x.tag.endswith('polygon') for x in panel))
+            rect = next(x for x in panel.iter() if x.tag.endswith('rect'))
+            low, high = float(rect.attrib['y']), float(rect.attrib['y']) + float(rect.attrib['height'])
+            self.assertTrue(all(low <= float(x.attrib['cy']) <= high
+                                for x in panel if x.tag.endswith('circle')))
+        cadence_labels = [x.text for x in panels['cadence'] if x.tag.endswith('text')]
+        self.assertTrue(any('steps/min' in text for text in cadence_labels))
+        # A short observed cadence peak remains visible, independently of the smoothed trend.
+        cadence_points = [x for x in panels['cadence'] if x.tag.endswith('circle')]
+        self.assertEqual(len(cadence_points), 150)
+        self.assertEqual(panels['grade'].attrib['data-style'], 'diverging')
+        self.assertTrue(any(x.tag.endswith('linearGradient') for x in panels['grade'].iter()))
+
+    def test_missing_metrics_are_omitted_and_non_running_cadence_stays_rpm(self):
+        self.data['sessions'][0]['sport'] = 'cycling'
+        self.cloud['activity_id'] = 2
+        for row in self.data['records']:
+            del row['stance_time']
+            del row['altitude']
+        out = write_outputs(self.root, self.cloud, self.analysis, self.data, self.entry, 'now', charts=True)
+        tree = ET.parse(out['chart_path'])
+        panels = {x.attrib['data-metric']: x for x in tree.iter() if 'data-metric' in x.attrib}
+        for key in ('power', 'ground-contact', 'step-length', 'elevation', 'grade'):
+            self.assertNotIn(key, panels)
+        text = ' '.join(x.text or '' for x in panels['cadence'].iter())
+        self.assertIn('rpm', text)
+        self.assertNotIn('steps/min', text)
+
     def test_chart_removes_pause_time_and_connects_hr_and_pace_gaps(self):
         at = lambda n: self.data['records'][n]['timestamp']
         self.data['events'][1:1] = [

@@ -2,6 +2,7 @@
 
 from bisect import bisect_left, bisect_right
 from collections import defaultdict
+from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
 from html import escape
 import math
@@ -10,10 +11,25 @@ from statistics import median, mean
 
 from suunto_cloud.storage.local import private_json
 from suunto_cloud.analysis.metrics import active_samples, number, seconds
+from suunto_cloud.analysis.chart_metrics import grade_samples, step_length
 
 START = '<!-- suunto-generated:start -->'
 END = '<!-- suunto-generated:end -->'
 CHART_MARKER = '<!-- generated: suunto-analysis -->'
+
+
+@dataclass
+class ChartPanel:
+    key: str
+    title: str
+    groups: list
+    lo: float
+    hi: float
+    color: str
+    inverted: bool = False
+    style: str = 'area'
+    raw_groups: list | None = None
+    digits: int = 0
 
 
 def duration(value):
@@ -124,33 +140,79 @@ def chart_svg(data, analysis, cloud, hr_range=None):
     for start, end in intervals:
         observed = hr_observed[bisect_left(hr_times, start):bisect_left(hr_times, end)]
         hr.extend((active_time(t), value) for t, value in moving_average(observed))
-    def smoothed_groups(field, smooth, transform=lambda value: value):
-        observed = [(t, transform(r[field])) for t, r in rows if number(r.get(field))]
+    def mapped_groups(observed, smooth=None):
         observed = [(t, value) for t, value in observed if number(value)]
         times = [t for t, _ in observed]
         mapped = []
         for start, end in intervals:
             group = observed[bisect_left(times, start):bisect_left(times, end)]
-            mapped.extend((active_time(t), value) for t, value in smooth(group))
+            mapped.extend((active_time(t), value) for t, value in (smooth(group) if smooth else group))
         return segments(mapped, 2)
 
-    altitude = smoothed_groups('altitude', moving_average)
-    pace = smoothed_groups('speed', moving_median, pace_from_speed)
+    def samples(extract):
+        return [(t, value) for t, row in rows if number(value := extract(row))]
+
+    altitude = mapped_groups(samples(lambda r: r.get('altitude')), moving_average)
+    pace = mapped_groups(samples(lambda r: pace_from_speed(r.get('speed'))), moving_median)
     panels = []
     if hr:
         lo, hi = hr_range if hr_range is not None else (65, 190)
-        panels.append(('Heart rate (bpm) · 15 s moving average', [hr], lo, hi, '#b52f3c', False))
+        panels.append(ChartPanel('heart-rate', 'Heart rate (bpm) · 15 s moving average', [hr], lo, hi, '#b52f3c'))
     if pace:
         lo, hi = doubled_range(pace, minimum_span=0.5, nonnegative=True)
         continuous_pace = [point for group in pace for point in group]
-        panels.append(('Pace (min/km) · 15 s moving median', [continuous_pace], lo, hi, '#24679c', True))
+        panels.append(ChartPanel('pace', 'Pace (min/km) · 15 s moving median', [continuous_pace], lo, hi,
+                                 '#24679c', inverted=True))
     if altitude:
         lo, hi = doubled_range(altitude, minimum_span=1)
-        panels.append(('Elevation (m above sea level) · 15 s moving average', altitude, lo, hi, '#27704d', False))
+        panels.append(ChartPanel('elevation', 'Elevation (m above sea level) · 15 s moving average',
+                                 altitude, lo, hi, '#27704d'))
+
+    def add_metric(key, title, observed, color, minimum_span, smooth=moving_average,
+                   style='area', digits=0, nonnegative=True):
+        groups = mapped_groups(observed, smooth)
+        if not groups:
+            return
+        raw_groups = mapped_groups(observed) if style == 'scatter' else None
+        axis_groups = raw_groups if raw_groups is not None else groups
+        if style == 'diverging':
+            axis_groups = groups + [[(0, 0)]]
+        lo, hi = doubled_range(axis_groups, minimum_span, nonnegative=nonnegative)
+        panels.append(ChartPanel(key, title, groups, lo, hi, color, style=style,
+                                 raw_groups=raw_groups, digits=digits))
+
+    def nonnegative_field(row, key, positive=False):
+        value = row.get(key)
+        return value if number(value) and (value > 0 if positive else value >= 0) else None
+
+    sport = (data.get('sessions') or [{}])[0].get('sport')
+    running = sport == 'running' or cloud.get('activity_id') in (1, 22)
+    on_foot = running or sport in ('walking', 'hiking') or cloud.get('activity_id') == 11
+    power_title = 'Running power' if running else 'Power'
+    add_metric('power', f'{power_title} (W) · 15 s moving average',
+               samples(lambda r: nonnegative_field(r, 'power')), '#b47719', 10)
+    cadence_unit, cadence_factor = ('steps/min', 2) if on_foot else ('rpm', 1)
+    cadence = [(t, value * cadence_factor) for t, value in
+               samples(lambda r: nonnegative_field(r, 'cadence', positive=True))]
+    add_metric('cadence', f'Cadence ({cadence_unit}) · dots + 15 s median trend',
+               cadence, '#7554a3', 5, smooth=moving_median, style='scatter')
+    if on_foot:
+        add_metric('ground-contact', 'Ground contact (ms) · dots + 15 s median trend',
+                   samples(lambda r: nonnegative_field(r, 'stance_time', positive=True)),
+                   '#98603a', 10, smooth=moving_median, style='scatter')
+        add_metric('step-length', 'Estimated step length (m) · dots + 15 s median trend',
+                   samples(step_length), '#257c84', 0.1, smooth=moving_median,
+                   style='scatter', digits=2)
+    speed = [(t, value * 3.6) for t, value in samples(lambda r: nonnegative_field(r, 'speed'))]
+    add_metric('speed', 'Speed (km/h) · 15 s moving median', speed,
+               '#24679c', 1, smooth=moving_median, digits=1)
+    add_metric('grade', 'Estimated terrain grade (%) · 50 m window + 15 s mean',
+               grade_samples(rows, intervals), '#27704d', 1, style='diverging',
+               digits=1, nonnegative=False)
     if not panels:
         return None
-    width, left, right, ph, spacing = 1200, 85, 40, 170, 250
-    height = 130 + len(panels) * spacing
+    width, left, right, ph, spacing = 1200, 85, 40, 170, 280
+    height = 140 + len(panels) * spacing
     pw = width - left - right
     x = lambda t: left + t / total * pw
     date = datetime.fromisoformat(cloud['start_local']).strftime('%Y-%m-%d %H:%M')
@@ -170,15 +232,25 @@ def chart_svg(data, analysis, cloud, hr_range=None):
            'elevation retains measurement gaps. '
            'Pace and elevation axes double the smoothed min-max span around its midpoint; '
            'pace is bounded below by zero. Minimum data spans: 0.5 min/km and 1 m. '
-           'Colored areas extend from each line to the bottom of its panel.</desc>',
+           'Power: 15 s mean. Speed: 15 s median. Cadence, contact and estimated step length: '
+           'observed dots with a 15 s median trend, without area fill. Dots are reduced preserving extrema. '
+           'Cadence uses steps/min for running/walking and rpm otherwise. Step length = 30 * speed / cadence. '
+           'Grade: local rise/run over up to ±25 m, minimum 20 m and three observations, then 15 s mean. '
+           'No grade is estimated across missing inputs, pauses, distance resets or stationary samples. '
+           'New axes double the displayed min-max span, including raw dots and zero for grade. '
+           'All source data remain unchanged. Areas fill to the panel bottom except signed grade, '
+           'which fills toward zero (green uphill, blue downhill). Missing metrics are omitted.</desc>',
            f'<rect width="{width}" height="{height}" fill="#ffffff"/>',
            '<g font-family="Arial, sans-serif" fill="#17212b">',
            f'<text x="85" y="35" font-size="25">Workout overview · {date}</text>',
            f'<text x="85" y="65" font-size="17">{subtitle}</text>']
-    for index, (title, groups, lo, hi, color, inverted) in enumerate(panels):
+    for index, panel in enumerate(panels):
+        title, groups, lo, hi = panel.title, panel.groups, panel.lo, panel.hi
+        color, inverted = panel.color, panel.inverted
         top = 130 + index * spacing
         y = lambda v: top + ((v - lo) if inverted else (hi - v)) / (hi - lo) * ph
-        out.extend([f'<defs><clipPath id="panel-{index}"><rect x="{left}" y="{top}" '
+        out.extend([f'<g data-metric="{panel.key}" data-style="{panel.style}">',
+                    f'<defs><clipPath id="panel-{index}"><rect x="{left}" y="{top}" '
                     f'width="{pw}" height="{ph}"/></clipPath></defs>',
                     f'<text x="{left}" y="{top - 25}" font-size="19">{escape(title)}</text>'])
         for lap in work_laps:
@@ -186,26 +258,49 @@ def chart_svg(data, analysis, cloud, hr_range=None):
             out.append(f'<rect x="{x1:.2f}" y="{top}" width="{x2 - x1:.2f}" height="{ph}" fill="#e8f0f8"/>')
         for tick in range(6):
             v = lo + tick * (hi - lo) / 5
-            label = duration(round(v * 60)).removesuffix('.0') if inverted else display(v, 0)
+            label = duration(round(v * 60)).removesuffix('.0') if inverted else display(v, panel.digits)
             out.extend([f'<line x1="{left}" y1="{y(v):.2f}" x2="{width-right}" y2="{y(v):.2f}" stroke="#dce1e6"/>',
                         f'<text x="{left-12}" y="{y(v)+5:.2f}" font-size="16" text-anchor="end">{label}</text>'])
         step = max(60, math.ceil(total / 600) * 60)
         for t in range(0, math.ceil(total) + 1, step):
             out.append(f'<text x="{x(t):.2f}" y="{top+ph+25}" font-size="16" text-anchor="middle">{t // 60}</text>')
+        if panel.raw_groups is not None:
+            raw_count = sum(len(group) for group in panel.raw_groups)
+            for group in panel.raw_groups:
+                points = thin(group, max(4, int(600 * len(group) / max(1, raw_count))))
+                for when, value in points:
+                    out.append(f'<circle cx="{x(when):.2f}" cy="{y(value):.2f}" r="1.8" '
+                               f'fill="{color}" fill-opacity="0.35" clip-path="url(#panel-{index})"/>')
+        baseline = y(0) if panel.style == 'diverging' else top + ph
+        area_color = color
+        if panel.style == 'diverging':
+            offset = 100 * (0 - lo) / (hi - lo)
+            offset = 100 - offset
+            out.extend([f'<defs><linearGradient id="grade-{index}" x1="0" y1="{top}" x2="0" '
+                        f'y2="{top+ph}" gradientUnits="userSpaceOnUse">',
+                        f'<stop offset="{offset:.4f}%" stop-color="#27704d"/>',
+                        f'<stop offset="{offset:.4f}%" stop-color="#24679c"/></linearGradient></defs>',
+                        f'<line x1="{left}" x2="{width-right}" y1="{baseline:.2f}" y2="{baseline:.2f}" '
+                        'stroke="#788795" stroke-dasharray="4 3"/>'])
+            area_color = f'url(#grade-{index})'
         count = sum(len(g) for g in groups)
         for group in groups:
             points = thin(group, max(4, int(1600 * len(group) / max(1, count))))
             if len(points) < 2:
                 continue
             coords = ' '.join(f'{x(t):.2f},{y(v):.2f}' for t, v in points)
-            area = f'{x(points[0][0]):.2f},{top+ph} {coords} {x(points[-1][0]):.2f},{top+ph}'
-            out.append(f'<polygon points="{area}" fill="{color}" fill-opacity="0.25" '
-                       f'clip-path="url(#panel-{index})"/>')
+            if panel.style != 'scatter':
+                area = f'{x(points[0][0]):.2f},{baseline:.2f} {coords} {x(points[-1][0]):.2f},{baseline:.2f}'
+                out.append(f'<polygon points="{area}" fill="{area_color}" fill-opacity="0.25" '
+                           f'clip-path="url(#panel-{index})"/>')
             out.append(f'<polyline points="{coords}" fill="none" stroke="{color}" stroke-width="1.8" '
                        f'clip-path="url(#panel-{index})" stroke-linejoin="round"/>')
-        out.append(f'<text x="{left+pw/2}" y="{top+ph+49}" font-size="16" text-anchor="middle">Active workout time (min)</text>')
-    out.extend([f'<text x="85" y="{height-15}" font-size="15">HR: 15 s mean. Pace: 15 s median. '
-                'Elevation: 15 s mean. Pace/elevation axes: doubled min-max span. HR/pace gaps connected.</text>', '</g></svg>'])
+        out.extend([f'<text x="{left+pw/2}" y="{top+ph+49}" font-size="16" text-anchor="middle">Active workout time (min)</text>',
+                    '</g>'])
+    out.extend([f'<text x="85" y="{height-35}" font-size="14">15 s smoothing; HR/pace gaps connected only on chart. '
+                'Other gaps retained. Non-HR axes: doubled min-max span.</text>',
+                f'<text x="85" y="{height-15}" font-size="14">Dots: observed samples + median trend. '
+                'Grade: 50 m rise/run; green uphill, blue downhill. Missing metrics omitted.</text>', '</g></svg>'])
     return '\n'.join(out) + '\n'
 
 
@@ -264,7 +359,7 @@ def report_body(cloud, analysis, entry, retrieved, chart):
                   details['method'], '', 'Full data, sample counts, and additional fields are in the adjacent JSON file; '
                   f"original FIT: `{entry['fit_path']}`, SHA-256 `{entry['fit_sha256']}`."])
     if chart:
-        lines.extend(['', f'[Heart rate, pace, and elevation chart]({chart})'])
+        lines.extend(['', f'[Workout metric charts]({chart})'])
         lines.extend(['', 'HR chart: centered 15 s moving average of available samples (±7.5 s), '
                       'calculated separately for continuous measurement segments. Gaps >2 s and pauses separate windows. '
                       'Gaps in the heart rate line are connected linearly on the chart only. '
@@ -275,6 +370,21 @@ def report_body(cloud, analysis, entry, retrieved, chart):
                       'Their axes use twice the smoothed min-max span around its midpoint, '
                       'with minimum data spans of 0.5 min/km and 1 m. Pace bounds shift upward '
                       'if needed to keep the lower limit nonnegative. Smoothing affects charts only.'])
+        lines.extend(['', 'Additional charts are included only when their measurements exist. '
+                      'Power: 15 s mean and filled line. Speed: 15 s median in km/h and filled line. '
+                      'Cadence, ground contact and estimated step length: observed dots (reduced preserving extrema) '
+                      'with a 15 s median trend, no area fill. Their doubled axis ranges include the observed dots. '
+                      'Running/walking cadence is converted from cycles/min to steps/min; '
+                      'other cadence remains rpm. Ground contact is in ms. '
+                      'Estimated single step length = 30 * simultaneous speed (m/s) / cadence (cycles/min); '
+                      'missing or nonpositive speed/cadence pairs are omitted.', '',
+                      'Estimated terrain grade is 100 * rise/run across actual endpoint samples '
+                      'within ±25 m, requiring at least 20 m and three distinct distance observations, '
+                      'then a centered 15 s mean. Windows do not cross pauses, input gaps >2 s, '
+                      'missing elevation/distance, distance resets, or stationary stretches >2 s. '
+                      'It is a local estimate, not a surveyed gradient. Its doubled range includes zero; '
+                      'green/blue areas show uphill/downhill relative to zero. '
+                      'New chart gaps remain visible. Source measurements and workout statistics are unchanged.'])
     return '\n'.join(lines)
 
 
