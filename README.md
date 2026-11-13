@@ -19,6 +19,7 @@ The current tools download data from Cloud API; this repository has no MCP clien
 ## Contents
 
 - [Highlights](#highlights)
+- [Independence and API access](#independence-and-api-access)
 - [Quick start with Docker](#quick-start-with-docker)
 - [Marathon example](#example-analysis-marathon)
 - [Project structure](#structure)
@@ -39,10 +40,33 @@ The current tools download data from Cloud API; this repository has no MCP clien
 - Generate Markdown/JSON reports and portable SVG charts with smoothed heart rate.
 - Run in Docker while keeping credentials and raw workout files outside the image and Git.
 
+## Independence and API access
+
+This is an independent project, not affiliated with, endorsed by, or sponsored
+by Suunto Oy. Suunto is a trademark of Suunto Oy.
+
+Connecting to Suunto Cloud API requires an approved API application and
+credentials supplied by the installation's operator. The operator is
+responsible for obtaining any required API agreement, subscriptions, and
+approvals, and for complying with Suunto's API terms and rate limits. User
+consent through OAuth does not replace these requirements. No shared
+application credentials or API access are provided with this repository.
+
+Suunto's [API Zone](https://apizone.suunto.com/) describes access for approved
+companies and organizations providing tools, apps, or services to a public
+audience, and states that API access is not offered for personal use. A Suunto
+account or watch alone does not grant Cloud API access. Review the
+[official FAQ](https://apizone.suunto.com/faq) before setting up an installation.
+
+The project's GPL license grants rights to this code; it does not grant access
+to Suunto services or rights to Suunto trademarks.
+
 ## Quick start with Docker
 
 You need Git, Docker with Compose, and a Suunto API Zone application with a
-Developer API subscription. Python and Node.js are included in the image.
+subscription approved for your intended use. See
+[API access requirements](#independence-and-api-access). Python and Node.js
+are included in the image.
 
 ```sh
 git clone https://github.com/n0kit31/suunto-cloud-training-analisys.git
@@ -125,7 +149,7 @@ For local execution:
 
 - Python 3.9+ on macOS or Linux, with time zone data available for the user's local time zone.
 - Node.js and the `fit-file-parser` package for FIT decoding.
-- An OAuth application and Developer API subscription in [Suunto API Zone](https://apizone.suunto.com/how-to-start).
+- Your own approved OAuth application and API subscription in [Suunto API Zone](https://apizone.suunto.com/how-to-start), subject to the [API access requirements](#independence-and-api-access).
 
 ## Local setup
 
@@ -288,3 +312,7 @@ Copyright (C) 2026 Marcin Krzyżanowski.
 
 This project is licensed under **GNU GPL v3 or later** (`GPL-3.0-or-later`).
 See [LICENSE](LICENSE) for the full text.
+
+Dependencies retain their own licenses. See
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for dependency licenses and
+the location of the original notices included in the Docker image.

@@ -5,6 +5,11 @@ The host only needs Docker Desktop or Docker Engine with Compose; Python and
 Node.js are not required. The container provides the same CLI commands as
 local execution.
 
+Cloud API commands require an approved API application and credentials
+supplied by the installation's operator. See
+[independence and API access](../README.md#independence-and-api-access) for
+Suunto's access requirements and the operator's responsibilities.
+
 ## Setup
 
 From the repository directory:
@@ -90,6 +95,14 @@ The official Suunto MCP remains an external agent integration. The image handles
 direct Cloud API and FIT access; it does not use the host application's MCP
 authorization.
 
+## Third-party licenses
+
+The image includes the matching Node.js license and bundled component notices
+at `/usr/local/share/doc/node/LICENSE`. FIT decoder dependencies retain their
+original license files under `/app/suunto-cloud/node_modules/`. The image also
+includes [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) in the application
+directory. These components retain their own licenses.
+
 ## Project helper
 
 The `../skills/suunto-training-analysis/scripts/run-docker.sh` helper sets UID/GID
@@ -110,5 +123,5 @@ sh scripts/docker/test-image.sh
 
 The script builds the `test` stage with offline tests, then the application
 image, checks the CLI without network access, and verifies that the image
-contains no private configuration or runtime data. It does not use your
-credentials or call Suunto API.
+contains third-party license notices and no private configuration or runtime
+data. It does not use your credentials or call Suunto API.
