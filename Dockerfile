@@ -49,7 +49,10 @@ CMD ["--help"]
 
 FROM runtime AS test
 COPY tests ./tests
-RUN python3 -m unittest discover -s tests -t . -v
+COPY scripts/update-test-badge.py ./scripts/update-test-badge.py
+COPY docs/badges/tests.svg ./docs/badges/tests.svg
+RUN python3 -m unittest discover -s tests -t . -v \
+    && python3 scripts/update-test-badge.py --check
 
 
 FROM runtime AS app

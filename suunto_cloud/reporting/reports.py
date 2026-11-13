@@ -8,6 +8,7 @@ from html import escape
 import math
 from pathlib import Path
 from statistics import median, mean
+from typing import Optional
 
 from suunto_cloud.storage.local import private_json
 from suunto_cloud.analysis.metrics import active_samples, number, seconds
@@ -28,7 +29,7 @@ class ChartPanel:
     color: str
     inverted: bool = False
     style: str = 'area'
-    raw_groups: list | None = None
+    raw_groups: Optional[list] = None
     digits: int = 0
 
 
