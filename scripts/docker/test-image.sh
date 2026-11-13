@@ -19,6 +19,13 @@ from zoneinfo import ZoneInfo
 from suunto_cloud import __version__
 
 root = Path("/app/suunto-cloud")
+node_license = Path("/usr/local/share/doc/node/LICENSE").read_text()
+assert "Copyright Node.js contributors" in node_license, "Node.js copyright notice is missing"
+assert "permission notice shall be included" in node_license, "Node.js license terms are missing"
+assert (root / "THIRD_PARTY_NOTICES.md").is_file(), "Third-party notices are missing"
+for package in ("fit-file-parser", "buffer", "base64-js", "ieee754"):
+    notices = (root / "node_modules" / package).glob("LICENSE*")
+    assert any(path.is_file() and path.stat().st_size > 0 for path in notices), f"License missing for {package}"
 assert __version__ == os.environ["SUUNTO_IMAGE_VERSION"], "Image version label does not match the application"
 assert json.loads((root / "package.json").read_text())["version"] == __version__, "Package version mismatch"
 assert os.geteuid() != 0, "Image must run as a non-root user"
@@ -28,5 +35,5 @@ assert not (root / ".git").exists(), "Git history found in image"
 assert not (root / "tests").exists(), "Test files found in application image"
 for name in ("UTC", "America/New_York", "Asia/Tokyo"):
     assert ZoneInfo(name).key == name
-print("Image checks passed: matching release versions, non-root user, timezone data, no private configuration or runtime data.")
+print("Image checks passed: third-party license notices, matching release versions, non-root user, timezone data, no private configuration or runtime data.")
 '

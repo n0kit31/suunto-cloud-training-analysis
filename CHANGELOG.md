@@ -20,6 +20,12 @@ Suunto workouts, with local reports and portable charts.
 - Configurable user time zones for calendar dates, local timestamps, filenames, and reports, including daylight saving transitions.
 - Docker and Compose runtime, CLI version reporting, and container image checks.
 - GitHub Actions CI, a generated test-count badge, English documentation, and an approved marathon example.
+- Documentation of project independence, API access requirements, and installation operator responsibilities.
+- Third-party license summary and container checks for runtime and FIT decoder license notices.
+
+### Fixed
+
+- Preserve the matching Node.js license and bundled component notices in the Docker image.
 
 ### Release notes
 

@@ -28,11 +28,12 @@ RUN apt-get update \
     && useradd --uid 1000 --gid 1000 --create-home suunto
 
 COPY --from=node-dependencies /usr/local/bin/node /usr/local/bin/node
+COPY --from=node-dependencies /usr/local/LICENSE /usr/local/share/doc/node/LICENSE
 
 WORKDIR /app/suunto-cloud
 COPY --from=node-dependencies /dependencies/node_modules ./node_modules
 COPY suunto_cloud ./suunto_cloud
-COPY sync.py LICENSE package.json package-lock.json ./
+COPY sync.py LICENSE THIRD_PARTY_NOTICES.md package.json package-lock.json ./
 
 RUN mkdir -p .local /app/reports /app/visualizations \
     && chown suunto:suunto .local /app/reports /app/visualizations \
