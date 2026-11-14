@@ -21,6 +21,8 @@ reports/
 visualizations/
 exports/
 TRAINING*.md
+# The web app plan is kept in local project memory outside this repository.
+/docs/plans/2026-11-13-local-web-app.md
 *.log
 *.bak
 *.tmp
