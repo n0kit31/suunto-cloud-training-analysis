@@ -241,8 +241,10 @@ distinct distance samples. Windows do not cross pauses, missing inputs,
 distance resets, or recording/stationary gaps over 2 s. The grade axis includes
 zero. It is an estimate of local slope, rather than a surveyed measurement.
 Reports use decimal points, and chart filenames end in `-overview.svg`.
-The chart title includes the activity type, for example
-`Workout overview · Trail running · 2026-01-15 08:00`.
+The chart title includes the activity type and recorded start–end times, for example
+`Workout overview · Trail running · 2026-01-15 08:00–09:10`.
+If the workout crosses midnight, both dates are shown. An unavailable end time
+is left out rather than reconstructed from active time.
 Labels use [Suunto App activity IDs](https://aspartnercontent.blob.core.windows.net/apizone/docs/Activities.pdf),
 then an explicit activity name or FIT sport/sub-sport when the ID is not mapped.
 The current version downloads one page of the workout list, not the complete
@@ -313,6 +315,12 @@ sleep tile uses the worse available comparison of duration and quality, and
 overnight HR uses its own history. The report and JSON retain these rules and
 the separate metric statuses. These are explicit display rules, not a recreation
 of Suunto's unpublished status algorithm.
+
+A separate **Workout feeling** tile shows the subjective rating recorded in
+Suunto after the workout: 4–5 green, 3 yellow, 1–2 red, and missing/invalid ratings
+gray. Its colors follow the 1–5 rating, independently of historical recovery
+comparisons. The tile also works without sleep data; no rating is inferred from
+HRV, pace, or heart rate. The report includes the recorded feeling as well.
 
 Other commands: `workouts`, `track`, `analyze`, and `access`.
 Help: `python3 -m suunto_cloud --help` or `python3 -m suunto_cloud sync --help`.

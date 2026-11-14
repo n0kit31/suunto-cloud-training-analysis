@@ -59,7 +59,7 @@ class RecoveryOutputTests(unittest.TestCase):
             charts([out['json_path']])
         saved = json.loads(Path(out['json_path']).read_text())
         self.assertEqual(saved['recovery'], self.context)
-        self.assertIn('Pre-workout recovery', Path(saved['chart_path']).read_text())
+        self.assertIn('Recovery &amp; workout feeling', Path(saved['chart_path']).read_text())
 
     def test_explicit_sleep_import_updates_chart_and_preserves_existing_assessment(self):
         out = self.outputs()
@@ -124,3 +124,26 @@ class RecoveryOutputTests(unittest.TestCase):
         self.assertEqual(tiles['2'].attrib['data-status'], 'reference')
         self.assertIn('Outside reference', ' '.join(x.text or '' for x in tiles['0']))
         self.assertIn('Within reference', ' '.join(x.text or '' for x in tiles['1']))
+
+    def test_feeling_tile_uses_only_valid_recorded_ratings(self):
+        for rating, expected in ((5, 'green'), (4, 'green'), (3, 'yellow'), (2, 'red'), (1, 'red'),
+                                 (None, 'unknown'), (0, 'unknown'), (6, 'unknown'),
+                                 (True, 'unknown'), (2.5, 'unknown')):
+            with self.subTest(rating=rating):
+                self.cloud['summary']['feeling'] = rating
+                out = self.outputs(charts=True, recovery=self.context)
+                tree = ET.parse(out['chart_path'])
+                tile = next(x for x in tree.iter() if x.attrib.get('data-tile') == '5')
+                self.assertEqual(tile.attrib['data-status'], expected)
+                text = ' '.join(x.text or '' for x in tile)
+                self.assertIn('Workout feeling', text)
+                self.assertIn('No rating' if expected == 'unknown' else f'{rating}/5', text)
+
+    def test_feeling_is_available_without_sleep_data_and_is_labeled_after_workout(self):
+        self.cloud['summary']['feeling'] = 5
+        out = self.outputs(charts=True)
+        tree = ET.parse(out['chart_path'])
+        tile = next(x for x in tree.iter() if 'data-tile' in x.attrib)
+        self.assertEqual(tile.attrib['data-status'], 'green')
+        self.assertIn('Recorded after workout', ' '.join(x.text or '' for x in tile))
+        self.assertIn('| Workout feeling | 5/5 (recorded after workout) |', Path(out['markdown_path']).read_text())

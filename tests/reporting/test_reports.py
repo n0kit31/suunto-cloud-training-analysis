@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import patch
 import xml.etree.ElementTree as ET
 
-from suunto_cloud.reporting.reports import CHART_MARKER, cleanup_charts, moving_average, pace_from_speed, pace_series, thin, write_outputs
+from suunto_cloud.reporting.reports import CHART_MARKER, cleanup_charts, moving_average, pace_from_speed, pace_series, thin, workout_time_label, write_outputs
 from suunto_cloud.analysis.packet import cloud_metrics
 from suunto_cloud.analysis.fit import summarize
 from suunto_cloud.activities import activity_label
@@ -56,6 +56,17 @@ class OutputTests(unittest.TestCase):
         tree = ET.parse(out['chart_path'])
         title = next(x.text for x in tree.iter() if x.tag.endswith('title'))
         self.assertIn('Other <activity> & test', title)
+
+    def test_title_times_use_the_recorded_end_and_preserve_a_midnight_date_change(self):
+        self.cloud.update(start_local='2026-01-15T18:00:00+01:00', stop_local='2026-01-15T19:10:00+01:00')
+        self.assertEqual(workout_time_label(self.cloud), '2026-01-15 18:00–19:10')
+        self.cloud.update(start_local='2026-01-15T23:50:00+01:00', stop_local='2026-01-16T00:20:00+01:00')
+        out = write_outputs(self.root, self.cloud, self.analysis, self.data, self.entry, 'now', charts=True)
+        tree = ET.parse(out['chart_path'])
+        title = next(x.text for x in tree.iter() if x.tag.endswith('title'))
+        self.assertIn('2026-01-15 23:50 – 2026-01-16 00:20', title)
+        self.cloud['stop_local'] = None
+        self.assertEqual(workout_time_label(self.cloud), '2026-01-15 23:50')
 
     def test_hr_smoothing_softens_brief_spikes_and_preserves_sustained_changes(self):
         points = [(t, 180 if t == 10 else 150 if t >= 30 else 130) for t in range(61)]

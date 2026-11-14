@@ -14,7 +14,7 @@ from suunto_cloud.storage.local import private_json
 from suunto_cloud.activities import activity_label
 from suunto_cloud.analysis.metrics import active_samples, number, seconds
 from suunto_cloud.analysis.chart_metrics import grade_samples, step_length
-from suunto_cloud.reporting.recovery import recovery_markdown, recovery_svg
+from suunto_cloud.reporting.recovery import recovery_markdown, recovery_svg, workout_feeling
 
 START = '<!-- suunto-generated:start -->'
 END = '<!-- suunto-generated:end -->'
@@ -44,6 +44,18 @@ def duration(value):
 
 def display(value, digits=1):
     return '—' if value is None else f'{value:.{digits}f}' if number(value) else str(value)
+
+
+def workout_time_label(cloud):
+    start = datetime.fromisoformat(cloud['start_local'])
+    label = start.strftime('%Y-%m-%d %H:%M')
+    if cloud.get('stop_local'):
+        stop = datetime.fromisoformat(cloud['stop_local'])
+        if stop.date() == start.date():
+            label += stop.strftime('–%H:%M')
+        else:
+            label += stop.strftime(' – %Y-%m-%d %H:%M')
+    return label
 
 
 def pace_from_speed(speed):
@@ -215,13 +227,15 @@ def chart_svg(data, analysis, cloud, hr_range=None, recovery=None):
     if not panels:
         return None
     width, left, right, ph, spacing = 1200, 85, 40, 170, 280
-    recovery_header, header_offset = recovery_svg(recovery)
+    recovery_header, header_offset = recovery_svg(recovery, (cloud.get('summary') or {}).get('feeling'))
     height = 140 + len(panels) * spacing + header_offset
     pw = width - left - right
     x = lambda t: left + t / total * pw
-    date = datetime.fromisoformat(cloud['start_local']).strftime('%Y-%m-%d %H:%M')
+    date = workout_time_label(cloud)
     activity = activity_label(cloud, data)
-    heading = escape(' · '.join(part for part in ('Workout overview', activity, date) if part))
+    heading_text = ' · '.join(part for part in ('Workout overview', activity, date) if part)
+    heading = escape(heading_text)
+    heading_size = 25 if len(heading_text) <= 85 else 20
     lap_by_index = {i: lap for i, lap in enumerate(data.get('laps', []), 1)}
     work_laps = [lap_by_index[r['work_lap_index']]
                  for r in analysis['additional_metrics']['slower_next_lap_hr_changes']]
@@ -250,7 +264,7 @@ def chart_svg(data, analysis, cloud, hr_range=None, recovery=None):
            'which fills toward zero (green uphill, blue downhill). Missing metrics are omitted.</desc>',
            f'<rect width="{width}" height="{height}" fill="#ffffff"/>',
            '<g font-family="Arial, sans-serif" fill="#17212b">',
-           f'<text x="85" y="35" font-size="25">{heading}</text>',
+           f'<text x="85" y="35" font-size="{heading_size}">{heading}</text>',
            f'<text x="85" y="65" font-size="17">{subtitle}</text>']
     out.extend(recovery_header)
     for index, panel in enumerate(panels):
@@ -315,6 +329,7 @@ def chart_svg(data, analysis, cloud, hr_range=None, recovery=None):
 
 def report_body(cloud, analysis, entry, retrieved, chart, recovery=None):
     summary, details = cloud['summary'], analysis['additional_metrics']
+    feeling = workout_feeling(summary.get('feeling'))['rating']
     zone = cloud.get('timezone') or datetime.fromisoformat(cloud['start_local']).tzname()
     lines = [f"Retrieved: {retrieved}; timezone {zone}; ID `{cloud['workout_key']}`.", '',
              '| Metric | Value |', '| --- | --- |',
@@ -325,6 +340,7 @@ def report_body(cloud, analysis, entry, retrieved, chart, recovery=None):
              f"| Ascent / descent | {display(cloud['ascent_m'])} / {display(cloud['descent_m'])} m |",
              f"| TSS | {display((cloud['tss'] or {}).get('trainingStressScore'), 3)}; {(cloud['tss'] or {}).get('calculationMethod')} |",
              f"| PTE / estimated VO₂max | {display(summary.get('pte'))} / {display((cloud['fitness'] or {}).get('estimatedVo2Max'))} |",
+             f"| Workout feeling | {str(feeling) + '/5 (recorded after workout)' if feeling is not None else '—'} |",
              *recovery_markdown(recovery),
              '', '## Laps and running mechanics', '',
              'One non-overlapping lap type was selected. Pace uses active time and distance; mechanics use available paired samples.', '',
