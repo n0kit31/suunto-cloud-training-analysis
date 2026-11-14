@@ -250,6 +250,41 @@ Regenerate an existing chart without downloading data again:
 python3 -m suunto_cloud charts ../reports/suunto-2026-01-15-080000.json
 ```
 
+### Sleep and HRV context
+
+Analyses automatically read `.local/sleep.json` when present. This private
+snapshot comes from the official Suunto MCP or an authorized Suunto 247 API
+integration; the CLI does not connect to the agent's MCP session or fetch sleep
+with the workout endpoint. Refresh the snapshot before analyzing recent workouts.
+Its format is `{"source": "official_suunto_mcp", "retrieved_at_utc": "…", "data": [...]}`,
+where `data` contains the unmodified Suunto 247 `timestamp` / `entryData` samples.
+Keep this file in `.local/`, excluded from Git and Docker images. The source
+and retrieval timestamp are retained in the report.
+
+Use `sync --analysis --sleep-data PATH` for another snapshot, or add context to
+an existing chart without downloading FIT again:
+
+```sh
+python3 -m suunto_cloud charts ../reports/suunto-2026-01-15-080000.json --sleep-data .local/sleep.json
+```
+
+The chart header and report show the last completed non-nap sleep within 24 h
+before the workout: nightly HRV, seven-day mean and coverage, sleep duration and
+quality, and average/minimum nighttime HR. Complete snapshots are deduplicated
+by `SleepId`. Sleep duration uses the sum of deep/light/REM stages when all are
+available, otherwise the reported `Duration`. Nighttime HR is not daytime
+resting HR. Missing values remain missing, and fewer than three observed nights
+do not produce a seven-day mean.
+
+With at least 14 nights in the preceding 60 calendar days, the header also shows
+our own descriptive HRV reference: the median and 10th–90th percentiles, excluding
+the selected night. These are **not Suunto's normal range or readiness status**.
+Each local wake date contributes at most one main sleep. Pre-workout statistics
+exclude nights ending after workout start. The first main sleep starting within
+24 h after workout end is described separately in the report, with no claim that
+the workout caused a change. Regenerating charts preserves their saved context;
+`--sleep-data` explicitly recomputes it from the supplied snapshot.
+
 Other commands: `workouts`, `track`, `analyze`, and `access`.
 Help: `python3 -m suunto_cloud --help` or `python3 -m suunto_cloud sync --help`.
 The legacy `python3 sync.py ...` command still works through a compatibility wrapper.

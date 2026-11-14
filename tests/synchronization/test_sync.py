@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo
 from suunto_cloud.synchronization import service as sync
 from tests.fixtures import decoded, workout
 from suunto_cloud.timezones import TimeZoneError
+from tests.analysis.test_sleep import night, snapshot
 
 
 
@@ -98,6 +99,27 @@ class SyncAnalysisTests(unittest.TestCase):
         with contextlib.redirect_stdout(io.StringIO()):
             manifest = sync.sync(['2026-11-11'], analysis=True, charts=True)
         self.assertTrue(Path(manifest['workouts'][0]['outputs']['chart_path']).is_file())
+
+    def test_private_sleep_snapshot_is_in_full_brief_and_saved_reports(self):
+        source = self.root / 'sleep.json'
+        source.write_text(json.dumps(snapshot([night('2026-11-11', hrv=60)])))
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            manifest = sync.sync(['2026-11-11'], analysis=True, brief=True, charts=True)
+        brief = json.loads(output.getvalue())
+        full = json.loads((self.root / 'analysis.json').read_text())
+        recovery = brief['workouts'][0]['recovery']
+        self.assertEqual(recovery['before']['hrv_ms'], 60)
+        self.assertEqual(full['workouts'][0]['recovery'], recovery)
+        saved = json.loads(Path(manifest['workouts'][0]['outputs']['json_path']).read_text())
+        self.assertEqual(saved['recovery'], recovery)
+
+    def test_explicit_invalid_sleep_is_rejected_before_downloading_workouts(self):
+        source = self.root / 'invalid-sleep.json'
+        source.write_text('{"data": "invalid"}')
+        with self.assertRaises(ValueError):
+            sync.sync(['2026-11-11'], analysis=True, sleep_data=source)
+        self.fetch_list.assert_not_called()
 
     def test_user_timezone_is_consistent_in_selection_filenames_and_reports(self):
         with contextlib.redirect_stdout(io.StringIO()):

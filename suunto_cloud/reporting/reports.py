@@ -13,6 +13,7 @@ from typing import Optional
 from suunto_cloud.storage.local import private_json
 from suunto_cloud.analysis.metrics import active_samples, number, seconds
 from suunto_cloud.analysis.chart_metrics import grade_samples, step_length
+from suunto_cloud.reporting.recovery import recovery_markdown, recovery_svg
 
 START = '<!-- suunto-generated:start -->'
 END = '<!-- suunto-generated:end -->'
@@ -124,7 +125,7 @@ def thin(points, limit):
     return [points[i] for i in sorted(indices)]
 
 
-def chart_svg(data, analysis, cloud, hr_range=None):
+def chart_svg(data, analysis, cloud, hr_range=None, recovery=None):
     rows = active_samples(data, analysis['timer'])
     if not rows:
         return None
@@ -213,7 +214,8 @@ def chart_svg(data, analysis, cloud, hr_range=None):
     if not panels:
         return None
     width, left, right, ph, spacing = 1200, 85, 40, 170, 280
-    height = 140 + len(panels) * spacing
+    recovery_header, header_offset = recovery_svg(recovery)
+    height = 140 + len(panels) * spacing + header_offset
     pw = width - left - right
     x = lambda t: left + t / total * pw
     date = datetime.fromisoformat(cloud['start_local']).strftime('%Y-%m-%d %H:%M')
@@ -245,10 +247,11 @@ def chart_svg(data, analysis, cloud, hr_range=None):
            '<g font-family="Arial, sans-serif" fill="#17212b">',
            f'<text x="85" y="35" font-size="25">Workout overview · {date}</text>',
            f'<text x="85" y="65" font-size="17">{subtitle}</text>']
+    out.extend(recovery_header)
     for index, panel in enumerate(panels):
         title, groups, lo, hi = panel.title, panel.groups, panel.lo, panel.hi
         color, inverted = panel.color, panel.inverted
-        top = 130 + index * spacing
+        top = 130 + header_offset + index * spacing
         y = lambda v: top + ((v - lo) if inverted else (hi - v)) / (hi - lo) * ph
         out.extend([f'<g data-metric="{panel.key}" data-style="{panel.style}">',
                     f'<defs><clipPath id="panel-{index}"><rect x="{left}" y="{top}" '
@@ -305,7 +308,7 @@ def chart_svg(data, analysis, cloud, hr_range=None):
     return '\n'.join(out) + '\n'
 
 
-def report_body(cloud, analysis, entry, retrieved, chart):
+def report_body(cloud, analysis, entry, retrieved, chart, recovery=None):
     summary, details = cloud['summary'], analysis['additional_metrics']
     zone = cloud.get('timezone') or datetime.fromisoformat(cloud['start_local']).tzname()
     lines = [f"Retrieved: {retrieved}; timezone {zone}; ID `{cloud['workout_key']}`.", '',
@@ -317,6 +320,7 @@ def report_body(cloud, analysis, entry, retrieved, chart):
              f"| Ascent / descent | {display(cloud['ascent_m'])} / {display(cloud['descent_m'])} m |",
              f"| TSS | {display((cloud['tss'] or {}).get('trainingStressScore'), 3)}; {(cloud['tss'] or {}).get('calculationMethod')} |",
              f"| PTE / estimated VO₂max | {display(summary.get('pte'))} / {display((cloud['fitness'] or {}).get('estimatedVo2Max'))} |",
+             *recovery_markdown(recovery),
              '', '## Laps and running mechanics', '',
              'One non-overlapping lap type was selected. Pace uses active time and distance; mechanics use available paired samples.', '',
              '| Lap | m | Time | Pace/km | Avg/max HR | W | +m/−m | Steps/min | Contact ms | Oscillation cm | Estimated step m |',
@@ -389,17 +393,18 @@ def report_body(cloud, analysis, entry, retrieved, chart):
     return '\n'.join(lines)
 
 
-def write_outputs(project, cloud, analysis, decoded, entry, retrieved, charts=False, hr_range=None):
+def write_outputs(project, cloud, analysis, decoded, entry, retrieved, charts=False, hr_range=None,
+                  recovery=None):
     stem = datetime.fromisoformat(cloud['start_local']).strftime('%Y-%m-%d-%H%M%S')
     reports, chart_dir = project / 'reports', project / 'visualizations'
     reports.mkdir(exist_ok=True)
     chart = chart_dir / f'suunto-{stem}-overview.svg'
-    svg = chart_svg(decoded, analysis, cloud, hr_range=hr_range) if charts else None
+    svg = chart_svg(decoded, analysis, cloud, hr_range=hr_range, recovery=recovery) if charts else None
     if svg:
         chart_dir.mkdir(exist_ok=True)
         chart.write_text(svg)
     markdown, json_path = reports / f'suunto-{stem}.md', reports / f'suunto-{stem}.json'
-    body = report_body(cloud, analysis, entry, retrieved, str(chart) if svg else None)
+    body = report_body(cloud, analysis, entry, retrieved, str(chart) if svg else None, recovery)
     block = f'{START}\n{body}\n{END}'
     previous = markdown.read_text() if markdown.exists() else f'# Workout {stem}\n\n'
     if START in previous and END in previous:
@@ -410,7 +415,8 @@ def write_outputs(project, cloud, analysis, decoded, entry, retrieved, charts=Fa
         content = previous.rstrip() + '\n\n' + block + '\n'
     markdown.write_text(content)
     private_json(json_path, {'retrieved_at_utc': retrieved, 'cloud': cloud, 'fit': analysis,
-                             'source': dict(entry), 'chart_path': str(chart) if svg else None})
+                             'source': dict(entry), 'recovery': recovery,
+                             'chart_path': str(chart) if svg else None})
     return {'markdown_path': str(markdown), 'json_path': str(json_path),
             'chart_path': str(chart) if svg else None}
 

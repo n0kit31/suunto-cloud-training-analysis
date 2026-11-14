@@ -19,16 +19,22 @@ from suunto_cloud.downloads.workouts import fetch_workouts, save_workouts, worko
 from suunto_cloud.downloads.tracks import choose_workout, fetch_fit, save_fit
 from suunto_cloud.analysis.fit import summarize
 from suunto_cloud.analysis.packet import build_packet, brief_packet, cloud_metrics
+from suunto_cloud.analysis.sleep import recovery_context
+from suunto_cloud.storage.sleep import read_sleep
 from suunto_cloud.reporting.reports import write_outputs, cleanup_charts
 
 
-def sync(dates, decode=True, analysis=False, brief=False, charts=False, zone=None):
+def sync(dates, decode=True, analysis=False, brief=False, charts=False, zone=None, sleep_data=None):
     if analysis and not decode:
         raise ValueError('--analysis requires FIT decoding; remove --no-decode.')
     if brief and not analysis:
         raise ValueError('--brief requires --analysis.')
     if charts and not analysis:
         raise ValueError('--charts requires --analysis.')
+    if sleep_data is not None and not analysis:
+        raise ValueError('--sleep-data requires --analysis.')
+    sleep = read_sleep(sleep_data or private_directory() / 'sleep.json',
+                       required=sleep_data is not None) if analysis else None
     started = perf_counter()
 
     def progress(message):
@@ -111,9 +117,12 @@ def sync(dates, decode=True, analysis=False, brief=False, charts=False, zone=Non
         for entry in manifest['workouts']:
             output_started = perf_counter()
             key = entry['workout_key']
-            entry['outputs'] = write_outputs(ROOT.parent, cloud_metrics(by_key[key], zone), analyses[key],
+            cloud = cloud_metrics(by_key[key], zone)
+            entry['recovery'] = recovery_context(cloud, sleep)
+            entry['outputs'] = write_outputs(ROOT.parent, cloud, analyses[key],
                                              json.loads(Path(entry['decoded_path']).read_text()),
-                                             entry, manifest['retrieved_at_utc'], charts=charts)
+                                             entry, manifest['retrieved_at_utc'], charts=charts,
+                                             recovery=entry['recovery'])
             entry['timings_seconds']['outputs'] = round(perf_counter() - output_started, 4)
         manifest['removed_old_charts'] = cleanup_charts(
             ROOT.parent / 'visualizations', {entry['outputs']['chart_path'] for entry in manifest['workouts']}) if charts else []
@@ -145,13 +154,16 @@ def main(argv=None):
                         help='With --analysis, print a brief view; full data and reports are saved to files')
     parser.add_argument('--charts', action='store_true',
                         help='With --analysis, also generate charts; only when requested by the user')
+    parser.add_argument('--sleep-data', type=Path,
+                        help='Private Suunto 247 sleep JSON; defaults to .local/sleep.json when present')
     args = parser.parse_args(argv)
     for day in args.date:
         date.fromisoformat(day)  # Validate before credentials/network requests.
     zone = user_timezone()
     if args.configure:
         configure()
-    sync(args.date, decode=not args.no_decode, analysis=args.analysis, brief=args.brief, charts=args.charts, zone=zone)
+    sync(args.date, decode=not args.no_decode, analysis=args.analysis, brief=args.brief,
+         charts=args.charts, zone=zone, sleep_data=args.sleep_data)
 
 
 def run(argv=None):
