@@ -9,6 +9,7 @@ import xml.etree.ElementTree as ET
 from suunto_cloud.reporting.reports import CHART_MARKER, cleanup_charts, moving_average, pace_from_speed, pace_series, thin, write_outputs
 from suunto_cloud.analysis.packet import cloud_metrics
 from suunto_cloud.analysis.fit import summarize
+from suunto_cloud.activities import activity_label
 from tests.fixtures import fixture
 
 
@@ -32,6 +33,29 @@ class OutputTests(unittest.TestCase):
         self.assertIsNone(pace_from_speed(0))
         series = pace_series([(float(i), {'speed': 1000 / 300}) for i in range(20)], 0)
         self.assertEqual([v for _, v in series], [5, 5])
+
+    def test_activity_labels_use_suunto_ids_and_fall_back_to_fit(self):
+        for activity_id, expected in ((0, 'Walking'), (1, 'Running'), (2, 'Cycling'),
+                                      (3, 'Cross-country skiing'), (11, 'Hiking'), (22, 'Trail running')):
+            with self.subTest(activity_id=activity_id):
+                self.assertEqual(activity_label({'activity_id': activity_id}, self.data), expected)
+        data = {'sessions': [{'sport': 'running', 'sub_sport': 'trail'}]}
+        self.assertEqual(activity_label({'activity_id': 999}, data), 'Trail running')
+        self.assertEqual(activity_label({}, {'sessions': [{'sport': 'running'}, {'sport': 'cycling'}]}), 'Multisport')
+        self.assertIsNone(activity_label({}, {'sessions': [{'sport': 'generic'}]}))
+
+    def test_chart_title_includes_activity_and_escapes_names_for_svg(self):
+        self.cloud['activity_id'] = 22
+        out = write_outputs(self.root, self.cloud, self.analysis, self.data, self.entry, 'now', charts=True)
+        tree = ET.parse(out['chart_path'])
+        title = next(x.text for x in tree.iter() if x.tag.endswith('title'))
+        self.assertIn('Workout overview · Trail running · ', title)
+        self.assertIn(title, [x.text for x in tree.iter() if x.tag.endswith('text')])
+        self.cloud.update(activity_id=999, activity_name='Other <activity> & test')
+        out = write_outputs(self.root, self.cloud, self.analysis, self.data, self.entry, 'now', charts=True)
+        tree = ET.parse(out['chart_path'])
+        title = next(x.text for x in tree.iter() if x.tag.endswith('title'))
+        self.assertIn('Other <activity> & test', title)
 
     def test_hr_smoothing_softens_brief_spikes_and_preserves_sustained_changes(self):
         points = [(t, 180 if t == 10 else 150 if t >= 30 else 130) for t in range(61)]

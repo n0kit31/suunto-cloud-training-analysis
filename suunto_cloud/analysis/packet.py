@@ -13,6 +13,7 @@ def cloud_metrics(workout, zone=None):
     return {
         'workout_key': workout['workoutKey'],
         'activity_id': workout.get('activityId'),
+        'activity_name': workout.get('activityName'),
         'timezone': timezone_name(zone),
         'start_local': local_timestamp(start / 1000, zone).isoformat(),
         'stop_local': local_timestamp(stop / 1000, zone).isoformat() if stop is not None else None,

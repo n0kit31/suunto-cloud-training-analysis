@@ -241,6 +241,10 @@ distinct distance samples. Windows do not cross pauses, missing inputs,
 distance resets, or recording/stationary gaps over 2 s. The grade axis includes
 zero. It is an estimate of local slope, rather than a surveyed measurement.
 Reports use decimal points, and chart filenames end in `-overview.svg`.
+The chart title includes the activity type, for example
+`Workout overview · Trail running · 2026-01-15 08:00`.
+Labels use [Suunto App activity IDs](https://aspartnercontent.blob.core.windows.net/apizone/docs/Activities.pdf),
+then an explicit activity name or FIT sport/sub-sport when the ID is not mapped.
 The current version downloads one page of the workout list, not the complete
 history.
 

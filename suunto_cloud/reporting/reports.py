@@ -11,6 +11,7 @@ from statistics import median, mean
 from typing import Optional
 
 from suunto_cloud.storage.local import private_json
+from suunto_cloud.activities import activity_label
 from suunto_cloud.analysis.metrics import active_samples, number, seconds
 from suunto_cloud.analysis.chart_metrics import grade_samples, step_length
 from suunto_cloud.reporting.recovery import recovery_markdown, recovery_svg
@@ -219,6 +220,8 @@ def chart_svg(data, analysis, cloud, hr_range=None, recovery=None):
     pw = width - left - right
     x = lambda t: left + t / total * pw
     date = datetime.fromisoformat(cloud['start_local']).strftime('%Y-%m-%d %H:%M')
+    activity = activity_label(cloud, data)
+    heading = escape(' · '.join(part for part in ('Workout overview', activity, date) if part))
     lap_by_index = {i: lap for i, lap in enumerate(data.get('laps', []), 1)}
     work_laps = [lap_by_index[r['work_lap_index']]
                  for r in analysis['additional_metrics']['slower_next_lap_hr_changes']]
@@ -229,7 +232,7 @@ def chart_svg(data, analysis, cloud, hr_range=None, recovery=None):
         subtitle += ' · blue bands: interval before a slower workout step'
     out = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
            f'viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">', CHART_MARKER,
-           f'<title id="title">Workout overview {date}</title>',
+           f'<title id="title">{heading}</title>',
            '<desc id="desc">Workout panels use active workout time; recovery panels use local wake dates. '
            'Heart rate: centered 15 s moving average, with gaps connected linearly on the chart. '
            'Pace: centered 15 s moving median. Elevation: centered 15 s moving average. '
@@ -247,7 +250,7 @@ def chart_svg(data, analysis, cloud, hr_range=None, recovery=None):
            'which fills toward zero (green uphill, blue downhill). Missing metrics are omitted.</desc>',
            f'<rect width="{width}" height="{height}" fill="#ffffff"/>',
            '<g font-family="Arial, sans-serif" fill="#17212b">',
-           f'<text x="85" y="35" font-size="25">Workout overview · {date}</text>',
+           f'<text x="85" y="35" font-size="25">{heading}</text>',
            f'<text x="85" y="65" font-size="17">{subtitle}</text>']
     out.extend(recovery_header)
     for index, panel in enumerate(panels):
