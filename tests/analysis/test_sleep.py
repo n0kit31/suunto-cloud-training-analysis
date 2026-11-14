@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import unittest
 from zoneinfo import ZoneInfo
 
-from suunto_cloud.analysis.sleep import recovery_context, sleep_records
+from suunto_cloud.analysis.sleep import deviation_status, historical_reference, recovery_context, sleep_records
 
 
 def night(day='2026-01-15', hrv=50, **changes):
@@ -108,3 +108,46 @@ class SleepTests(unittest.TestCase):
 
     def test_absent_dataset_preserves_reports_without_a_recovery_card(self):
         self.assertIsNone(recovery_context(workout(), None))
+
+    def test_deviation_boundaries_and_both_directions_are_explicit(self):
+        reference = {'low': 40, 'high': 60, 'outer_low': 30, 'outer_high': 70}
+        for measurement, expected in ((40, 'green'), (60, 'green'), (39, 'yellow'), (61, 'yellow'),
+                                      (30, 'yellow'), (70, 'yellow'), (29, 'red'), (71, 'red')):
+            self.assertEqual(deviation_status(measurement, reference), expected)
+        self.assertEqual(deviation_status(None, reference), 'unknown')
+        self.assertEqual(deviation_status(50, None), 'unknown')
+
+    def test_zero_variance_history_has_a_meaningful_outer_margin(self):
+        reference = historical_reference([50] * 14)
+        self.assertEqual(reference['outer_low'], 45)
+        self.assertEqual(reference['outer_high'], 55)
+        self.assertEqual(deviation_status(51, reference), 'yellow')
+        self.assertEqual(deviation_status(56, reference), 'red')
+
+    def test_nightly_and_seven_day_statuses_use_their_own_measurements(self):
+        rows = [night(f'2026-01-{day:02d}', hrv=40 + (day % 5) * 5) for day in range(1, 15)]
+        result = recovery_context(workout(), snapshot(rows + [night(hrv=64)]))
+        self.assertEqual(result['statuses']['hrv_ms'], 'yellow')
+        self.assertEqual(result['statuses']['hrv_7d'], 'green')
+
+    def test_future_nights_cannot_change_pre_workout_colors_or_reference(self):
+        rows = [night(f'2026-01-{day:02d}') for day in range(1, 16)]
+        previous = recovery_context(workout(), snapshot(rows))
+        result = recovery_context(workout(), snapshot(rows + [night('2026-01-16', hrv=999, HRAvg=100)]))
+        self.assertEqual(result['statuses'], previous['statuses'])
+        self.assertEqual(result['references'], previous['references'])
+
+    def test_color_coverage_is_independent_for_each_metric(self):
+        rows = [night(f'2026-01-{day:02d}', SleepQualityScore=None) for day in range(1, 15)]
+        result = recovery_context(workout(), snapshot(rows + [night()]))
+        self.assertEqual(result['statuses']['quality_score'], 'unknown')
+        self.assertEqual(result['statuses']['hrv_ms'], 'green')
+        self.assertEqual(result['statuses']['sleep'], 'green')  # The available duration comparison.
+
+    def test_full_sleep_stages_are_preferred_over_a_later_partial_snapshot(self):
+        full = night(DeepSleepDuration=6000, LightSleepDuration=18000, REMSleepDuration=4800)
+        partial = night(AvgHRVSampleCount=100)
+        result = recovery_context(workout(), snapshot([full, partial]))
+        self.assertEqual(result['before']['stages_seconds']['deep'], 6000)
+        self.assertEqual(len(result['nights_7d']), 7)
+        self.assertEqual(sum(row['sleep'] is None for row in result['nights_7d']), 6)

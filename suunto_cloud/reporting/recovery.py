@@ -3,6 +3,8 @@
 from datetime import datetime
 from html import escape
 
+from suunto_cloud.reporting.recovery_charts import STATUS_COLORS, recovery_charts
+
 
 def value(number, unit='', digits=0):
     return '—' if number is None else f'{number:.{digits}f}{unit}'
@@ -30,37 +32,45 @@ def recovery_svg(context):
                 '<text x="85" y="136" font-size="16" fill="#526170">No completed sleep within 24 h before workout start.</text>',
                 '</g>'], 80
     week, reference = context['hrv_7d'], context['reference_60d']
+    statuses = context.get('statuses') or {}
     cards = [
         ('Nightly HRV', value(night['hrv_ms'], ' ms'),
-         f"{value(night['hrv_sample_count'])} samples"),
+         f"{value(night['hrv_sample_count'])} samples", statuses.get('hrv_ms', 'unknown')),
         ('7-day average HRV', value(week['average_ms'], ' ms', 1),
-         f"{week['night_count']}/7 nights · calculated"),
+         f"{week['night_count']}/7 nights · calculated", statuses.get('hrv_7d', 'unknown')),
         ('60-day HRV reference',
          f"{value(reference['low_ms'])}–{value(reference['high_ms'])} ms" if reference else 'No reference',
          f"median {value(reference['median_ms'])} ms · {reference['night_count']} nights" if reference
-         else f"{context['reference_night_count']}/14 required nights"),
+         else f"{context['reference_night_count']}/14 required nights", 'reference'),
         ('Sleep before workout', sleep_time(night['sleep_seconds']),
-         f"quality {value(night['quality_score'])}/100"),
+         f"quality {value(night['quality_score'])}/100", statuses.get('sleep', 'unknown')),
         ('Average overnight HR', value(night['hr_avg_bpm'], ' bpm'),
-         f"minimum {value(night['hr_min_bpm'])} bpm"),
+         f"minimum {value(night['hr_min_bpm'])} bpm", statuses.get('hr_avg_bpm', 'unknown')),
     ]
     out = ['<g data-section="pre-workout-recovery">',
            '<text x="85" y="109" font-size="20" font-weight="bold">Pre-workout recovery</text>',
            f'<text x="85" y="135" font-size="15" fill="#526170">Sleep: {escape(night_label(night))}</text>']
-    for index, (label, main, detail) in enumerate(cards):
+    for index, (label, main, detail, status) in enumerate(cards):
         x = 85 + index * 217
-        out.extend([f'<rect x="{x}" y="151" width="207" height="91" rx="8" fill="#f3f6f8"/>',
+        background, foreground, border, status_label = STATUS_COLORS[status]
+        out.extend([f'<g data-tile="{index}" data-status="{status}">',
+                    f'<title>{escape(label)}: {status_label}</title>',
+                    f'<rect x="{x}" y="151" width="207" height="112" rx="8" fill="{background}" stroke="{border}"/>',
                     f'<text x="{x+12}" y="174" font-size="13" fill="#526170">{escape(label)}</text>',
                     f'<text x="{x+12}" y="205" font-size="22" font-weight="bold">{escape(main)}</text>',
-                    f'<text x="{x+12}" y="228" font-size="12" fill="#526170">{escape(detail)}</text>'])
+                    f'<text x="{x+12}" y="228" font-size="12" fill="#526170">{escape(detail)}</text>',
+                    f'<text x="{x+12}" y="250" font-size="12" font-weight="bold" fill="{foreground}">{status_label}</text>',
+                    '</g>'])
     note = ('Calculated reference: central 80% of the preceding 60 days; '
             'selected night excluded. Not the Suunto normal range.' if reference else
             'Insufficient history for a reference. The 7-day average requires at least 3 nights.')
-    out.extend([f'<text x="85" y="266" font-size="13" fill="#526170">{escape(note)}</text>',
-                '<text x="85" y="287" font-size="13" fill="#526170">'
-                'Pre-workout context: interpret alongside how you feel and how the workout went.</text>',
+    out.extend(['<text x="85" y="286" font-size="13" fill="#526170">'
+                'Tile colors: green = within reference; yellow = outside; red = large deviation; gray = reference only or missing data.</text>',
+                f'<text x="85" y="307" font-size="13" fill="#526170">{escape(note)}</text>',
                 '</g>'])
-    return out, 240
+    trends, offset = recovery_charts(context)
+    out.extend(trends)
+    return out, offset
 
 
 def recovery_markdown(context):
@@ -96,4 +106,13 @@ def recovery_markdown(context):
                          'This change alone does not establish the effect of this session.')
     lines.extend(['', f"Sleep source: {context['source']}; retrieved: {context.get('retrieved_at_utc') or 'not provided'}.",
                   context['method']])
+    if context.get('color_method'):
+        labels = {key: item[3] for key, item in STATUS_COLORS.items()}
+        statuses = context.get('statuses') or {}
+        lines.extend(['', '### Historical comparison', '', '| Metric | Status |', '| --- | --- |'])
+        for field, name in (('hrv_ms', 'Nightly HRV'), ('hrv_7d', '7-day average HRV'),
+                            ('sleep_seconds', 'Sleep duration'), ('quality_score', 'Sleep quality'),
+                            ('hr_avg_bpm', 'Average overnight HR')):
+            lines.append(f"| {name} | {labels[statuses.get(field, 'unknown')]} |")
+        lines.extend(['', context['color_method']])
     return lines

@@ -223,12 +223,14 @@ def chart_svg(data, analysis, cloud, hr_range=None, recovery=None):
     work_laps = [lap_by_index[r['work_lap_index']]
                  for r in analysis['additional_metrics']['slower_next_lap_hr_changes']]
     subtitle = 'Time axis: active workout time'
+    if recovery and recovery.get('nights_7d') and recovery.get('before'):
+        subtitle = 'Workout panels: active time · Recovery panels: local wake date'
     if work_laps:
         subtitle += ' · blue bands: interval before a slower workout step'
     out = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
            f'viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">', CHART_MARKER,
            f'<title id="title">Workout overview {date}</title>',
-           '<desc id="desc">Active workout time axis. '
+           '<desc id="desc">Workout panels use active workout time; recovery panels use local wake dates. '
            'Heart rate: centered 15 s moving average, with gaps connected linearly on the chart. '
            'Pace: centered 15 s moving median. Elevation: centered 15 s moving average. '
            'Smoothing resets at pauses and gaps over 2 s. Pace gaps are connected linearly on the chart only; '

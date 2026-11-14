@@ -285,6 +285,31 @@ exclude nights ending after workout start. The first main sleep starting within
 the workout caused a change. Regenerating charts preserves their saved context;
 `--sleep-data` explicitly recomputes it from the supplied snapshot.
 
+Charts also include two calendar-based panels above the workout: nightly HRV
+over the seven-day window, and stacked deep/light/REM sleep durations for the
+same nights. The selected pre-workout night is highlighted. The HRV panel shows
+the calculated 60-day band and seven-day mean. A separately marked after-workout
+night may extend the calendar axis; it never enters the pre-workout statistics.
+Missing nights leave gaps, and a missing stage breakdown uses a gray total-sleep
+bar instead of invented stages. Sleep labels show duration and quality /100.
+
+Tiles use **calculated historical deviation**, with visible text labels as well
+as color. Each metric needs at least 14 observed nights in the preceding 60 days:
+
+- Green: within its 10th–90th percentile reference band.
+- Yellow: outside that band, within extended outer limits.
+- Red: beyond the outer limits, labeled "Large deviation".
+- Gray: reference-only tile, missing metric, or insufficient history.
+
+Each outer limit extends its reference edge by the larger of half the band width
+or 10% of the historical median. Both unusually low and high values count as
+deviations; the colors are not Suunto readiness or medical alerts. Nightly HRV
+and the seven-day mean are assessed separately against the HRV reference. The
+sleep tile uses the worse available comparison of duration and quality, and
+overnight HR uses its own history. The report and JSON retain these rules and
+the separate metric statuses. These are explicit display rules, not a recreation
+of Suunto's unpublished status algorithm.
+
 Other commands: `workouts`, `track`, `analyze`, and `access`.
 Help: `python3 -m suunto_cloud --help` or `python3 -m suunto_cloud sync --help`.
 The legacy `python3 sync.py ...` command still works through a compatibility wrapper.
