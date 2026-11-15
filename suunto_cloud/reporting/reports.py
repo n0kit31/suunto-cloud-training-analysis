@@ -1,4 +1,4 @@
-"""Generate reusable factual reports and portable SVG charts in the sync process."""
+"""Generate factual reports and portable interactive charts in the sync process."""
 
 from bisect import bisect_left, bisect_right
 from collections import defaultdict
@@ -15,6 +15,8 @@ from suunto_cloud.activities import activity_label
 from suunto_cloud.analysis.metrics import active_samples, number, seconds
 from suunto_cloud.analysis.chart_metrics import grade_samples, step_length
 from suunto_cloud.reporting.recovery import recovery_markdown, recovery_svg, workout_feeling
+from suunto_cloud.reporting.interactive import chart_html
+from suunto_cloud.analysis.chart_summary import chart_summary
 
 START = '<!-- suunto-generated:start -->'
 END = '<!-- suunto-generated:end -->'
@@ -138,7 +140,7 @@ def thin(points, limit):
     return [points[i] for i in sorted(indices)]
 
 
-def chart_svg(data, analysis, cloud, hr_range=None, recovery=None):
+def chart_svg(data, analysis, cloud, hr_range=None, recovery=None, interaction=None):
     rows = active_samples(data, analysis['timer'])
     if not rows:
         return None
@@ -236,6 +238,11 @@ def chart_svg(data, analysis, cloud, hr_range=None, recovery=None):
     heading_text = ' · '.join(part for part in ('Workout overview', activity, date) if part)
     heading = escape(heading_text)
     heading_size = 25 if len(heading_text) <= 85 else 20
+    if interaction is not None:
+        interaction.update(title=heading_text, total_seconds=total, left=left, plot_width=pw,
+                           panel_height=ph, panels=[],
+                           distance=[[round(active_time(t), 3), round(row['distance'] / 1000, 6)]
+                                     for t, row in rows if number(row.get('distance'))])
     lap_by_index = {i: lap for i, lap in enumerate(data.get('laps', []), 1)}
     work_laps = [lap_by_index[r['work_lap_index']]
                  for r in analysis['additional_metrics']['slower_next_lap_hr_changes']]
@@ -271,6 +278,13 @@ def chart_svg(data, analysis, cloud, hr_range=None, recovery=None):
         title, groups, lo, hi = panel.title, panel.groups, panel.lo, panel.hi
         color, inverted = panel.color, panel.inverted
         top = 130 + header_offset + index * spacing
+        if interaction is not None:
+            interaction['panels'].append({
+                'key': panel.key, 'label': title.split(' · ')[0], 'color': color,
+                'lo': lo, 'hi': hi, 'inverted': inverted, 'digits': panel.digits, 'top': top,
+                # Full smoothed observations, before visual thinning; never interpolate gaps.
+                'points': [[round(t, 3), round(v, 6)] for group in groups for t, v in group],
+            })
         y = lambda v: top + ((v - lo) if inverted else (hi - v)) / (hi - lo) * ph
         out.extend([f'<g data-metric="{panel.key}" data-style="{panel.style}">',
                     f'<defs><clipPath id="panel-{index}"><rect x="{left}" y="{top}" '
@@ -284,9 +298,10 @@ def chart_svg(data, analysis, cloud, hr_range=None, recovery=None):
             label = duration(round(v * 60)).removesuffix('.0') if inverted else display(v, panel.digits)
             out.extend([f'<line x1="{left}" y1="{y(v):.2f}" x2="{width-right}" y2="{y(v):.2f}" stroke="#dce1e6"/>',
                         f'<text x="{left-12}" y="{y(v)+5:.2f}" font-size="16" text-anchor="end">{label}</text>'])
-        step = max(60, math.ceil(total / 600) * 60)
-        for t in range(0, math.ceil(total) + 1, step):
-            out.append(f'<text x="{x(t):.2f}" y="{top+ph+25}" font-size="16" text-anchor="middle">{t // 60}</text>')
+        for t in range(0, math.floor(total) + 1, 600):
+            out.extend([f'<line data-active-tick="{t}" x1="{x(t):.2f}" x2="{x(t):.2f}" '
+                        f'y1="{top}" y2="{top+ph}" stroke="#dce1e6"/>',
+                        f'<text x="{x(t):.2f}" y="{top+ph+25}" font-size="16" text-anchor="middle">{t // 60}</text>'])
         if panel.raw_groups is not None:
             raw_count = sum(len(group) for group in panel.raw_groups)
             for group in panel.raw_groups:
@@ -415,15 +430,20 @@ def report_body(cloud, analysis, entry, retrieved, chart, recovery=None):
 
 
 def write_outputs(project, cloud, analysis, decoded, entry, retrieved, charts=False, hr_range=None,
-                  recovery=None):
+                  recovery=None, week_workouts=None):
     stem = datetime.fromisoformat(cloud['start_local']).strftime('%Y-%m-%d-%H%M%S')
     reports, chart_dir = project / 'reports', project / 'visualizations'
     reports.mkdir(exist_ok=True)
-    chart = chart_dir / f'suunto-{stem}-overview.svg'
-    svg = chart_svg(decoded, analysis, cloud, hr_range=hr_range, recovery=recovery) if charts else None
+    chart = chart_dir / f'suunto-{stem}-overview.html'
+    svg_path = chart.with_suffix('.svg')
+    interaction = {}
+    summary = chart_summary(cloud, analysis, week_workouts) if charts else None
+    svg = chart_svg(decoded, analysis, cloud, hr_range=hr_range, recovery=recovery,
+                    interaction=interaction) if charts else None
     if svg:
         chart_dir.mkdir(exist_ok=True)
-        chart.write_text(svg)
+        svg_path.write_text(svg)
+        chart.write_text(chart_html(svg, interaction, svg_path.name, summary))
     markdown, json_path = reports / f'suunto-{stem}.md', reports / f'suunto-{stem}.json'
     body = report_body(cloud, analysis, entry, retrieved, str(chart) if svg else None, recovery)
     block = f'{START}\n{body}\n{END}'
@@ -437,21 +457,25 @@ def write_outputs(project, cloud, analysis, decoded, entry, retrieved, charts=Fa
     markdown.write_text(content)
     private_json(json_path, {'retrieved_at_utc': retrieved, 'cloud': cloud, 'fit': analysis,
                              'source': dict(entry), 'recovery': recovery,
-                             'chart_path': str(chart) if svg else None})
+                             'chart_path': str(chart) if svg else None,
+                             'svg_path': str(svg_path) if svg else None,
+                             'chart_summary': summary})
     return {'markdown_path': str(markdown), 'json_path': str(json_path),
-            'chart_path': str(chart) if svg else None}
+            'chart_path': str(chart) if svg else None, 'svg_path': str(svg_path) if svg else None}
 
 
 def cleanup_charts(directory, keep, now=None):
     cutoff = (now or datetime.now(timezone.utc)) - timedelta(days=30)
     removed = []
-    for path in directory.glob('suunto-*.svg'):
+    for path in sorted(directory.glob('suunto-*')):
+        if path.suffix.lower() not in {'.svg', '.html', '.png'}:
+            continue
         if path.is_symlink() or not path.is_file() or str(path) in keep:
             continue
         if datetime.fromtimestamp(path.stat().st_mtime, timezone.utc) >= cutoff:
             continue
-        with path.open() as stream:
-            owned = CHART_MARKER in stream.read(512)
+        with path.open('rb') as stream:
+            owned = CHART_MARKER.encode() in stream.read(512)
         if owned:
             path.unlink()
             removed.append(str(path))

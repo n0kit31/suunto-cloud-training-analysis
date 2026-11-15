@@ -95,10 +95,16 @@ class SyncAnalysisTests(unittest.TestCase):
             sync.sync(['2026-11-11'], charts=True)
         self.fetch_list.assert_not_called()
 
-    def test_explicit_chart_request_generates_svg(self):
+    def test_explicit_chart_request_includes_other_week_workouts_without_downloading_their_fit(self):
+        self.fetch_list.return_value = {'payload': [workout(), workout('b' * 24, '2026-11-09')]}
         with contextlib.redirect_stdout(io.StringIO()):
             manifest = sync.sync(['2026-11-11'], analysis=True, charts=True)
-        self.assertTrue(Path(manifest['workouts'][0]['outputs']['chart_path']).is_file())
+        out = manifest['workouts'][0]['outputs']
+        self.assertTrue(Path(out['chart_path']).is_file())
+        saved = json.loads(Path(out['json_path']).read_text())
+        self.assertEqual(len(saved['chart_summary']['week']['comparable']), 2)
+        self.assertEqual(saved['chart_summary']['week']['totals']['distance_m'], 4000)
+        self.fetch_fit.assert_called_once()
 
     def test_private_sleep_snapshot_is_in_full_brief_and_saved_reports(self):
         source = self.root / 'sleep.json'

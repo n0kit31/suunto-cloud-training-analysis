@@ -9,6 +9,7 @@ import sys
 from suunto_cloud.reporting.reports import cleanup_charts, write_outputs
 from suunto_cloud.analysis.sleep import recovery_context
 from suunto_cloud.storage.sleep import read_sleep
+from suunto_cloud.storage.comparison import comparison_workouts
 
 
 def main(argv=None):
@@ -28,10 +29,11 @@ def main(argv=None):
     project = args.report.resolve().parent.parent
     recovery = (recovery_context(report['cloud'], read_sleep(args.sleep_data, required=True))
                 if args.sleep_data else report.get('recovery'))
+    peers = comparison_workouts(project, report['cloud'], report.get('chart_summary'))
     outputs = write_outputs(project, report['cloud'], report['fit'], decoded,
                             report['source'], report['retrieved_at_utc'], charts=True,
-                            hr_range=args.hr_range, recovery=recovery)
-    cleanup_charts(project / 'visualizations', {outputs['chart_path']})
+                            hr_range=args.hr_range, recovery=recovery, week_workouts=peers)
+    cleanup_charts(project / 'visualizations', {outputs['chart_path'], outputs['svg_path']})
     print(json.dumps(outputs, ensure_ascii=False))
 
 

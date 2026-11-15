@@ -47,13 +47,13 @@ class OutputTests(unittest.TestCase):
     def test_chart_title_includes_activity_and_escapes_names_for_svg(self):
         self.cloud['activity_id'] = 22
         out = write_outputs(self.root, self.cloud, self.analysis, self.data, self.entry, 'now', charts=True)
-        tree = ET.parse(out['chart_path'])
+        tree = ET.parse(out['svg_path'])
         title = next(x.text for x in tree.iter() if x.tag.endswith('title'))
         self.assertIn('Workout overview · Trail running · ', title)
         self.assertIn(title, [x.text for x in tree.iter() if x.tag.endswith('text')])
         self.cloud.update(activity_id=999, activity_name='Other <activity> & test')
         out = write_outputs(self.root, self.cloud, self.analysis, self.data, self.entry, 'now', charts=True)
-        tree = ET.parse(out['chart_path'])
+        tree = ET.parse(out['svg_path'])
         title = next(x.text for x in tree.iter() if x.tag.endswith('title'))
         self.assertIn('Other <activity> & test', title)
 
@@ -62,7 +62,7 @@ class OutputTests(unittest.TestCase):
         self.assertEqual(workout_time_label(self.cloud), '2026-01-15 18:00–19:10')
         self.cloud.update(start_local='2026-01-15T23:50:00+01:00', stop_local='2026-01-16T00:20:00+01:00')
         out = write_outputs(self.root, self.cloud, self.analysis, self.data, self.entry, 'now', charts=True)
-        tree = ET.parse(out['chart_path'])
+        tree = ET.parse(out['svg_path'])
         title = next(x.text for x in tree.iter() if x.tag.endswith('title'))
         self.assertIn('2026-01-15 23:50 – 2026-01-16 00:20', title)
         self.cloud['stop_local'] = None
@@ -92,7 +92,7 @@ class OutputTests(unittest.TestCase):
         self.analysis = summarize(self.data)
         out = write_outputs(self.root, self.cloud, self.analysis, self.data, self.entry, 'now',
                             charts=True, hr_range=(120, 180))
-        tree = ET.parse(out['chart_path'])
+        tree = ET.parse(out['svg_path'])
         hr_lines = [x for x in tree.iter() if x.tag.endswith('polyline')
                     and x.attrib.get('clip-path') == 'url(#panel-0)']
         heights = {float(pair.split(',')[1]) for line in hr_lines for pair in line.attrib['points'].split()}
@@ -111,7 +111,7 @@ class OutputTests(unittest.TestCase):
 
     def test_chart_requires_opt_in_and_has_a_real_pace_line(self):
         out = write_outputs(self.root, self.cloud, self.analysis, self.data, self.entry, 'now', charts=True)
-        tree = ET.parse(out['chart_path'])
+        tree = ET.parse(out['svg_path'])
         lines = [x for x in tree.iter() if x.tag.endswith('polyline')]
         self.assertTrue(any(x.attrib.get('clip-path') == 'url(#panel-1)' for x in lines))
         self.assertIn(CHART_MARKER, Path(out['chart_path']).read_text())
@@ -132,7 +132,7 @@ class OutputTests(unittest.TestCase):
             del row['vertical_oscillation']  # Contact/cadence do not require this other metric.
         self.data['records'][25]['cadence'] = 130
         out = write_outputs(self.root, self.cloud, self.analysis, self.data, self.entry, 'now', charts=True)
-        tree = ET.parse(out['chart_path'])
+        tree = ET.parse(out['svg_path'])
         panels = {x.attrib['data-metric']: x for x in tree.iter() if 'data-metric' in x.attrib}
         self.assertEqual(set(panels), {'heart-rate', 'pace', 'elevation', 'power', 'cadence',
                                        'ground-contact', 'step-length', 'speed', 'grade'})
@@ -160,7 +160,7 @@ class OutputTests(unittest.TestCase):
             del row['stance_time']
             del row['altitude']
         out = write_outputs(self.root, self.cloud, self.analysis, self.data, self.entry, 'now', charts=True)
-        tree = ET.parse(out['chart_path'])
+        tree = ET.parse(out['svg_path'])
         panels = {x.attrib['data-metric']: x for x in tree.iter() if 'data-metric' in x.attrib}
         for key in ('power', 'ground-contact', 'step-length', 'elevation', 'grade'):
             self.assertNotIn(key, panels)
@@ -180,7 +180,7 @@ class OutputTests(unittest.TestCase):
             del row['altitude']
         self.analysis = summarize(self.data)
         out = write_outputs(self.root, self.cloud, self.analysis, self.data, self.entry, 'now', charts=True)
-        tree = ET.parse(out['chart_path'])
+        tree = ET.parse(out['svg_path'])
         hr_lines = [x for x in tree.iter() if x.tag.endswith('polyline')
                     and x.attrib.get('clip-path') == 'url(#panel-0)']
         self.assertEqual(len(hr_lines), 1)
@@ -205,16 +205,25 @@ class OutputTests(unittest.TestCase):
         now = datetime.now(timezone.utc)
         old = (now - timedelta(days=31)).timestamp()
         owned = self.root / 'suunto-old.svg'
+        owned_html = self.root / 'suunto-old.html'
+        owned_png = self.root / 'suunto-old.png'
         current = self.root / 'suunto-current.svg'
+        current_html = self.root / 'suunto-current.html'
         user = self.root / 'suunto-user.svg'
-        for path, text in [(owned, CHART_MARKER), (current, CHART_MARKER), (user, '<svg/>')]:
+        unknown_png = self.root / 'suunto-user.png'
+        for path, text in [(owned, CHART_MARKER), (owned_html, '<!doctype html>' + CHART_MARKER),
+                           (owned_png, CHART_MARKER), (current, CHART_MARKER),
+                           (current_html, CHART_MARKER), (user, '<svg/>'), (unknown_png, 'unknown')]:
             path.write_text(text)
             os.utime(path, (old, old))
         link = self.root / 'suunto-link.svg'
         link.symlink_to(user)
-        self.assertEqual(cleanup_charts(self.root, {str(current)}, now), [str(owned)])
+        self.assertCountEqual(cleanup_charts(self.root, {str(current), str(current_html)}, now),
+                              [str(owned), str(owned_html), str(owned_png)])
         self.assertTrue(current.is_file())
+        self.assertTrue(current_html.is_file())
         self.assertTrue(user.is_file())
+        self.assertTrue(unknown_png.is_file())
         self.assertTrue(link.is_symlink())
 
 

@@ -114,6 +114,7 @@ def sync(dates, decode=True, analysis=False, brief=False, charts=False, zone=Non
     packet = None
     if analysis and manifest['complete']:
         by_key = {workout['workoutKey']: workout for workout in records}
+        comparisons = [cloud_metrics(workout, zone) for workout in records] if charts else None
         for entry in manifest['workouts']:
             output_started = perf_counter()
             key = entry['workout_key']
@@ -122,10 +123,12 @@ def sync(dates, decode=True, analysis=False, brief=False, charts=False, zone=Non
             entry['outputs'] = write_outputs(ROOT.parent, cloud, analyses[key],
                                              json.loads(Path(entry['decoded_path']).read_text()),
                                              entry, manifest['retrieved_at_utc'], charts=charts,
-                                             recovery=entry['recovery'])
+                                             recovery=entry['recovery'], week_workouts=comparisons)
             entry['timings_seconds']['outputs'] = round(perf_counter() - output_started, 4)
         manifest['removed_old_charts'] = cleanup_charts(
-            ROOT.parent / 'visualizations', {entry['outputs']['chart_path'] for entry in manifest['workouts']}) if charts else []
+            ROOT.parent / 'visualizations',
+            {entry['outputs'][key] for entry in manifest['workouts']
+             for key in ('chart_path', 'svg_path')}) if charts else []
         packet = build_packet(manifest, records, analyses, zone)
         packet_path = private_directory() / 'analysis.json'
         private_json(packet_path, packet)

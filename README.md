@@ -10,7 +10,7 @@
 
 A CLI for downloading data from Suunto Cloud API and analyzing FIT files.
 Supports OAuth with automatic token refresh, GPX export, and JSON and Markdown
-reports with laps, heart rate, pace, pauses, and running mechanics. SVG charts
+reports with laps, heart rate, pace, pauses, and running mechanics. Interactive HTML charts
 are optional.
 
 Data from the official Suunto MCP can be added through an external integration.
@@ -37,7 +37,7 @@ The current tools download data from Cloud API; this repository has no MCP clien
 
 - Fetch workout summaries and original FIT files with automatic OAuth refresh.
 - Analyze pace, heart rate, power, laps, pauses, running mechanics, and SuuntoPlus fields.
-- Generate Markdown/JSON reports and portable SVG charts with smoothed heart rate.
+- Generate Markdown/JSON reports and offline HTML charts with a synchronized cursor, plus SVG exports.
 - Run in Docker while keeping credentials and raw workout files outside the image and Git.
 
 ## Independence and API access
@@ -135,7 +135,7 @@ Code in `suunto_cloud/` is organized by responsibility:
 | `authentication/` | OAuth, credentials, and authenticated requests |
 | `downloads/` | Workout summaries and FIT downloads |
 | `analysis/` | Metric calculations and analysis packet preparation |
-| `reporting/` | Markdown/JSON reports and SVG charts |
+| `reporting/` | Markdown/JSON reports, interactive HTML charts and SVG exports |
 | `synchronization/` | Download, analysis, and reporting coordination |
 | `storage/` | Configuration paths and secure local storage |
 | `fit/` | Node.js FIT decoder and GPX exporter |
@@ -240,7 +240,27 @@ Grade uses actual endpoint observations within ±25 m, at least 20 m and three
 distinct distance samples. Windows do not cross pauses, missing inputs,
 distance resets, or recording/stationary gaps over 2 s. The grade axis includes
 zero. It is an estimate of local slope, rather than a surveyed measurement.
-Reports use decimal points, and chart filenames end in `-overview.svg`.
+Reports use decimal points. The main chart file ends in `-overview.html`; a
+matching `-overview.svg` is saved for static export. HTML files contain their
+SVG, styles, JavaScript and chart observations, so they work offline without
+external assets or a server. Move over any workout panel to synchronize the
+vertical cursor and readouts across all workout panels; click or tap to pin
+the position while scrolling. Use the time slider for keyboard selection,
+Escape or Clear to reset, and Download SVG for a static copy. Readouts use
+the nearest available smoothed observation within one second, without
+interpolating measurement gaps. Every workout time axis has fixed 10-minute
+ticks. Sleep/HRV retain their separate calendar axis.
+
+Each HTML page also includes a short English workout summary and a comparison
+with available sessions from the same Monday–Sunday week in the workout's time
+zone. It shows distance, active time and HR-based TSS totals, highlights the
+selected session, and keeps walking/hiking separate from running. Other TSS
+methods are not added to HR-TSS. Repeated faster/slower kilometre splits are
+described from the recorded laps, without assuming they were programmed intervals.
+Synchronization uses the workout list already downloaded. Offline chart
+regeneration combines the saved weekly context, local reports and the optional
+workout-list cache, without API requests. Weekly totals describe available
+records and do not assert that the entire week or history is complete.
 The chart title includes the activity type and recorded start–end times, for example
 `Workout overview · Trail running · 2026-01-15 08:00–09:10`.
 If the workout crosses midnight, both dates are shown. An unavailable end time

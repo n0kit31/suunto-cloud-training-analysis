@@ -37,7 +37,7 @@ class RecoveryOutputTests(unittest.TestCase):
 
     def test_card_expands_canvas_and_keeps_every_panel_below_it(self):
         out = self.outputs(charts=True, recovery=self.context)
-        tree = ET.parse(out['chart_path'])
+        tree = ET.parse(out['svg_path'])
         sections = [x for x in tree.iter() if x.attrib.get('data-section') == 'pre-workout-recovery']
         self.assertEqual(len(sections), 1)
         self.assertIn('Recovery panels: local wake date', Path(out['chart_path']).read_text())
@@ -77,7 +77,7 @@ class RecoveryOutputTests(unittest.TestCase):
     def test_missing_sleep_has_no_fake_values_or_readiness_status(self):
         context = recovery_context(self.cloud, snapshot([]))
         out = self.outputs(charts=True, recovery=context)
-        svg = Path(out['chart_path']).read_text()
+        svg = Path(out['svg_path']).read_text()
         self.assertIn('No completed sleep', svg)
         self.assertNotIn('0 ms', svg)
         ET.fromstring(svg)
@@ -89,7 +89,7 @@ class RecoveryOutputTests(unittest.TestCase):
         rows[-1]['entryData']['AvgHRV'] = 40
         context = recovery_context(self.cloud, snapshot(rows))
         out = self.outputs(charts=True, recovery=context)
-        tree = ET.parse(out['chart_path'])
+        tree = ET.parse(out['svg_path'])
         sections = {x.attrib['data-section']: x for x in tree.iter() if 'data-section' in x.attrib}
         hrv = sections['hrv-history']
         lines = [x for x in hrv if x.attrib.get('data-role') == 'hrv-daily-line']
@@ -107,7 +107,7 @@ class RecoveryOutputTests(unittest.TestCase):
 
     def test_unavailable_stage_breakdown_uses_total_sleep_without_invented_stages(self):
         out = self.outputs(charts=True, recovery=self.context)
-        tree = ET.parse(out['chart_path'])
+        tree = ET.parse(out['svg_path'])
         bars = [x for x in tree.iter() if 'data-stage' in x.attrib]
         self.assertEqual(len(bars), 2)
         self.assertTrue(all(x.attrib['data-stage'] == 'unknown' for x in bars))
@@ -117,7 +117,7 @@ class RecoveryOutputTests(unittest.TestCase):
         rows = [night(f'2026-01-{day:02d}', hrv=40 + (day % 5) * 5) for day in range(1, 15)]
         context = recovery_context(self.cloud, snapshot(rows + [night(hrv=64)]))
         out = self.outputs(charts=True, recovery=context)
-        tree = ET.parse(out['chart_path'])
+        tree = ET.parse(out['svg_path'])
         tiles = {x.attrib['data-tile']: x for x in tree.iter() if 'data-tile' in x.attrib}
         self.assertEqual(tiles['0'].attrib['data-status'], 'yellow')
         self.assertEqual(tiles['1'].attrib['data-status'], 'green')
@@ -132,7 +132,7 @@ class RecoveryOutputTests(unittest.TestCase):
             with self.subTest(rating=rating):
                 self.cloud['summary']['feeling'] = rating
                 out = self.outputs(charts=True, recovery=self.context)
-                tree = ET.parse(out['chart_path'])
+                tree = ET.parse(out['svg_path'])
                 tile = next(x for x in tree.iter() if x.attrib.get('data-tile') == '5')
                 self.assertEqual(tile.attrib['data-status'], expected)
                 text = ' '.join(x.text or '' for x in tile)
@@ -142,7 +142,7 @@ class RecoveryOutputTests(unittest.TestCase):
     def test_feeling_is_available_without_sleep_data_and_is_labeled_after_workout(self):
         self.cloud['summary']['feeling'] = 5
         out = self.outputs(charts=True)
-        tree = ET.parse(out['chart_path'])
+        tree = ET.parse(out['svg_path'])
         tile = next(x for x in tree.iter() if 'data-tile' in x.attrib)
         self.assertEqual(tile.attrib['data-status'], 'green')
         self.assertIn('Recorded after workout', ' '.join(x.text or '' for x in tile))
