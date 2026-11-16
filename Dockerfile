@@ -10,7 +10,7 @@ RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund
 FROM python:3.13-slim-bookworm AS runtime
 
 LABEL org.opencontainers.image.title="Suunto Cloud Training Analysis" \
-      org.opencontainers.image.version="1.0.0" \
+      org.opencontainers.image.version="1.1.0" \
       org.opencontainers.image.licenses="GPL-3.0-or-later"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -49,7 +49,10 @@ CMD ["--help"]
 
 FROM runtime AS test
 COPY tests ./tests
-RUN python3 -m unittest discover -s tests -t . -v
+COPY scripts/update-test-badge.py ./scripts/update-test-badge.py
+COPY docs/badges/tests.svg ./docs/badges/tests.svg
+RUN python3 -m unittest discover -s tests -t . -v \
+    && python3 scripts/update-test-badge.py --check
 
 
 FROM runtime AS app

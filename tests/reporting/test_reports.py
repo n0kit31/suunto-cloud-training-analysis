@@ -6,9 +6,10 @@ import unittest
 from unittest.mock import patch
 import xml.etree.ElementTree as ET
 
-from suunto_cloud.reporting.reports import CHART_MARKER, cleanup_charts, moving_average, pace_from_speed, pace_series, thin, write_outputs
+from suunto_cloud.reporting.reports import CHART_MARKER, cleanup_charts, moving_average, pace_from_speed, pace_series, thin, workout_time_label, write_outputs
 from suunto_cloud.analysis.packet import cloud_metrics
 from suunto_cloud.analysis.fit import summarize
+from suunto_cloud.activities import activity_label
 from tests.fixtures import fixture
 
 
@@ -33,6 +34,40 @@ class OutputTests(unittest.TestCase):
         series = pace_series([(float(i), {'speed': 1000 / 300}) for i in range(20)], 0)
         self.assertEqual([v for _, v in series], [5, 5])
 
+    def test_activity_labels_use_suunto_ids_and_fall_back_to_fit(self):
+        for activity_id, expected in ((0, 'Walking'), (1, 'Running'), (2, 'Cycling'),
+                                      (3, 'Cross-country skiing'), (11, 'Hiking'), (22, 'Trail running')):
+            with self.subTest(activity_id=activity_id):
+                self.assertEqual(activity_label({'activity_id': activity_id}, self.data), expected)
+        data = {'sessions': [{'sport': 'running', 'sub_sport': 'trail'}]}
+        self.assertEqual(activity_label({'activity_id': 999}, data), 'Trail running')
+        self.assertEqual(activity_label({}, {'sessions': [{'sport': 'running'}, {'sport': 'cycling'}]}), 'Multisport')
+        self.assertIsNone(activity_label({}, {'sessions': [{'sport': 'generic'}]}))
+
+    def test_chart_title_includes_activity_and_escapes_names_for_svg(self):
+        self.cloud['activity_id'] = 22
+        out = write_outputs(self.root, self.cloud, self.analysis, self.data, self.entry, 'now', charts=True)
+        tree = ET.parse(out['svg_path'])
+        title = next(x.text for x in tree.iter() if x.tag.endswith('title'))
+        self.assertIn('Workout overview · Trail running · ', title)
+        self.assertIn(title, [x.text for x in tree.iter() if x.tag.endswith('text')])
+        self.cloud.update(activity_id=999, activity_name='Other <activity> & test')
+        out = write_outputs(self.root, self.cloud, self.analysis, self.data, self.entry, 'now', charts=True)
+        tree = ET.parse(out['svg_path'])
+        title = next(x.text for x in tree.iter() if x.tag.endswith('title'))
+        self.assertIn('Other <activity> & test', title)
+
+    def test_title_times_use_the_recorded_end_and_preserve_a_midnight_date_change(self):
+        self.cloud.update(start_local='2026-01-15T18:00:00+01:00', stop_local='2026-01-15T19:10:00+01:00')
+        self.assertEqual(workout_time_label(self.cloud), '2026-01-15 18:00–19:10')
+        self.cloud.update(start_local='2026-01-15T23:50:00+01:00', stop_local='2026-01-16T00:20:00+01:00')
+        out = write_outputs(self.root, self.cloud, self.analysis, self.data, self.entry, 'now', charts=True)
+        tree = ET.parse(out['svg_path'])
+        title = next(x.text for x in tree.iter() if x.tag.endswith('title'))
+        self.assertIn('2026-01-15 23:50 – 2026-01-16 00:20', title)
+        self.cloud['stop_local'] = None
+        self.assertEqual(workout_time_label(self.cloud), '2026-01-15 23:50')
+
     def test_hr_smoothing_softens_brief_spikes_and_preserves_sustained_changes(self):
         points = [(t, 180 if t == 10 else 150 if t >= 30 else 130) for t in range(61)]
         smoothed = dict(moving_average(points))
@@ -55,9 +90,11 @@ class OutputTests(unittest.TestCase):
             {'event': 'timer', 'event_type': 'start', 'timestamp': at(6)},
         ]
         self.analysis = summarize(self.data)
-        out = write_outputs(self.root, self.cloud, self.analysis, self.data, self.entry, 'now', charts=True)
-        tree = ET.parse(out['chart_path'])
-        hr_lines = [x for x in tree.iter() if x.attrib.get('clip-path') == 'url(#panel-0)']
+        out = write_outputs(self.root, self.cloud, self.analysis, self.data, self.entry, 'now',
+                            charts=True, hr_range=(120, 180))
+        tree = ET.parse(out['svg_path'])
+        hr_lines = [x for x in tree.iter() if x.tag.endswith('polyline')
+                    and x.attrib.get('clip-path') == 'url(#panel-0)']
         heights = {float(pair.split(',')[1]) for line in hr_lines for pair in line.attrib['points'].split()}
         self.assertEqual(heights, {130, 300})
 
@@ -74,7 +111,7 @@ class OutputTests(unittest.TestCase):
 
     def test_chart_requires_opt_in_and_has_a_real_pace_line(self):
         out = write_outputs(self.root, self.cloud, self.analysis, self.data, self.entry, 'now', charts=True)
-        tree = ET.parse(out['chart_path'])
+        tree = ET.parse(out['svg_path'])
         lines = [x for x in tree.iter() if x.tag.endswith('polyline')]
         self.assertTrue(any(x.attrib.get('clip-path') == 'url(#panel-1)' for x in lines))
         self.assertIn(CHART_MARKER, Path(out['chart_path']).read_text())
@@ -89,7 +126,49 @@ class OutputTests(unittest.TestCase):
         self.assertEqual(reduced, sorted(reduced))
         self.assertTrue(set(reduced).issubset(points))
 
-    def test_chart_removes_pause_time_and_connects_hr_gaps_only(self):
+    def test_new_panels_use_units_and_styles_and_preserve_raw_dot_extrema(self):
+        for n, row in enumerate(self.data['records']):
+            row['power'] = 200 + n
+            del row['vertical_oscillation']  # Contact/cadence do not require this other metric.
+        self.data['records'][25]['cadence'] = 130
+        out = write_outputs(self.root, self.cloud, self.analysis, self.data, self.entry, 'now', charts=True)
+        tree = ET.parse(out['svg_path'])
+        panels = {x.attrib['data-metric']: x for x in tree.iter() if 'data-metric' in x.attrib}
+        self.assertEqual(set(panels), {'heart-rate', 'pace', 'elevation', 'power', 'cadence',
+                                       'ground-contact', 'step-length', 'speed', 'grade'})
+        for key in ('cadence', 'ground-contact', 'step-length'):
+            panel = panels[key]
+            self.assertEqual(panel.attrib['data-style'], 'scatter')
+            self.assertTrue(any(x.tag.endswith('circle') for x in panel))
+            self.assertFalse(any(x.tag.endswith('polygon') for x in panel))
+            rect = next(x for x in panel.iter() if x.tag.endswith('rect'))
+            low, high = float(rect.attrib['y']), float(rect.attrib['y']) + float(rect.attrib['height'])
+            self.assertTrue(all(low <= float(x.attrib['cy']) <= high
+                                for x in panel if x.tag.endswith('circle')))
+        cadence_labels = [x.text for x in panels['cadence'] if x.tag.endswith('text')]
+        self.assertTrue(any('steps/min' in text for text in cadence_labels))
+        # A short observed cadence peak remains visible, independently of the smoothed trend.
+        cadence_points = [x for x in panels['cadence'] if x.tag.endswith('circle')]
+        self.assertEqual(len(cadence_points), 150)
+        self.assertEqual(panels['grade'].attrib['data-style'], 'diverging')
+        self.assertTrue(any(x.tag.endswith('linearGradient') for x in panels['grade'].iter()))
+
+    def test_missing_metrics_are_omitted_and_non_running_cadence_stays_rpm(self):
+        self.data['sessions'][0]['sport'] = 'cycling'
+        self.cloud['activity_id'] = 2
+        for row in self.data['records']:
+            del row['stance_time']
+            del row['altitude']
+        out = write_outputs(self.root, self.cloud, self.analysis, self.data, self.entry, 'now', charts=True)
+        tree = ET.parse(out['svg_path'])
+        panels = {x.attrib['data-metric']: x for x in tree.iter() if 'data-metric' in x.attrib}
+        for key in ('power', 'ground-contact', 'step-length', 'elevation', 'grade'):
+            self.assertNotIn(key, panels)
+        text = ' '.join(x.text or '' for x in panels['cadence'].iter())
+        self.assertIn('rpm', text)
+        self.assertNotIn('steps/min', text)
+
+    def test_chart_removes_pause_time_and_connects_hr_and_pace_gaps(self):
         at = lambda n: self.data['records'][n]['timestamp']
         self.data['events'][1:1] = [
             {'event': 'timer', 'event_type': 'stop', 'timestamp': at(60)},
@@ -97,18 +176,25 @@ class OutputTests(unittest.TestCase):
         ]
         for row in self.data['records'][20:25]:
             del row['heart_rate']
+            del row['speed']
             del row['altitude']
         self.analysis = summarize(self.data)
         out = write_outputs(self.root, self.cloud, self.analysis, self.data, self.entry, 'now', charts=True)
-        tree = ET.parse(out['chart_path'])
-        hr_lines = [x for x in tree.iter() if x.attrib.get('clip-path') == 'url(#panel-0)']
+        tree = ET.parse(out['svg_path'])
+        hr_lines = [x for x in tree.iter() if x.tag.endswith('polyline')
+                    and x.attrib.get('clip-path') == 'url(#panel-0)']
         self.assertEqual(len(hr_lines), 1)
-        altitude_lines = [x for x in tree.iter() if x.attrib.get('clip-path') == 'url(#panel-2)']
+        pace_lines = [x for x in tree.iter() if x.tag.endswith('polyline')
+                      and x.attrib.get('clip-path') == 'url(#panel-1)']
+        self.assertEqual(len(pace_lines), 1)
+        altitude_lines = [x for x in tree.iter() if x.tag.endswith('polyline')
+                          and x.attrib.get('clip-path') == 'url(#panel-2)']
         self.assertEqual(len(altitude_lines), 2)
         points = [tuple(map(float, pair.split(',')))
                   for line in hr_lines for pair in line.attrib['points'].split()]
         self.assertEqual(len(points), 115)
         self.assertNotIn('heart_rate', self.data['records'][22])
+        self.assertNotIn('speed', self.data['records'][22])
         # At 90 elapsed seconds, only 60 active seconds have passed (out of 120).
         self.assertTrue(any(abs(x - (85 + 1075 * 60 / 120)) < .01 for x, _ in points))
         self.assertAlmostEqual(points[-1][0], 85 + 1075 * 119 / 120, places=2)
@@ -119,16 +205,25 @@ class OutputTests(unittest.TestCase):
         now = datetime.now(timezone.utc)
         old = (now - timedelta(days=31)).timestamp()
         owned = self.root / 'suunto-old.svg'
+        owned_html = self.root / 'suunto-old.html'
+        owned_png = self.root / 'suunto-old.png'
         current = self.root / 'suunto-current.svg'
+        current_html = self.root / 'suunto-current.html'
         user = self.root / 'suunto-user.svg'
-        for path, text in [(owned, CHART_MARKER), (current, CHART_MARKER), (user, '<svg/>')]:
+        unknown_png = self.root / 'suunto-user.png'
+        for path, text in [(owned, CHART_MARKER), (owned_html, '<!doctype html>' + CHART_MARKER),
+                           (owned_png, CHART_MARKER), (current, CHART_MARKER),
+                           (current_html, CHART_MARKER), (user, '<svg/>'), (unknown_png, 'unknown')]:
             path.write_text(text)
             os.utime(path, (old, old))
         link = self.root / 'suunto-link.svg'
         link.symlink_to(user)
-        self.assertEqual(cleanup_charts(self.root, {str(current)}, now), [str(owned)])
+        self.assertCountEqual(cleanup_charts(self.root, {str(current), str(current_html)}, now),
+                              [str(owned), str(owned_html), str(owned_png)])
         self.assertTrue(current.is_file())
+        self.assertTrue(current_html.is_file())
         self.assertTrue(user.is_file())
+        self.assertTrue(unknown_png.is_file())
         self.assertTrue(link.is_symlink())
 
 

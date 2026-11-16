@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/n0kit31/suunto-cloud-training-analysis/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/n0kit31/suunto-cloud-training-analysis/actions/workflows/ci.yml)
 [![Test count](docs/badges/tests.svg)](#tests)
-[![Release: 1.0.0](https://img.shields.io/badge/release-1.0.0-blue)](CHANGELOG.md)
+[![Release: 1.1.0](https://img.shields.io/badge/release-1.1.0-blue)](CHANGELOG.md)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](LICENSE)
 [![Python: 3.9+](https://img.shields.io/badge/Python-3.9%2B-3776AB?logo=python&logoColor=white)](#requirements)
 [![Node.js: 24](https://img.shields.io/badge/Node.js-24-339933?logo=nodedotjs&logoColor=white)](Dockerfile)
@@ -10,7 +10,7 @@
 
 A CLI for downloading data from Suunto Cloud API and analyzing FIT files.
 Supports OAuth with automatic token refresh, GPX export, and JSON and Markdown
-reports with laps, heart rate, pace, pauses, and running mechanics. SVG charts
+reports with laps, heart rate, pace, pauses, and running mechanics. Interactive HTML charts
 are optional.
 
 Data from the official Suunto MCP can be added through an external integration.
@@ -37,7 +37,9 @@ The current tools download data from Cloud API; this repository has no MCP clien
 
 - Fetch workout summaries and original FIT files with automatic OAuth refresh.
 - Analyze pace, heart rate, power, laps, pauses, running mechanics, and SuuntoPlus fields.
-- Generate Markdown/JSON reports and portable SVG charts with smoothed heart rate.
+- Generate Markdown/JSON reports and offline HTML charts with a synchronized cursor, pinned readouts, keyboard time selection, and SVG downloads.
+- Compare available sessions from the same week by distance, active time, and HR-based TSS.
+- Add optional sleep/HRV history, sleep stages, historical reference colors, and recorded workout feeling.
 - Run in Docker while keeping credentials and raw workout files outside the image and Git.
 
 ## Independence and API access
@@ -111,7 +113,25 @@ measurements; the official race result has not been verified.
 | Peak training effect | 5.0 |
 | Timer pauses | None |
 
-![Marathon analysis: continuous smoothed heart rate, pace, and elevation over active workout time](docs/examples/marathon-overview.svg)
+The static previews below use the current chart renderer. The CLI also produces
+an offline HTML page with synchronized readouts, pinning, keyboard controls,
+an English workout summary, and a comparison with available sessions that week.
+
+![Marathon analysis: filled heart rate, pace, and elevation charts over active workout time](docs/examples/marathon-overview.svg)
+
+<details>
+<summary>Power, speed, and estimated terrain grade</summary>
+
+![Marathon analysis: running power, speed, and signed terrain grade](docs/examples/marathon-power-terrain.svg)
+
+</details>
+
+<details>
+<summary>Running mechanics: cadence, ground contact, and estimated step length</summary>
+
+![Marathon analysis: observed cadence, ground contact, and estimated step length with median trends](docs/examples/marathon-mechanics.svg)
+
+</details>
 
 **Interpretation.** The first 21 km took 1:41:36.2 and the next 21 km took
 1:42:29.7, a difference of 53.5 seconds. These are equal-distance watch
@@ -121,10 +141,27 @@ steady late in the race, with the final 320 m covered in 1:21.0 (4:13.1 min/km).
 The recording shows a sustained effort and a faster finish; it does not
 establish the cause of the heart rate increase.
 
-Heart rate uses a centered 15 s moving average; gaps are connected linearly
-for display only. Pace uses a 10 s median. Charts show active workout time,
-and summary statistics use source measurements. The example includes no GPS
-coordinates, account identifiers, or raw workout files.
+Heart rate, elevation, and power use centered 15 s moving means; pace and speed
+use 15 s medians. Mechanics show observed dots with a median trend. Heart rate
+and pace gaps are connected linearly for display only. Heart rate uses a
+65–190 bpm axis; other axes double the displayed min–max span. Charts show active
+workout time with 10-minute ticks, and summary statistics use source measurements.
+Step length and terrain grade are estimates; see [chart methods](#usage).
+The example includes no GPS coordinates, account identifiers, or raw workout files.
+
+### Sleep and HRV preview (synthetic)
+
+This separate illustration uses entirely synthetic nights and a synthetic
+workout feeling rating. It is not the marathon owner's recovery data. It shows
+the recovery tiles, seven-night HRV history, calculated 60-day reference band,
+and sleep stages. Missing nights remain gaps; the after-workout night is marked
+separately and excluded from pre-workout statistics.
+
+![Synthetic recovery example: historical comparison tiles, nightly HRV, and stacked sleep stages](docs/examples/recovery-synthetic.svg)
+
+Colors describe deviations from the calculated history and the recorded feeling
+rating. They are not Suunto readiness statuses. See [sleep and HRV context](#sleep-and-hrv-context)
+for data import and calculation details.
 
 ## Structure
 
@@ -135,7 +172,7 @@ Code in `suunto_cloud/` is organized by responsibility:
 | `authentication/` | OAuth, credentials, and authenticated requests |
 | `downloads/` | Workout summaries and FIT downloads |
 | `analysis/` | Metric calculations and analysis packet preparation |
-| `reporting/` | Markdown/JSON reports and SVG charts |
+| `reporting/` | Markdown/JSON reports, interactive HTML charts and SVG exports |
 | `synchronization/` | Download, analysis, and reporting coordination |
 | `storage/` | Configuration paths and secure local storage |
 | `fit/` | Node.js FIT decoder and GPX exporter |
@@ -215,12 +252,58 @@ Dates use the [user's selected time zone](#time-zones); `--date` may be repeated
 Add `--charts` to generate a chart. Raw data and analyses are in `.local/`,
 reports in `../reports/`, and charts in `../visualizations/`.
 Charts use active workout time: pauses are removed from the time axis and have
-no separate markers. Missing pace and elevation measurements remain gaps in
-the line. Heart rate is smoothed with a centered 15 s moving average of
-available samples, calculated separately for continuous measurement segments.
-Heart rate gaps are connected linearly on the chart only, producing a
-continuous curve. HR statistics come from source data. Reports use decimal
-points, and chart filenames end in `-overview.svg`.
+no separate markers. Heart rate uses a fixed 65–190 bpm axis (overridable with
+`charts --hr-range MIN MAX`). Other axes double the displayed min–max span,
+with minimum spans for flat data and nonnegative bounds for unsigned metrics.
+Smoothing uses centered 15 s windows and resets at pauses and measurement gaps
+over 2 s. Heart rate and pace gaps are connected linearly on the chart only;
+other measurement gaps remain visible. Source data and statistics are unchanged.
+
+Only metrics with available samples are included:
+
+| Metric | Presentation and smoothing |
+| --- | --- |
+| Heart rate / elevation | Filled line, 15 s moving mean |
+| Pace / speed | Filled line, 15 s moving median; min/km / km/h |
+| Running power | Filled line, 15 s moving mean, W |
+| Cadence | Observed dots with a 15 s median trend; steps/min for running/walking, rpm otherwise |
+| Ground contact | Observed dots with a 15 s median trend, ms |
+| Estimated single step length | Dots with a 15 s median trend; `30 * speed_mps / cadence_cycles_per_min`, using simultaneous positive samples |
+| Estimated terrain grade | Signed area around zero: green uphill, blue downhill; local rise/run over up to 50 m, then 15 s mean |
+
+Dot plots preserve observed variation without filling the area under it.
+Their axis ranges include the raw dots, and sample reduction preserves extrema.
+Grade uses actual endpoint observations within ±25 m, at least 20 m and three
+distinct distance samples. Windows do not cross pauses, missing inputs,
+distance resets, or recording/stationary gaps over 2 s. The grade axis includes
+zero. It is an estimate of local slope, rather than a surveyed measurement.
+Reports use decimal points. The main chart file ends in `-overview.html`; a
+matching `-overview.svg` is saved for static export. HTML files contain their
+SVG, styles, JavaScript and chart observations, so they work offline without
+external assets or a server. Move over any workout panel to synchronize the
+vertical cursor and readouts across all workout panels; click or tap to pin
+the position while scrolling. Use the time slider for keyboard selection,
+Escape or Clear to reset, and Download SVG for a static copy. Readouts use
+the nearest available smoothed observation within one second, without
+interpolating measurement gaps. Every workout time axis has fixed 10-minute
+ticks. Sleep/HRV retain their separate calendar axis.
+
+Each HTML page also includes a short English workout summary and a comparison
+with available sessions from the same Monday–Sunday week in the workout's time
+zone. It shows distance, active time and HR-based TSS totals, highlights the
+selected session, and keeps walking/hiking separate from running. Other TSS
+methods are not added to HR-TSS. Repeated faster/slower kilometre splits are
+described from the recorded laps, without assuming they were programmed intervals.
+Synchronization uses the workout list already downloaded. Offline chart
+regeneration combines the saved weekly context, local reports and the optional
+workout-list cache, without API requests. Weekly totals describe available
+records and do not assert that the entire week or history is complete.
+The chart title includes the activity type and recorded start–end times, for example
+`Workout overview · Trail running · 2026-01-15 08:00–09:10`.
+If the workout crosses midnight, both dates are shown. An unavailable end time
+is left out rather than reconstructed from active time.
+Labels use [Suunto App activity IDs](https://aspartnercontent.blob.core.windows.net/apizone/docs/Activities.pdf),
+then an explicit activity name or FIT sport/sub-sport when the ID is not mapped.
 The current version downloads one page of the workout list, not the complete
 history.
 
@@ -229,6 +312,72 @@ Regenerate an existing chart without downloading data again:
 ```sh
 python3 -m suunto_cloud charts ../reports/suunto-2026-01-15-080000.json
 ```
+
+### Sleep and HRV context
+
+Analyses automatically read `.local/sleep.json` when present. This private
+snapshot comes from the official Suunto MCP or an authorized Suunto 247 API
+integration; the CLI does not connect to the agent's MCP session or fetch sleep
+with the workout endpoint. Refresh the snapshot before analyzing recent workouts.
+Its format is `{"source": "official_suunto_mcp", "retrieved_at_utc": "…", "data": [...]}`,
+where `data` contains the unmodified Suunto 247 `timestamp` / `entryData` samples.
+Keep this file in `.local/`, excluded from Git and Docker images. The source
+and retrieval timestamp are retained in the report.
+
+Use `sync --analysis --sleep-data PATH` for another snapshot, or add context to
+an existing chart without downloading FIT again:
+
+```sh
+python3 -m suunto_cloud charts ../reports/suunto-2026-01-15-080000.json --sleep-data .local/sleep.json
+```
+
+The chart header and report show the last completed non-nap sleep within 24 h
+before the workout: nightly HRV, seven-day mean and coverage, sleep duration and
+quality, and average/minimum nighttime HR. Complete snapshots are deduplicated
+by `SleepId`. Sleep duration uses the sum of deep/light/REM stages when all are
+available, otherwise the reported `Duration`. Nighttime HR is not daytime
+resting HR. Missing values remain missing, and fewer than three observed nights
+do not produce a seven-day mean.
+
+With at least 14 nights in the preceding 60 calendar days, the header also shows
+our own descriptive HRV reference: the median and 10th–90th percentiles, excluding
+the selected night. These are **not Suunto's normal range or readiness status**.
+Each local wake date contributes at most one main sleep. Pre-workout statistics
+exclude nights ending after workout start. The first main sleep starting within
+24 h after workout end is described separately in the report, with no claim that
+the workout caused a change. Regenerating charts preserves their saved context;
+`--sleep-data` explicitly recomputes it from the supplied snapshot.
+
+Charts also include two calendar-based panels above the workout: nightly HRV
+over the seven-day window, and stacked deep/light/REM sleep durations for the
+same nights. The selected pre-workout night is highlighted. The HRV panel shows
+the calculated 60-day band and seven-day mean. A separately marked after-workout
+night may extend the calendar axis; it never enters the pre-workout statistics.
+Missing nights leave gaps, and a missing stage breakdown uses a gray total-sleep
+bar instead of invented stages. Sleep labels show duration and quality /100.
+
+Tiles use **calculated historical deviation**, with visible text labels as well
+as color. Each metric needs at least 14 observed nights in the preceding 60 days:
+
+- Green: within its 10th–90th percentile reference band.
+- Yellow: outside that band, within extended outer limits.
+- Red: beyond the outer limits, labeled "Large deviation".
+- Gray: reference-only tile, missing metric, or insufficient history.
+
+Each outer limit extends its reference edge by the larger of half the band width
+or 10% of the historical median. Both unusually low and high values count as
+deviations; the colors are not Suunto readiness or medical alerts. Nightly HRV
+and the seven-day mean are assessed separately against the HRV reference. The
+sleep tile uses the worse available comparison of duration and quality, and
+overnight HR uses its own history. The report and JSON retain these rules and
+the separate metric statuses. These are explicit display rules, not a recreation
+of Suunto's unpublished status algorithm.
+
+A separate **Workout feeling** tile shows the subjective rating recorded in
+Suunto after the workout: 4–5 green, 3 yellow, 1–2 red, and missing/invalid ratings
+gray. Its colors follow the 1–5 rating, independently of historical recovery
+comparisons. The tile also works without sleep data; no rating is inferred from
+HRV, pace, or heart rate. The report includes the recorded feeling as well.
 
 Other commands: `workouts`, `track`, `analyze`, and `access`.
 Help: `python3 -m suunto_cloud --help` or `python3 -m suunto_cloud sync --help`.
@@ -298,13 +447,14 @@ personal reports out of commits and issue attachments.
 
 ## Releases
 
-**1.0.0** is the first stable release. See [CHANGELOG.md](CHANGELOG.md) for its
-features and release notes, and run `python3 -m suunto_cloud --version` to
-check the installed version.
+**1.1.0** adds interactive HTML charts, expanded workout metrics, weekly
+comparisons, and optional sleep/HRV context. See [CHANGELOG.md](CHANGELOG.md)
+for release notes, and run `python3 -m suunto_cloud --version` to check the
+installed version.
 
 Stable releases are maintained on `main` and identified by version tags such
-as `v1.0.0`. Development of subsequent iterations takes place on `develop`,
-which starts from the same commit as the 1.0.0 release.
+as `v1.1.0`. Release changes are committed on `develop`, merged into `main`,
+and tagged from `main`. Development of subsequent iterations continues on `develop`.
 
 ## License
 

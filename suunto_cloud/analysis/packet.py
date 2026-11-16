@@ -13,6 +13,7 @@ def cloud_metrics(workout, zone=None):
     return {
         'workout_key': workout['workoutKey'],
         'activity_id': workout.get('activityId'),
+        'activity_name': workout.get('activityName'),
         'timezone': timezone_name(zone),
         'start_local': local_timestamp(start / 1000, zone).isoformat(),
         'stop_local': local_timestamp(stop / 1000, zone).isoformat() if stop is not None else None,
@@ -71,6 +72,7 @@ def build_packet(manifest, records, analyses, zone=None):
             'cloud': cloud_metrics(by_key[key], zone),
             'fit': fit,
             'distance_blocks': blocks,
+            'recovery': entry.get('recovery'),
             'files': {field: entry[field] for field in
                       ('cloud_summary_path', 'fit_path', 'decoded_path', 'analysis_path')},
             **({'outputs': entry['outputs']} if 'outputs' in entry else {}),
@@ -172,6 +174,7 @@ def brief_packet(packet):
                                   for t in cloud['alternative_tss']]
         core['suuntoplus_apps'] = cloud.get('suuntoplus_apps')
         result['workouts'].append({'cloud': core, 'lap_columns': columns, 'lap_rows': rows,
+                                   'recovery': workout.get('recovery'),
                                    'distance_blocks': workout.get('distance_blocks') or distance_blocks(selected_laps, samples),
                                    'pauses': fit['timer']['pauses'], 'hr_peak': fit['hr_peak'],
                                    'sample_counts': {k: fit[k] for k in ('record_count', 'active_hr_sample_count',
