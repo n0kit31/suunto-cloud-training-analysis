@@ -6,6 +6,25 @@ Notable changes to Suunto Cloud Training Analysis are recorded here.
 
 Future iterations are developed on the `develop` branch.
 
+## [1.1.0] - 2026-11-16
+
+### Added
+
+- Offline interactive HTML charts with a synchronized cursor, pinned readouts, keyboard time selection, and SVG downloads.
+- Workout summaries and same-week comparisons of available sessions, with distance, active time, and HR-based TSS totals.
+- Charts for power, cadence, ground contact, estimated step length, speed, and estimated terrain grade.
+- Optional sleep and HRV context from private snapshots, with nightly history, sleep stages, and calculated historical reference colors.
+- Activity type, recorded start/end times, and a colored workout feeling tile in chart headers.
+
+### Changed
+
+- Filled, smoothed workout charts, expanded non-HR axes, fixed 10-minute time ticks, and a configurable heart rate range (65–190 bpm by default).
+- Refreshed README illustrations with expanded marathon charts and a separate synthetic sleep/HRV example.
+
+### Fixed
+
+- Restored Python 3.9 compatibility and refreshed the test-count badge.
+
 ## [1.0.0] - 2026-11-13
 
 First stable release of the Docker-ready CLI for downloading and analyzing
@@ -34,5 +53,6 @@ Suunto workouts, with local reports and portable charts.
 - Credentials, OAuth tokens, raw workout files, and personal reports remain outside the release.
 - Licensed under GNU GPL v3 or later (`GPL-3.0-or-later`).
 
-[Unreleased]: https://github.com/n0kit31/suunto-cloud-training-analysis/compare/v1.0.0...develop
+[Unreleased]: https://github.com/n0kit31/suunto-cloud-training-analysis/compare/v1.1.0...develop
+[1.1.0]: https://github.com/n0kit31/suunto-cloud-training-analysis/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/n0kit31/suunto-cloud-training-analysis/tree/v1.0.0

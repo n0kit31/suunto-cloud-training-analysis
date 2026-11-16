@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/n0kit31/suunto-cloud-training-analysis/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/n0kit31/suunto-cloud-training-analysis/actions/workflows/ci.yml)
 [![Test count](docs/badges/tests.svg)](#tests)
-[![Release: 1.0.0](https://img.shields.io/badge/release-1.0.0-blue)](CHANGELOG.md)
+[![Release: 1.1.0](https://img.shields.io/badge/release-1.1.0-blue)](CHANGELOG.md)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](LICENSE)
 [![Python: 3.9+](https://img.shields.io/badge/Python-3.9%2B-3776AB?logo=python&logoColor=white)](#requirements)
 [![Node.js: 24](https://img.shields.io/badge/Node.js-24-339933?logo=nodedotjs&logoColor=white)](Dockerfile)
@@ -37,7 +37,9 @@ The current tools download data from Cloud API; this repository has no MCP clien
 
 - Fetch workout summaries and original FIT files with automatic OAuth refresh.
 - Analyze pace, heart rate, power, laps, pauses, running mechanics, and SuuntoPlus fields.
-- Generate Markdown/JSON reports and offline HTML charts with a synchronized cursor, plus SVG exports.
+- Generate Markdown/JSON reports and offline HTML charts with a synchronized cursor, pinned readouts, keyboard time selection, and SVG downloads.
+- Compare available sessions from the same week by distance, active time, and HR-based TSS.
+- Add optional sleep/HRV history, sleep stages, historical reference colors, and recorded workout feeling.
 - Run in Docker while keeping credentials and raw workout files outside the image and Git.
 
 ## Independence and API access
@@ -111,7 +113,25 @@ measurements; the official race result has not been verified.
 | Peak training effect | 5.0 |
 | Timer pauses | None |
 
-![Marathon analysis: continuous smoothed heart rate, pace, and elevation over active workout time](docs/examples/marathon-overview.svg)
+The static previews below use the current chart renderer. The CLI also produces
+an offline HTML page with synchronized readouts, pinning, keyboard controls,
+an English workout summary, and a comparison with available sessions that week.
+
+![Marathon analysis: filled heart rate, pace, and elevation charts over active workout time](docs/examples/marathon-overview.svg)
+
+<details>
+<summary>Power, speed, and estimated terrain grade</summary>
+
+![Marathon analysis: running power, speed, and signed terrain grade](docs/examples/marathon-power-terrain.svg)
+
+</details>
+
+<details>
+<summary>Running mechanics: cadence, ground contact, and estimated step length</summary>
+
+![Marathon analysis: observed cadence, ground contact, and estimated step length with median trends](docs/examples/marathon-mechanics.svg)
+
+</details>
 
 **Interpretation.** The first 21 km took 1:41:36.2 and the next 21 km took
 1:42:29.7, a difference of 53.5 seconds. These are equal-distance watch
@@ -121,10 +141,27 @@ steady late in the race, with the final 320 m covered in 1:21.0 (4:13.1 min/km).
 The recording shows a sustained effort and a faster finish; it does not
 establish the cause of the heart rate increase.
 
-Heart rate uses a centered 15 s moving average; gaps are connected linearly
-for display only. Pace uses a 10 s median. Charts show active workout time,
-and summary statistics use source measurements. The example includes no GPS
-coordinates, account identifiers, or raw workout files.
+Heart rate, elevation, and power use centered 15 s moving means; pace and speed
+use 15 s medians. Mechanics show observed dots with a median trend. Heart rate
+and pace gaps are connected linearly for display only. Heart rate uses a
+65–190 bpm axis; other axes double the displayed min–max span. Charts show active
+workout time with 10-minute ticks, and summary statistics use source measurements.
+Step length and terrain grade are estimates; see [chart methods](#usage).
+The example includes no GPS coordinates, account identifiers, or raw workout files.
+
+### Sleep and HRV preview (synthetic)
+
+This separate illustration uses entirely synthetic nights and a synthetic
+workout feeling rating. It is not the marathon owner's recovery data. It shows
+the recovery tiles, seven-night HRV history, calculated 60-day reference band,
+and sleep stages. Missing nights remain gaps; the after-workout night is marked
+separately and excluded from pre-workout statistics.
+
+![Synthetic recovery example: historical comparison tiles, nightly HRV, and stacked sleep stages](docs/examples/recovery-synthetic.svg)
+
+Colors describe deviations from the calculated history and the recorded feeling
+rating. They are not Suunto readiness statuses. See [sleep and HRV context](#sleep-and-hrv-context)
+for data import and calculation details.
 
 ## Structure
 
@@ -410,13 +447,14 @@ personal reports out of commits and issue attachments.
 
 ## Releases
 
-**1.0.0** is the first stable release. See [CHANGELOG.md](CHANGELOG.md) for its
-features and release notes, and run `python3 -m suunto_cloud --version` to
-check the installed version.
+**1.1.0** adds interactive HTML charts, expanded workout metrics, weekly
+comparisons, and optional sleep/HRV context. See [CHANGELOG.md](CHANGELOG.md)
+for release notes, and run `python3 -m suunto_cloud --version` to check the
+installed version.
 
 Stable releases are maintained on `main` and identified by version tags such
-as `v1.0.0`. Development of subsequent iterations takes place on `develop`,
-which starts from the same commit as the 1.0.0 release.
+as `v1.1.0`. Release changes are committed on `develop`, merged into `main`,
+and tagged from `main`. Development of subsequent iterations continues on `develop`.
 
 ## License
 
