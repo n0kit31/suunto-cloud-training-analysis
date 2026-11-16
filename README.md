@@ -113,25 +113,22 @@ measurements; the official race result has not been verified.
 | Peak training effect | 5.0 |
 | Timer pauses | None |
 
-The static previews below use the current chart renderer. The CLI also produces
-an offline HTML page with synchronized readouts, pinning, keyboard controls,
-an English workout summary, and a comparison with available sessions that week.
+[**Download the interactive marathon chart (HTML)**](docs/examples/marathon-overview.html)
+and open it in a browser. The self-contained page works offline and includes
+all nine workout panels, the recorded workout feeling, an English workout
+summary, and a weekly table. Only the marathon is included in this example's
+weekly records; the table does not represent a complete training week.
+The page also includes the separate, clearly labeled synthetic sleep and HRV
+illustration shown below, with all recovery tiles and sleep-stage charts.
 
-![Marathon analysis: filled heart rate, pace, and elevation charts over active workout time](docs/examples/marathon-overview.svg)
+Move the pointer across any workout panel to see synchronized metric readouts,
+active time, and distance. Click or tap to pin a position while scrolling through
+the panels, or select a time with the slider and arrow keys. Press Escape to
+clear the selection. The page also provides an SVG download.
 
-<details>
-<summary>Power, speed, and estimated terrain grade</summary>
+The image below is a static preview; download the HTML above to use the cursor.
 
-![Marathon analysis: running power, speed, and signed terrain grade](docs/examples/marathon-power-terrain.svg)
-
-</details>
-
-<details>
-<summary>Running mechanics: cadence, ground contact, and estimated step length</summary>
-
-![Marathon analysis: observed cadence, ground contact, and estimated step length with median trends](docs/examples/marathon-mechanics.svg)
-
-</details>
+[![Marathon analysis: workout feeling and all nine panels for heart rate, pace, elevation, power, cadence, ground contact, estimated step length, speed, and estimated terrain grade](docs/examples/marathon-overview.svg)](docs/examples/marathon-overview.html)
 
 **Interpretation.** The first 21 km took 1:41:36.2 and the next 21 km took
 1:42:29.7, a difference of 53.5 seconds. These are equal-distance watch
@@ -147,7 +144,9 @@ and pace gaps are connected linearly for display only. Heart rate uses a
 65–190 bpm axis; other axes double the displayed min–max span. Charts show active
 workout time with 10-minute ticks, and summary statistics use source measurements.
 Step length and terrain grade are estimates; see [chart methods](#usage).
-The example includes no GPS coordinates, account identifiers, or raw workout files.
+The HTML embeds only the plotted metric readouts with relative active time and
+distance. The example includes no GPS coordinates, account or workout
+identifiers, or raw workout files.
 
 ### Sleep and HRV preview (synthetic)
 
