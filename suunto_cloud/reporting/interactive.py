@@ -16,6 +16,8 @@ def chart_html(svg, interaction, svg_filename, summary=None):
     assets = Path(__file__).parent
     css = (assets / 'interactive.css').read_text()
     script = (assets / 'interactive.js').read_text()
+    options = ''.join(f'<option value="{i}">{escape(lap["label"])}</option>'
+                      for i, lap in enumerate(interaction['laps']))
     return f'''<!doctype html>
 <!-- generated: suunto-analysis -->
 <html lang="en">
@@ -35,6 +37,15 @@ def chart_html(svg, interaction, svg_filename, summary=None):
     <button id="clear-cursor" type="button" disabled>Clear</button>
     <button id="download-svg" type="button" data-filename="{escape(svg_filename, quote=True)}">Download SVG</button>
   </div>
+  <div class="zoom-controls">
+    <label>Select a lap
+      <select id="select-lap"{'' if options else ' disabled'}>
+        <option value="">Choose a lap</option>{options}
+      </select>
+    </label>
+    <button id="reset-zoom" type="button" disabled>Full workout</button>
+    <output id="range-stats" aria-live="polite"></output>
+  </div>
   <label class="timeline">Select active time
     <input id="cursor-slider" type="range" min="0" max="{interaction['total_seconds']}" step="1" value="0"
            aria-label="Selected active workout time" aria-valuetext="No position selected">
@@ -43,6 +54,8 @@ def chart_html(svg, interaction, svg_filename, summary=None):
 <main>
   {summary_html(summary)}
   <p class="help">Move to inspect all workout panels. Click or tap to pin; click again or press Escape to release.
+  Drag across a panel to zoom or select a lap above.
+  Lap statistics use FIT lap summaries. Drag selections use recorded samples, with distance and pace measured between the first and last distance samples in the range.
   Readouts follow the smoothed lines at nearby recorded times (within 1 second); gaps show “No data”.
   Sleep and HRV use their own calendar axis.</p>
   <noscript><p>The charts are visible below. Enable JavaScript for synchronized readouts.</p></noscript>

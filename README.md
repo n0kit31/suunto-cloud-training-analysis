@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/n0kit31/suunto-cloud-training-analysis/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/n0kit31/suunto-cloud-training-analysis/actions/workflows/ci.yml)
 [![Test count](docs/badges/tests.svg)](#tests)
-[![Release: 1.1.1](https://img.shields.io/badge/release-1.1.1-blue)](CHANGELOG.md)
+[![Release: 1.2.0](https://img.shields.io/badge/release-1.2.0-blue)](CHANGELOG.md)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](LICENSE)
 [![Python: 3.9+](https://img.shields.io/badge/Python-3.9%2B-3776AB?logo=python&logoColor=white)](#requirements)
 [![Node.js: 24](https://img.shields.io/badge/Node.js-24-339933?logo=nodedotjs&logoColor=white)](Dockerfile)
@@ -35,9 +35,10 @@ The current tools download data from Cloud API; this repository has no MCP clien
 
 ## Highlights
 
-- Fetch workout summaries and original FIT files with automatic OAuth refresh.
+- Page through workout history and fetch original FIT files with automatic OAuth refresh.
+- Import single-session FIT files offline and save a separate report.
 - Analyze pace, heart rate, power, laps, pauses, running mechanics, and SuuntoPlus fields.
-- Generate Markdown/JSON reports and offline HTML charts with a synchronized cursor, pinned readouts, keyboard time selection, and SVG downloads.
+- Generate Markdown/JSON reports and offline HTML charts with a synchronized cursor, drag-to-zoom, lap selection, and SVG downloads.
 - Compare available sessions from the same week by distance, active time, and HR-based TSS.
 - Add optional sleep/HRV history, sleep stages, historical reference colors, and recorded workout feeling.
 - Run in Docker while keeping credentials and raw workout files outside the image and Git.
@@ -274,6 +275,14 @@ the nearest available smoothed observation within one second, without
 interpolating measurement gaps. Every workout time axis has fixed 10-minute
 ticks. Sleep/HRV retain their separate calendar axis.
 
+Drag horizontally across a workout panel to zoom all workout charts, or use
+the lap picker to inspect recorded laps or guided workout steps. The selection
+shows active time, distance, pace, average and maximum heart rate, and average
+power where available. Lap values come from FIT lap summaries. Drag selections
+use recorded active samples, with pace and distance measured between the first
+and last available distance observations inside the selection. **Full workout**
+resets the view. **Download SVG** exports the full workout.
+
 Each HTML page also includes a short English workout summary and a comparison
 with available sessions from the same Monday–Sunday week in the workout's time
 zone. It shows distance, active time and HR-based TSS totals, highlights the
@@ -290,8 +299,10 @@ If the workout crosses midnight, both dates are shown. An unavailable end time
 is left out rather than reconstructed from active time.
 Labels use [Suunto App activity IDs](https://aspartnercontent.blob.core.windows.net/apizone/docs/Activities.pdf),
 then an explicit activity name or FIT sport/sub-sport when the ID is not mapped.
-The current version downloads one page of the workout list, not the complete
-history.
+Sync pages back through the Monday of the earliest requested date in the
+configured time zone. Use `workouts --all` for all pages or `workouts --since DATE`
+to list workouts started on or after a local calendar date. An interrupted or
+stalled page traversal leaves the previous list cache available.
 
 Regenerate an existing chart without downloading data again:
 
@@ -365,7 +376,6 @@ gray. Its colors follow the 1–5 rating, independently of historical recovery
 comparisons. The tile also works without sleep data; no rating is inferred from
 HRV, pace, or heart rate. The report includes the recorded feeling as well.
 
-Other commands: `workouts`, `track`, `analyze`, and `access`.
 Help: `python3 -m suunto_cloud --help` or `python3 -m suunto_cloud sync --help`.
 The legacy `python3 sync.py ...` command still works through a compatibility wrapper.
 
@@ -374,14 +384,22 @@ The legacy `python3 sync.py ...` command still works through a compatibility wra
 | `sync --date YYYY-MM-DD --analysis --brief` | Download fresh data and produce a concise analysis |
 | `sync --date YYYY-MM-DD --analysis --brief --charts` | Also generate charts |
 | `charts PATH_TO_REPORT.json` | Regenerate charts from saved data without API access |
-| `workouts` | Download the current workout list |
+| `workouts` | Download the latest workout-list page |
+| `workouts --all` / `workouts --since YYYY-MM-DD` | Page through all workouts or list workouts started since a local date |
 | `track --workout-key WORKOUT_KEY` | Download a recorded FIT and export GPX |
 | `analyze PATH_TO_DECODED.json` | Analyze decoded FIT samples |
+| `import-fit PATH_TO_WORKOUT.fit [--charts]` | Analyze a local single-session FIT file and save a separate report |
 | `oauth` | Authorize the Suunto account |
 | `access --configure` | Save credentials using hidden interactive input |
 
 Run commands as `docker compose run --rm suunto COMMAND`, or as
 `python3 -m suunto_cloud COMMAND` during local development.
+
+Local FIT imports use only information in the file. Cloud fields such as TSS
+and workout feeling remain unavailable, and charts require active timer
+intervals and usable measurements. The report and chart filenames include a
+FIT fingerprint so a synced workout with the same start time has its own files.
+See the [Docker import instructions](docs/docker.md#import-a-local-fit-file).
 
 ## Docker
 
@@ -433,14 +451,16 @@ personal reports out of commits and issue attachments.
 
 ## Releases
 
-**1.1.1** is a documentation release that refreshes the marathon example.
+[**1.2.0**](https://github.com/n0kit31/suunto-cloud-training-analysis/releases/tag/v1.2.0)
+adds workout-list pagination, offline FIT import, and zoom and lap
+selection in workout charts. **1.1.1** refreshes the marathon example.
 **1.1.0** adds interactive HTML charts, expanded workout metrics, weekly
 comparisons, and optional sleep/HRV context. See [CHANGELOG.md](CHANGELOG.md)
 for release notes, and run `python3 -m suunto_cloud --version` to check the
 installed version.
 
 Stable releases are maintained on `main` and identified by version tags such
-as `v1.1.1`. Release changes are committed on `develop`, merged into `main`,
+as `v1.2.0`. Release changes are committed on `develop`, merged into `main`,
 and tagged from `main`. Development of subsequent iterations continues on `develop`.
 
 ## License

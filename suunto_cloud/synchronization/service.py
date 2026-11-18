@@ -2,11 +2,10 @@
 """Fetch fresh Cloud summaries, FIT and decoded measurements for selected local dates."""
 
 import argparse
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 import hashlib
 import json
 from pathlib import Path
-import subprocess
 import sys
 from time import perf_counter
 from urllib.error import URLError
@@ -14,8 +13,8 @@ from urllib.error import URLError
 from suunto_cloud.authentication.access import AccessError, authorized_call, configure, safe_error
 from suunto_cloud.storage.local import ROOT, private_directory, private_json, user_timezone
 from suunto_cloud.timezones import local_timestamp, timezone_name
-from suunto_cloud.fit import SCRIPTS_DIRECTORY
-from suunto_cloud.downloads.workouts import fetch_workouts, save_workouts, workout_records
+from suunto_cloud.fit import decode_fit
+from suunto_cloud.downloads.workouts import date_cutoff, fetch_workouts, paginated_workouts, save_workouts, workout_records
 from suunto_cloud.downloads.tracks import choose_workout, fetch_fit, save_fit
 from suunto_cloud.analysis.fit import summarize
 from suunto_cloud.analysis.packet import build_packet, brief_packet, cloud_metrics
@@ -42,7 +41,10 @@ def sync(dates, decode=True, analysis=False, brief=False, charts=False, zone=Non
             print(message, flush=True)
 
     wanted = {date.fromisoformat(day) for day in dates}
-    data = authorized_call(fetch_workouts)
+    first_day = min(wanted)
+    monday = first_day - timedelta(days=first_day.weekday())
+    data = paginated_workouts(lambda **query: authorized_call(
+        lambda token, key: fetch_workouts(token, key, **query)), cutoff=date_cutoff(monday, zone))
     records = workout_records(data)
     save_workouts(data)  # Only replace the cache after a successful, validated API response.
     selected = []
@@ -54,7 +56,8 @@ def sync(dates, decode=True, analysis=False, brief=False, charts=False, zone=Non
     missing = sorted(str(day) for day in wanted - found)
     manifest = {'retrieved_at_utc': datetime.now(timezone.utc).isoformat(),
                 'requested_dates': sorted(dates), 'timezone': timezone_name(zone),
-                'missing_dates': missing, 'workouts': [], 'complete': False}
+                'workout_list_pages': data['metadata']['pages'], 'missing_dates': missing,
+                'workouts': [], 'complete': False}
     manifest['timings_seconds'] = {'list': round(perf_counter() - started, 4)}
     manifest_path = private_directory() / 'sync.json'
     private_json(manifest_path, manifest)
@@ -85,12 +88,8 @@ def sync(dates, decode=True, analysis=False, brief=False, charts=False, zone=Non
             entry['timings_seconds'] = {'fit_download': round(perf_counter() - fit_started, 4)}
             if decode:
                 decode_started = perf_counter()
-                result = subprocess.run(['node', str(SCRIPTS_DIRECTORY / 'decode.cjs'), str(fit_path), str(decoded_path)],
-                                        check=False, capture_output=True)
-                if result.returncode:
-                    raise AccessError('FIT saved, but decoding failed. Check Node.js and fit-file-parser.')
                 # Do not mark decoding successful merely because an old output file exists.
-                decoded = json.loads(decoded_path.read_text())
+                decoded = decode_fit(fit_path, decoded_path)
                 entry.update({'decoded': True, 'decoded_path': str(decoded_path)})
                 entry['timings_seconds']['decode'] = round(perf_counter() - decode_started, 4)
                 if analysis:

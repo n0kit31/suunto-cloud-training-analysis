@@ -14,6 +14,9 @@ button[aria-pressed="true"] { background: #e3eef8; border-color: #24679c; color:
 :focus-visible { outline: 3px solid #24679c; outline-offset: 3px; }
 .timeline { flex-basis: 100%; display: flex; align-items: center; gap: 12px; }
 .timeline input { flex: 1; min-width: 100px; accent-color: #24679c; }
+.zoom-controls { flex-basis: 100%; display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; font-size: 13px; }
+.zoom-controls select { margin-left: 5px; font: inherit; color: inherit; max-width: 100%; }
+#range-stats { font-variant-numeric: tabular-nums; }
 main { max-width: 1440px; margin: 0 auto; padding: 12px 20px 30px; }
 .workout-summary { display: grid; grid-template-columns: minmax(260px, .85fr) minmax(0, 1.5fr); gap: 16px; margin: 4px 0 18px; }
 .workout-summary article { background: white; border: 1px solid #dce1e6; border-radius: 10px; padding: 20px; min-width: 0; }
@@ -35,7 +38,9 @@ main { max-width: 1440px; margin: 0 auto; padding: 12px 20px 30px; }
 .help { margin: 4px 0 14px; font-size: 13px; color: #526170; line-height: 1.6; }
 .chart-sheet { background: white; border: 1px solid #dce1e6; border-radius: 10px; overflow: auto; }
 .chart-sheet > svg { display: block; width: 100%; min-width: 680px; height: auto; }
-[data-cursor-overlay] { pointer-events: none; }
+[data-cursor-overlay], [data-selection-overlay], [data-zoom-layer] { pointer-events: none; }
+[data-zoomed] [data-full-plot] { display: none; }
+.chart-sheet > svg { user-select: none; }
 @media (max-width: 640px) {
   .inspector { padding: 10px 12px 6px; gap: 8px 14px; }
   .readout strong { font-size: 19px; }

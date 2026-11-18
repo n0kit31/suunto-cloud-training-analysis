@@ -29,7 +29,8 @@ def main(argv=None):
     project = args.report.resolve().parent.parent
     recovery = (recovery_context(report['cloud'], read_sleep(args.sleep_data, required=True))
                 if args.sleep_data else report.get('recovery'))
-    peers = comparison_workouts(project, report['cloud'], report.get('chart_summary'))
+    peers = (None if report['source'].get('source_type') == 'local_fit' else
+             comparison_workouts(project, report['cloud'], report.get('chart_summary')))
     outputs = write_outputs(project, report['cloud'], report['fit'], decoded,
                             report['source'], report['retrieved_at_utc'], charts=True,
                             hr_range=args.hr_range, recovery=recovery, week_workouts=peers)

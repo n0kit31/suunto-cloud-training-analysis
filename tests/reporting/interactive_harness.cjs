@@ -11,14 +11,15 @@ class Element {
     this.dataset = {};
   }
   setAttribute(key, value) { this.attributes[key] = String(value); }
+  removeAttribute(key) { delete this.attributes[key]; }
   appendChild(child) { this.children.push(child); child.parent = this; return child; }
   addEventListener(key, callback) { this.listeners[key] = callback; }
   dispatch(type, values = {}) { this.listeners[type]?.({ currentTarget: this, ...values }); }
   remove() { this.parent.children = this.parent.children.filter(child => child !== this); }
   querySelector(selector) {
-    const attribute = selector.slice(1, -1);
+    const [attribute, value] = selector.slice(1, -1).split('=');
     for (const child of this.children) {
-      if (attribute in child.attributes) return child;
+      if (attribute in child.attributes && (value === undefined || child.attributes[attribute] === JSON.parse(value))) return child;
       const nested = child.querySelector(selector);
       if (nested) return nested;
     }
@@ -35,11 +36,24 @@ const panels = [
     points: [[0, 50], [20, 60]] },
 ];
 const data = { panels, total_seconds: 20, left: 85, plot_width: 1075, panel_height: 170,
-  distance: [[0, 0], [10, 0.04], [20, 0.08]] };
+  distance: [[0, 0], [10, 0.04], [20, 0.08]],
+  observed_hr: [[0, 130], [10, 170], [20, 180]], observed_power: [[0, 200], [10, 300]],
+  work_bands: [[0, 10]],
+  laps: [{ label: 'Workout step 1', start: 0, end: 10, distance_m: 50,
+    active_seconds: 10, avg_hr: 140, max_hr: 160, avg_power_w: 230 }] };
 const ids = Object.fromEntries(['chart-data', 'cursor-time', 'cursor-distance', 'cursor-status',
-  'pin-cursor', 'clear-cursor', 'cursor-slider', 'download-svg'].map(id => [id, new Element()]));
-ids['chart-data'].textContent = JSON.stringify(data);
+  'pin-cursor', 'clear-cursor', 'cursor-slider', 'download-svg', 'reset-zoom', 'select-lap',
+  'range-stats'].map(id => [id, new Element()]));
 const svg = new Element('svg');
+for (const panel of panels) {
+  panel.group_sizes = panel.key === 'elevation' ? [1, 1] : [panel.points.length];
+  panel.dots = [];
+  panel.clip_path = 'url(#panel)';
+  panel.baseline = panel.top + 170;
+  svg.appendChild(new Element('g', { 'data-metric': panel.key }));
+}
+ids['chart-data'].textContent = JSON.stringify(data);
+svg.setPointerCapture = () => {};
 // Simulate 50% scaling and a scrolled viewport. Screen CTM conversion must undo both.
 svg.getScreenCTM = () => ({ inverse: () => ({}) });
 svg.createSVGPoint = () => ({ x: 0, y: 0, matrixTransform() { return { x: (this.x - 20) * 2, y: (this.y + 200) * 2 }; } });
@@ -50,8 +64,8 @@ document.createElementNS = (_ns, tag) => new Element(tag);
 const script = fs.readFileSync(path.join(__dirname, '../../suunto_cloud/reporting/interactive.js'), 'utf8');
 vm.runInNewContext(script, { document, setTimeout });
 const event = (time, panel = 0) => ({ clientX: 20 + (85 + time / 20 * 1075) / 2,
-  clientY: (panels[panel].top + 70) / 2 - 200, pointerType: 'mouse' });
-const overlay = svg.children[0];
+  clientY: (panels[panel].top + 70) / 2 - 200, pointerType: 'mouse', pointerId: 1, button: 0 });
+const overlay = svg.querySelector('[data-cursor-overlay]');
 
 svg.dispatch('pointermove', event(10));
 assert.equal(ids['cursor-time'].textContent, '0:10');
@@ -90,4 +104,26 @@ svg.dispatch('click', event(10));
 assert.equal(ids['pin-cursor'].attributes['aria-pressed'], 'true');
 ids['clear-cursor'].dispatch('click');
 assert.equal(overlay.attributes.visibility, 'hidden');
-console.log('Cursor checks passed: alignment, scaling, gaps, pin, clear, keyboard and touch selection.');
+
+svg.dispatch('pointerdown', event(20));
+svg.dispatch('pointermove', event(0));
+svg.dispatch('pointermove', event(10));
+svg.dispatch('pointerup', event(10));
+svg.dispatch('click', event(10));
+assert.equal(overlay.attributes.visibility, 'hidden'); // Drag must not pin the cursor.
+assert.equal(ids['cursor-slider'].min, 10);
+assert.match(ids['range-stats'].textContent, /HR avg\/max 170\/170 bpm/);
+svg.dispatch('pointermove', event(0));
+assert.equal(ids['cursor-time'].textContent, '0:10');
+assert.equal(overlay.children[0].children[0].attributes.x1, '85');
+assert.ok(svg.querySelector('[data-zoom-layer]'));
+assert.equal(svg.children[2].querySelector('[data-zoom-layer]').children.at(-1).children.length, 0);
+
+ids['select-lap'].value = '0';
+ids['select-lap'].dispatch('change');
+assert.match(ids['range-stats'].textContent, /Workout step 1 \(FIT\).*0\.050 km.*HR avg\/max 140\/160 bpm/);
+assert.equal(ids['cursor-slider'].max, 10);
+ids['reset-zoom'].dispatch('click');
+assert.equal(ids['cursor-slider'].max, 20);
+assert.equal(svg.querySelector('[data-zoom-layer]'), null);
+console.log('Cursor and zoom checks passed.');

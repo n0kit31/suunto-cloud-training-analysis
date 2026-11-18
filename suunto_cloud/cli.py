@@ -13,6 +13,7 @@ COMMANDS = {
     'workouts': ('suunto_cloud.downloads.workouts', 'Download the workout list'),
     'track': ('suunto_cloud.downloads.tracks', 'Download FIT or export GPX'),
     'analyze': ('suunto_cloud.analysis.command', 'Analyze decoded FIT data'),
+    'import-fit': ('suunto_cloud.fit.import_command', 'Analyze a local FIT file offline'),
     'charts': ('suunto_cloud.reporting.command', 'Generate charts from a saved report'),
 }
 
