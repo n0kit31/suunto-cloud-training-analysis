@@ -14,8 +14,9 @@
 - FIT files, GPX files, reports, and personal `TRAINING*.md` context stay outside
   the repository.
 - The user explicitly approved their marathon analysis as a README example.
-  That example may include aggregate metrics and chart-only SVGs in
-  `docs/examples/`. Omit account/workout identifiers, GPS coordinates,
+  That example may include aggregate metrics, chart-only SVGs, and self-contained
+  interactive HTML charts in `docs/examples/`. HTML readouts contain only relative
+  active time, distance, and plotted metrics. Omit account/workout identifiers, GPS coordinates,
   credentials, raw FIT/GPX files, and full report JSON.
 - Before committing or pushing, check the staged files for secrets. Do not print
   any discovered values in the terminal or response.

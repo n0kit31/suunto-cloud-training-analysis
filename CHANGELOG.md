@@ -6,6 +6,23 @@ Notable changes to Suunto Cloud Training Analysis are recorded here.
 
 Future iterations are developed on the `develop` branch.
 
+## [1.1.1] - 2026-11-18
+
+Documentation-only release; application behavior is unchanged from 1.1.0.
+
+### Changed
+
+- The README marathon example is a single SVG exported from the HTML chart, showing the workout feeling and all nine panels.
+- Repository privacy rules cover self-contained interactive HTML charts in `docs/examples/`.
+
+### Added
+
+- Self-contained interactive HTML version of the marathon example in `docs/examples/marathon-overview.html`.
+
+### Removed
+
+- Separate power/terrain and running-mechanics example SVGs, now part of the combined overview.
+
 ## [1.1.0] - 2026-11-16
 
 ### Added
@@ -53,6 +70,7 @@ Suunto workouts, with local reports and portable charts.
 - Credentials, OAuth tokens, raw workout files, and personal reports remain outside the release.
 - Licensed under GNU GPL v3 or later (`GPL-3.0-or-later`).
 
-[Unreleased]: https://github.com/n0kit31/suunto-cloud-training-analysis/compare/v1.1.0...develop
+[Unreleased]: https://github.com/n0kit31/suunto-cloud-training-analysis/compare/v1.1.1...develop
+[1.1.1]: https://github.com/n0kit31/suunto-cloud-training-analysis/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/n0kit31/suunto-cloud-training-analysis/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/n0kit31/suunto-cloud-training-analysis/tree/v1.0.0

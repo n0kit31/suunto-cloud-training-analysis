@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/n0kit31/suunto-cloud-training-analysis/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/n0kit31/suunto-cloud-training-analysis/actions/workflows/ci.yml)
 [![Test count](docs/badges/tests.svg)](#tests)
-[![Release: 1.1.0](https://img.shields.io/badge/release-1.1.0-blue)](CHANGELOG.md)
+[![Release: 1.1.1](https://img.shields.io/badge/release-1.1.1-blue)](CHANGELOG.md)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](LICENSE)
 [![Python: 3.9+](https://img.shields.io/badge/Python-3.9%2B-3776AB?logo=python&logoColor=white)](#requirements)
 [![Node.js: 24](https://img.shields.io/badge/Node.js-24-339933?logo=nodedotjs&logoColor=white)](Dockerfile)
@@ -113,25 +113,10 @@ measurements; the official race result has not been verified.
 | Peak training effect | 5.0 |
 | Timer pauses | None |
 
-The static previews below use the current chart renderer. The CLI also produces
-an offline HTML page with synchronized readouts, pinning, keyboard controls,
-an English workout summary, and a comparison with available sessions that week.
+The SVG below is exported from the current HTML chart and shows all nine workout
+panels and the recorded workout feeling.
 
-![Marathon analysis: filled heart rate, pace, and elevation charts over active workout time](docs/examples/marathon-overview.svg)
-
-<details>
-<summary>Power, speed, and estimated terrain grade</summary>
-
-![Marathon analysis: running power, speed, and signed terrain grade](docs/examples/marathon-power-terrain.svg)
-
-</details>
-
-<details>
-<summary>Running mechanics: cadence, ground contact, and estimated step length</summary>
-
-![Marathon analysis: observed cadence, ground contact, and estimated step length with median trends](docs/examples/marathon-mechanics.svg)
-
-</details>
+![Marathon analysis: workout feeling and all nine panels for heart rate, pace, elevation, power, cadence, ground contact, estimated step length, speed, and estimated terrain grade](docs/examples/marathon-overview.svg)
 
 **Interpretation.** The first 21 km took 1:41:36.2 and the next 21 km took
 1:42:29.7, a difference of 53.5 seconds. These are equal-distance watch
@@ -147,7 +132,8 @@ and pace gaps are connected linearly for display only. Heart rate uses a
 65–190 bpm axis; other axes double the displayed min–max span. Charts show active
 workout time with 10-minute ticks, and summary statistics use source measurements.
 Step length and terrain grade are estimates; see [chart methods](#usage).
-The example includes no GPS coordinates, account identifiers, or raw workout files.
+The example includes no GPS coordinates, account or workout identifiers, or raw
+workout files.
 
 ### Sleep and HRV preview (synthetic)
 
@@ -447,13 +433,14 @@ personal reports out of commits and issue attachments.
 
 ## Releases
 
+**1.1.1** is a documentation release that refreshes the marathon example.
 **1.1.0** adds interactive HTML charts, expanded workout metrics, weekly
 comparisons, and optional sleep/HRV context. See [CHANGELOG.md](CHANGELOG.md)
 for release notes, and run `python3 -m suunto_cloud --version` to check the
 installed version.
 
 Stable releases are maintained on `main` and identified by version tags such
-as `v1.1.0`. Release changes are committed on `develop`, merged into `main`,
+as `v1.1.1`. Release changes are committed on `develop`, merged into `main`,
 and tagged from `main`. Development of subsequent iterations continues on `develop`.
 
 ## License
