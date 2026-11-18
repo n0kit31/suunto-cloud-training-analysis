@@ -99,7 +99,7 @@ class OutputTests(unittest.TestCase):
         self.assertEqual(heights, {130, 300})
 
     def test_default_produces_no_chart_and_preserves_written_assessment(self):
-        with patch('suunto_cloud.reporting.reports.chart_svg', side_effect=AssertionError('Unexpected chart')):
+        with patch('suunto_cloud.reporting.reports.prepare_chart', side_effect=AssertionError('Unexpected chart')):
             out = write_outputs(self.root, self.cloud, self.analysis, self.data, self.entry, 'first')
             self.assertIsNone(out['chart_path'])
             self.assertFalse((self.root / 'visualizations').exists())

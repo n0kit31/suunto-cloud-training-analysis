@@ -3,6 +3,7 @@
 
 import argparse
 from datetime import date, datetime, timedelta, timezone
+import fcntl
 import hashlib
 import json
 from pathlib import Path
@@ -11,7 +12,7 @@ from time import perf_counter
 from urllib.error import URLError
 
 from suunto_cloud.authentication.access import AccessError, authorized_call, configure, safe_error
-from suunto_cloud.storage.local import ROOT, private_directory, private_json, user_timezone
+from suunto_cloud.storage.local import ROOT, cloud_artifact_stem, private_directory, private_json, user_timezone
 from suunto_cloud.timezones import local_timestamp, timezone_name
 from suunto_cloud.fit import decode_fit
 from suunto_cloud.downloads.workouts import date_cutoff, fetch_workouts, paginated_workouts, save_workouts, workout_records
@@ -20,7 +21,10 @@ from suunto_cloud.analysis.fit import summarize
 from suunto_cloud.analysis.packet import build_packet, brief_packet, cloud_metrics
 from suunto_cloud.analysis.sleep import recovery_context
 from suunto_cloud.storage.sleep import read_sleep
-from suunto_cloud.reporting.reports import write_outputs, cleanup_charts
+from suunto_cloud.reporting.reports import prune_report_charts, write_outputs
+
+
+STAGE_ERRORS = (AccessError, OSError, ValueError, EOFError, KeyError, IndexError, TypeError, KeyboardInterrupt)
 
 
 def sync(dates, decode=True, analysis=False, brief=False, charts=False, zone=None, sleep_data=None):
@@ -32,8 +36,18 @@ def sync(dates, decode=True, analysis=False, brief=False, charts=False, zone=Non
         raise ValueError('--charts requires --analysis.')
     if sleep_data is not None and not analysis:
         raise ValueError('--sleep-data requires --analysis.')
-    sleep = read_sleep(sleep_data or private_directory() / 'sleep.json',
+    directory = private_directory()
+    sleep = read_sleep(sleep_data or directory / 'sleep.json',
                        required=sleep_data is not None) if analysis else None
+    with (directory / 'sync.lock').open('a') as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as error:
+            raise AccessError('Another sync is already running for this project.') from error
+        return _synchronize(directory, dates, decode, analysis, brief, charts, zone, sleep)
+
+
+def _synchronize(directory, dates, decode, analysis, brief, charts, zone, sleep):
     started = perf_counter()
 
     def progress(message):
@@ -59,7 +73,7 @@ def sync(dates, decode=True, analysis=False, brief=False, charts=False, zone=Non
                 'workout_list_pages': data['metadata']['pages'], 'missing_dates': missing,
                 'workouts': [], 'complete': False}
     manifest['timings_seconds'] = {'list': round(perf_counter() - started, 4)}
-    manifest_path = private_directory() / 'sync.json'
+    manifest_path = directory / 'sync.json'
     private_json(manifest_path, manifest)
     if not selected:
         raise AccessError('No workouts for the requested dates in the fresh API response. Cached data was not substituted.')
@@ -67,19 +81,22 @@ def sync(dates, decode=True, analysis=False, brief=False, charts=False, zone=Non
     analyses = {}
     for start, workout in sorted(selected, key=lambda item: item[0]):
         key = workout['workoutKey']
-        # Reuse the strict ID validation used by the FIT downloader.
-        choose_workout([workout], workout_key=key)
-        summary_path = private_directory() / 'workouts' / (key + '.json')
-        private_json(summary_path, workout)
-        stem = start.strftime('%Y-%m-%d-%H%M%S')
-        fit_path = private_directory() / 'tracks' / (stem + '.fit')
-        decoded_path = fit_path.with_suffix('.decoded.json')
         entry = {'workout_key': key, 'date': start.date().isoformat(),
-                 'cloud_summary_path': str(summary_path), 'fit_downloaded': False, 'decoded': False}
+                 'fit_downloaded': False, 'decoded': False}
         manifest['workouts'].append(entry)
-        private_json(manifest_path, manifest)
-        progress(f'Downloading FIT: {start.date()}, {workout.get("totalDistance", 0) / 1000:.3f} km...')
+        stage = 'cloud_summary'
         try:
+            # Reuse the strict ID validation used by the FIT downloader.
+            choose_workout([workout], workout_key=key)
+            summary_path = directory / 'workouts' / (key + '.json')
+            private_json(summary_path, workout)
+            entry['cloud_summary_path'] = str(summary_path)
+            private_json(manifest_path, manifest)
+            stem = cloud_artifact_stem(start, key)
+            fit_path = directory / 'tracks' / (stem + '.fit')
+            decoded_path = fit_path.with_suffix('.decoded.json')
+            stage = 'fit_download'
+            progress(f'Downloading FIT: {start.date()}, {workout.get("totalDistance", 0) / 1000:.3f} km...')
             fit_started = perf_counter()
             content = authorized_call(lambda token, subkey: fetch_fit(key, token, subkey))
             save_fit(fit_path, content)
@@ -87,12 +104,14 @@ def sync(dates, decode=True, analysis=False, brief=False, charts=False, zone=Non
                           'fit_bytes': len(content), 'fit_sha256': hashlib.sha256(content).hexdigest()})
             entry['timings_seconds'] = {'fit_download': round(perf_counter() - fit_started, 4)}
             if decode:
+                stage = 'decode'
                 decode_started = perf_counter()
                 # Do not mark decoding successful merely because an old output file exists.
                 decoded = decode_fit(fit_path, decoded_path)
                 entry.update({'decoded': True, 'decoded_path': str(decoded_path)})
                 entry['timings_seconds']['decode'] = round(perf_counter() - decode_started, 4)
                 if analysis:
+                    stage = 'analysis'
                     analyze_started = perf_counter()
                     try:
                         analyses[key] = summarize(decoded, zone)
@@ -103,46 +122,70 @@ def sync(dates, decode=True, analysis=False, brief=False, charts=False, zone=Non
                     entry.update({'analyzed': True, 'analysis_path': str(analysis_path)})
                     entry['timings_seconds']['analysis'] = round(perf_counter() - analyze_started, 4)
             progress(f'Saved FIT{ " and full JSON samples" if decode else ""}: {start.date()}.')
-        except (AccessError, OSError, ValueError, URLError) as error:
+        except STAGE_ERRORS as error:
+            entry['failed_stage'] = stage
             entry['error'] = safe_error(error)
+            if isinstance(error, KeyboardInterrupt):
+                raise
             failed = True
             print(entry['error'], file=sys.stderr)
         finally:
             private_json(manifest_path, manifest)
-    manifest['complete'] = not failed and not missing
     packet = None
-    if analysis and manifest['complete']:
-        by_key = {workout['workoutKey']: workout for workout in records}
-        comparisons = [cloud_metrics(workout, zone) for workout in records] if charts else None
-        for entry in manifest['workouts']:
-            output_started = perf_counter()
-            key = entry['workout_key']
-            cloud = cloud_metrics(by_key[key], zone)
-            entry['recovery'] = recovery_context(cloud, sleep)
-            entry['outputs'] = write_outputs(ROOT.parent, cloud, analyses[key],
-                                             json.loads(Path(entry['decoded_path']).read_text()),
-                                             entry, manifest['retrieved_at_utc'], charts=charts,
-                                             recovery=entry['recovery'], week_workouts=comparisons)
-            entry['timings_seconds']['outputs'] = round(perf_counter() - output_started, 4)
-        manifest['removed_old_charts'] = cleanup_charts(
-            ROOT.parent / 'visualizations',
-            {entry['outputs'][key] for entry in manifest['workouts']
-             for key in ('chart_path', 'svg_path')}) if charts else []
-        packet = build_packet(manifest, records, analyses, zone)
-        packet_path = private_directory() / 'analysis.json'
-        private_json(packet_path, packet)
-        manifest['analysis_packet_path'] = str(packet_path)
-    manifest['timings_seconds']['total'] = round(perf_counter() - started, 4)
-    private_json(manifest_path, manifest)
+    try:
+        if not failed and not missing:
+            if analysis:
+                packet = _publish_analysis(directory, manifest_path, manifest, records, analyses, zone, sleep, charts)
+            manifest['complete'] = True
+    finally:
+        manifest['timings_seconds']['total'] = round(perf_counter() - started, 4)
+        private_json(manifest_path, manifest)
     if missing:
         print('Requested dates missing from the current API response: ' + ', '.join(missing), file=sys.stderr)
     if not manifest['complete']:
-        raise AccessError('Download incomplete. Details without credentials saved to .local/sync.json.')
+        raise AccessError('Synchronization incomplete. Details saved to .local/sync.json.')
     if packet is not None:
         print(json.dumps(brief_packet(packet) if brief else packet, ensure_ascii=False, separators=(',', ':')))
     else:
         progress(f'Completed: {len(selected)} activities. Manifest: {manifest_path}')
     return manifest
+
+
+def _publish_analysis(directory, manifest_path, manifest, records, analyses, zone, sleep, charts):
+    stage = 'report_context'
+    try:
+        by_key = {workout['workoutKey']: workout for workout in records}
+        comparisons = [cloud_metrics(workout, zone) for workout in records] if charts else None
+        stage = 'report'
+        for entry in manifest['workouts']:
+            output_started = perf_counter()
+            key = entry['workout_key']
+            try:
+                cloud = cloud_metrics(by_key[key], zone)
+                entry['recovery'] = recovery_context(cloud, sleep)
+                entry['outputs'] = write_outputs(ROOT.parent, cloud, analyses[key],
+                                                 json.loads(Path(entry['decoded_path']).read_text()),
+                                                 entry, manifest['retrieved_at_utc'], charts=charts,
+                                                 recovery=entry['recovery'], week_workouts=comparisons)
+            except STAGE_ERRORS as error:
+                entry.update(failed_stage=stage, error=safe_error(error))
+                raise
+            entry['timings_seconds']['outputs'] = round(perf_counter() - output_started, 4)
+            private_json(manifest_path, manifest)
+        stage = 'chart_cleanup'
+        manifest['removed_old_charts'] = prune_report_charts(
+            ROOT.parent, [entry['outputs'] for entry in manifest['workouts']]) if charts else []
+        stage = 'analysis_packet'
+        packet = build_packet({**manifest, 'complete': True}, records, analyses, zone)
+        packet_path = directory / 'analysis.json'
+        private_json(packet_path, packet)
+        manifest['analysis_packet_path'] = str(packet_path)
+        return packet
+    except STAGE_ERRORS as error:
+        manifest.update(failed_stage=stage, error=safe_error(error))
+        if isinstance(error, KeyboardInterrupt):
+            raise
+        raise AccessError(f'Synchronization failed during {stage}. Details saved to .local/sync.json.') from error
 
 
 def main(argv=None):

@@ -27,30 +27,35 @@ class Element {
   }
 }
 
-const panels = [
-  { key: 'heart-rate', color: 'red', lo: 65, hi: 190, digits: 0, top: 130,
+const generated = process.argv[2] === '--generated' ? JSON.parse(fs.readFileSync(0, 'utf8')) : null;
+const fixturePanels = [
+  { key: 'heart-rate', unit: 'bpm', color: 'red', lo: 65, hi: 190, digits: 0, top: 130,
     points: [[0, 120], [10, 150], [20, 160]] },
-  { key: 'pace', color: 'blue', lo: 3, hi: 8, digits: 0, inverted: true, top: 410,
+  { key: 'pace', unit: 'min/km', color: 'blue', lo: 3, hi: 8, digits: 0, inverted: true, top: 410,
     points: [[0, 5], [10, 4.5], [20, 6]] },
-  { key: 'elevation', color: 'green', lo: 0, hi: 100, digits: 0, top: 690,
+  { key: 'elevation', unit: 'm', color: 'green', lo: 0, hi: 100, digits: 0, top: 690,
     points: [[0, 50], [20, 60]] },
 ];
-const data = { panels, total_seconds: 20, left: 85, plot_width: 1075, panel_height: 170,
+const data = generated?.data ?? { panels: fixturePanels, total_seconds: 20,
+  left: 85, plot_width: 1075, panel_height: 170, tick_seconds: 600,
   distance: [[0, 0], [10, 0.04], [20, 0.08]],
   observed_hr: [[0, 130], [10, 170], [20, 180]], observed_power: [[0, 200], [10, 300]],
   work_bands: [[0, 10]],
   laps: [{ label: 'Workout step 1', start: 0, end: 10, distance_m: 50,
     active_seconds: 10, avg_hr: 140, max_hr: 160, avg_power_w: 230 }] };
+const panels = data.panels;
 const ids = Object.fromEntries(['chart-data', 'cursor-time', 'cursor-distance', 'cursor-status',
   'pin-cursor', 'clear-cursor', 'cursor-slider', 'download-svg', 'reset-zoom', 'select-lap',
   'range-stats'].map(id => [id, new Element()]));
 const svg = new Element('svg');
-for (const panel of panels) {
+for (const panel of fixturePanels) {
   panel.group_sizes = panel.key === 'elevation' ? [1, 1] : [panel.points.length];
   panel.dots = [];
   panel.clip_path = 'url(#panel)';
   panel.baseline = panel.top + 170;
-  svg.appendChild(new Element('g', { 'data-metric': panel.key }));
+}
+for (const attributes of generated?.panels ?? panels.map(panel => ({ 'data-metric': panel.key }))) {
+  svg.appendChild(new Element('g', attributes));
 }
 ids['chart-data'].textContent = JSON.stringify(data);
 svg.setPointerCapture = () => {};
@@ -61,11 +66,27 @@ const document = new Element('document');
 document.getElementById = id => ids[id];
 document.querySelector = () => svg;
 document.createElementNS = (_ns, tag) => new Element(tag);
-const script = fs.readFileSync(path.join(__dirname, '../../suunto_cloud/reporting/interactive.js'), 'utf8');
+const script = generated?.script ?? fs.readFileSync(path.join(__dirname, '../../suunto_cloud/reporting/interactive.js'), 'utf8');
 vm.runInNewContext(script, { document, setTimeout });
-const event = (time, panel = 0) => ({ clientX: 20 + (85 + time / 20 * 1075) / 2,
+const event = (time, panel = 0) => ({ clientX: 20 + (data.left + time / data.total_seconds * data.plot_width) / 2,
   clientY: (panels[panel].top + 70) / 2 - 200, pointerType: 'mouse', pointerId: 1, button: 0 });
 const overlay = svg.querySelector('[data-cursor-overlay]');
+
+if (generated) {
+  assert.equal(data.total_seconds, 120);
+  svg.dispatch('pointermove', event(22));
+  assert.equal(overlay.children[0].children[3].textContent, 'No data');
+  svg.dispatch('pointermove', event(10));
+  const cadence = svg.querySelector('[data-cursor-panel="cadence"]');
+  assert.match(cadence.children[3].textContent, / rpm$/);
+  ids['select-lap'].value = '0';
+  ids['select-lap'].dispatch('change');
+  assert.match(ids['range-stats'].textContent, /\(FIT\)/);
+  assert.ok(svg.querySelector('[data-zoom-layer]'));
+  ids['reset-zoom'].dispatch('click');
+  assert.equal(svg.querySelector('[data-zoom-layer]'), null);
+  process.exit(0);
+}
 
 svg.dispatch('pointermove', event(10));
 assert.equal(ids['cursor-time'].textContent, '0:10');

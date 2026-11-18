@@ -109,3 +109,30 @@ class InteractiveOutputTests(unittest.TestCase):
         harness = Path(__file__).with_name('interactive_harness.cjs')
         result = subprocess.run(['node', str(harness)], capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    @unittest.skipUnless(shutil.which('node'), 'Node.js is required for chart interaction tests')
+    def test_generated_chart_keeps_cadence_units_when_label_changes(self):
+        self.data['sessions'][0]['sport'] = 'cycling'
+        self.cloud['activity_id'] = 2
+        at = lambda index: self.data['records'][index]['timestamp']
+        self.data['events'][1:1] = [
+            {'event': 'timer', 'event_type': 'stop', 'timestamp': at(60)},
+            {'event': 'timer', 'event_type': 'start', 'timestamp': at(90)},
+        ]
+        for row in self.data['records'][20:25]:
+            del row['heart_rate']
+        out = self.output()
+        html = Path(out['chart_path']).read_text()
+        svg = ET.parse(out['svg_path']).getroot()
+        payload = json.loads(ChartDataParser(html).payload)
+        cadence = next(panel for panel in payload['panels'] if panel['key'] == 'cadence')
+        self.assertEqual(cadence.get('unit'), 'rpm')
+        cadence['label'] = 'Cadence'
+        bundle = json.dumps({
+            'data': payload,
+            'panels': [node.attrib for node in svg.iter() if 'data-metric' in node.attrib],
+            'script': html.split('<script>', 1)[1].split('</script>', 1)[0],
+        })
+        harness = Path(__file__).with_name('interactive_harness.cjs')
+        result = subprocess.run(['node', str(harness), '--generated'], input=bundle, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)

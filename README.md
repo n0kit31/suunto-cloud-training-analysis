@@ -304,6 +304,13 @@ configured time zone. Use `workouts --all` for all pages or `workouts --since DA
 to list workouts started on or after a local calendar date. An interrupted or
 stalled page traversal leaves the previous list cache available.
 
+New Cloud FIT, GPX, report and chart filenames combine the local start time
+with a workout fingerprint. Use the paths returned by `sync` or `track`.
+`charts` also accepts timestamp-only reports saved by earlier releases.
+After an incomplete sync, `.local/sync.json` records completed outputs and
+the stage that failed. A concurrent sync for the same project exits before
+modifying the manifest.
+
 Regenerate an existing chart without downloading data again:
 
 ```sh
