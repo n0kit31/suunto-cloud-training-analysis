@@ -6,6 +6,18 @@ Notable changes to Suunto Cloud Training Analysis are recorded here.
 
 Future iterations are developed on the `develop` branch.
 
+## [1.2.0] - 2026-11-18
+
+### Added
+
+- `workouts --all` pages through the workout list. `workouts --since DATE` lists workouts started on or after a local date.
+- `import-fit` analyzes a local single-session FIT file without API credentials and saves a separate report. Optional HTML and SVG charts can be regenerated offline.
+- Interactive charts support drag-to-zoom and lap selection across workout panels, with statistics from recorded samples or FIT lap summaries.
+
+### Changed
+
+- Date-based synchronization reads workout pages back to the week containing the earliest requested date. The default `workouts` command still fetches the latest page.
+
 ## [1.1.1] - 2026-11-18
 
 Documentation-only release; application behavior is unchanged from 1.1.0.
@@ -66,11 +78,12 @@ Suunto workouts, with local reports and portable charts.
 ### Release notes
 
 - The official Suunto MCP is a separate agent integration; the CLI accesses Cloud API directly.
-- Workout listing currently reads one API page, so complete history is not guaranteed.
+- In 1.0.0, workout listing read one API page.
 - Credentials, OAuth tokens, raw workout files, and personal reports remain outside the release.
 - Licensed under GNU GPL v3 or later (`GPL-3.0-or-later`).
 
-[Unreleased]: https://github.com/n0kit31/suunto-cloud-training-analysis/compare/v1.1.1...develop
+[Unreleased]: https://github.com/n0kit31/suunto-cloud-training-analysis/compare/v1.2.0...develop
+[1.2.0]: https://github.com/n0kit31/suunto-cloud-training-analysis/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/n0kit31/suunto-cloud-training-analysis/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/n0kit31/suunto-cloud-training-analysis/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/n0kit31/suunto-cloud-training-analysis/tree/v1.0.0

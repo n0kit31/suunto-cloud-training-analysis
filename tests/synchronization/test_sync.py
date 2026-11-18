@@ -30,7 +30,7 @@ class SyncAnalysisTests(unittest.TestCase):
         self.stack.enter_context(patch.object(sync, 'authorized_call', side_effect=lambda operation: operation('token', 'key')))
         self.fetch_list = self.stack.enter_context(patch.object(sync, 'fetch_workouts', return_value={'payload': [workout()]}))
         self.fetch_fit = self.stack.enter_context(patch.object(sync, 'fetch_fit', return_value=b'header00.FIT00'))
-        self.decoder = self.stack.enter_context(patch.object(sync.subprocess, 'run', side_effect=self.decode))
+        self.decoder = self.stack.enter_context(patch('suunto_cloud.fit.subprocess.run', side_effect=self.decode))
 
     def decode(self, command, **kwargs):
         Path(command[-1]).write_text(json.dumps(decoded()))

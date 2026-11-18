@@ -62,6 +62,8 @@ class InteractiveOutputTests(unittest.TestCase):
         payload = json.loads(ChartDataParser(html).payload)
         self.assertEqual(payload['total_seconds'], 150)
         self.assertEqual(payload['panels'][0]['key'], 'heart-rate')
+        self.assertEqual([(lap['start'], lap['end']) for lap in payload['laps']], [(0, 60), (60, 150)])
+        self.assertNotIn('position_lat', payload)
 
     def test_hover_observations_exclude_pauses_and_keep_measurement_gaps(self):
         at = lambda n: self.data['records'][n]['timestamp']
@@ -79,6 +81,7 @@ class InteractiveOutputTests(unittest.TestCase):
         self.assertEqual(payload['total_seconds'], 120)
         self.assertFalse(any(20 <= t < 25 for t, _ in hr['points']))
         self.assertTrue(all(value < 999 for _, value in hr['points']))
+        self.assertTrue(all(value < 999 for _, value in payload['observed_hr']))
         self.assertEqual(hr['points'][-1][0], 119)
         self.assertEqual(payload['distance'][-1][0], 119)
 

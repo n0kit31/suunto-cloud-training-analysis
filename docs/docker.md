@@ -74,6 +74,21 @@ docker compose run --rm suunto access
 
 If the refresh token is rejected, run `oauth` again with `--service-ports`.
 
+## Import a local FIT file
+
+Place the workout FIT in the mounted `.local/` directory. With the local
+directories and configuration file from the setup above in place, run:
+
+```sh
+docker compose run --rm -T suunto import-fit /app/suunto-cloud/.local/workout.fit --charts
+```
+
+The command works offline with the template configuration and needs no OAuth
+tokens. It saves the report under `../reports/`, decoded data under
+`.local/tracks/`, and the optional HTML and SVG under `../visualizations/`.
+It prints the container paths to those outputs. Pass the resulting report JSON
+path to `charts` to regenerate the charts from the stored samples.
+
 ## Data and credentials
 
 | Host path | Container path | Access |

@@ -238,14 +238,36 @@ def chart_svg(data, analysis, cloud, hr_range=None, recovery=None, interaction=N
     heading_text = ' · '.join(part for part in ('Workout overview', activity, date) if part)
     heading = escape(heading_text)
     heading_size = 25 if len(heading_text) <= 85 else 20
-    if interaction is not None:
-        interaction.update(title=heading_text, total_seconds=total, left=left, plot_width=pw,
-                           panel_height=ph, panels=[],
-                           distance=[[round(active_time(t), 3), round(row['distance'] / 1000, 6)]
-                                     for t, row in rows if number(row.get('distance'))])
-    lap_by_index = {i: lap for i, lap in enumerate(data.get('laps', []), 1)}
-    work_laps = [lap_by_index[r['work_lap_index']]
+    raw_laps = data.get('laps', [])
+    work_laps = [raw_laps[r['work_lap_index'] - 1]
                  for r in analysis['additional_metrics']['slower_next_lap_hr_changes']]
+    work_bands = [(active_time(seconds(lap['start_time'])), active_time(seconds(lap['timestamp'])))
+                  for lap in work_laps]
+    if interaction is not None:
+        def series(points):
+            return [[round(t, 3), round(value, 6)] for t, value in points]
+
+        details = analysis['additional_metrics']
+        preferred = set(details['preferred_lap_indices'])
+        laps = []
+        for lap in analysis['laps']:
+            if lap['index'] not in preferred:
+                continue
+            raw_lap = raw_laps[lap['index'] - 1]
+            start = active_time(seconds(raw_lap['start_time']))
+            end = active_time(seconds(raw_lap['timestamp']))
+            if start < end:
+                label = 'Workout step' if details['preferred_lap_kind'] == 'guided' else 'Lap'
+                laps.append({'label': f'{label} {len(laps) + 1}', 'start': start, 'end': end,
+                             **{key: lap[key] for key in
+                                ('distance_m', 'active_seconds', 'avg_hr', 'max_hr', 'avg_power_w')}})
+        interaction.update(title=heading_text, total_seconds=total, left=left, plot_width=pw,
+                           panel_height=ph, panels=[], laps=laps, work_bands=work_bands,
+                           distance=series((active_time(t), d / 1000)
+                                           for t, d in samples(lambda row: row.get('distance'))),
+                           observed_hr=series((active_time(t), v) for t, v in hr_observed),
+                           observed_power=series((active_time(t), v) for t, v in
+                                                 samples(lambda r: nonnegative_field(r, 'power'))))
     subtitle = 'Time axis: active workout time'
     if recovery and recovery.get('nights_7d') and recovery.get('before'):
         subtitle = 'Workout panels: active time · Recovery panels: local wake date'
@@ -278,39 +300,43 @@ def chart_svg(data, analysis, cloud, hr_range=None, recovery=None, interaction=N
         title, groups, lo, hi = panel.title, panel.groups, panel.lo, panel.hi
         color, inverted = panel.color, panel.inverted
         top = 130 + header_offset + index * spacing
+        y = lambda v: top + ((v - lo) if inverted else (hi - v)) / (hi - lo) * ph
+        baseline = y(0) if panel.style == 'diverging' else top + ph
+        clip_path = f'url(#panel-{index})'
+        area_color = f'url(#grade-{index})' if panel.style == 'diverging' else color
         if interaction is not None:
             interaction['panels'].append({
                 'key': panel.key, 'label': title.split(' · ')[0], 'color': color,
                 'lo': lo, 'hi': hi, 'inverted': inverted, 'digits': panel.digits, 'top': top,
+                'style': panel.style, 'baseline': baseline, 'clip_path': clip_path, 'area_color': area_color,
                 # Full smoothed observations, before visual thinning; never interpolate gaps.
-                'points': [[round(t, 3), round(v, 6)] for group in groups for t, v in group],
+                'points': series(point for group in groups for point in group),
+                'group_sizes': [len(group) for group in groups],
+                'dots': series(point for group in (panel.raw_groups or []) for point in group),
             })
-        y = lambda v: top + ((v - lo) if inverted else (hi - v)) / (hi - lo) * ph
         out.extend([f'<g data-metric="{panel.key}" data-style="{panel.style}">',
                     f'<defs><clipPath id="panel-{index}"><rect x="{left}" y="{top}" '
                     f'width="{pw}" height="{ph}"/></clipPath></defs>',
                     f'<text x="{left}" y="{top - 25}" font-size="19">{escape(title)}</text>'])
-        for lap in work_laps:
-            x1, x2 = x(active_time(seconds(lap['start_time']))), x(active_time(seconds(lap['timestamp'])))
-            out.append(f'<rect x="{x1:.2f}" y="{top}" width="{x2 - x1:.2f}" height="{ph}" fill="#e8f0f8"/>')
+        for start, end in work_bands:
+            x1, x2 = x(start), x(end)
+            out.append(f'<rect data-full-plot="" x="{x1:.2f}" y="{top}" width="{x2 - x1:.2f}" height="{ph}" fill="#e8f0f8"/>')
         for tick in range(6):
             v = lo + tick * (hi - lo) / 5
             label = duration(round(v * 60)).removesuffix('.0') if inverted else display(v, panel.digits)
             out.extend([f'<line x1="{left}" y1="{y(v):.2f}" x2="{width-right}" y2="{y(v):.2f}" stroke="#dce1e6"/>',
                         f'<text x="{left-12}" y="{y(v)+5:.2f}" font-size="16" text-anchor="end">{label}</text>'])
         for t in range(0, math.floor(total) + 1, 600):
-            out.extend([f'<line data-active-tick="{t}" x1="{x(t):.2f}" x2="{x(t):.2f}" '
+            out.extend([f'<line data-full-plot="" data-active-tick="{t}" x1="{x(t):.2f}" x2="{x(t):.2f}" '
                         f'y1="{top}" y2="{top+ph}" stroke="#dce1e6"/>',
-                        f'<text x="{x(t):.2f}" y="{top+ph+25}" font-size="16" text-anchor="middle">{t // 60}</text>'])
+                        f'<text data-full-plot="" x="{x(t):.2f}" y="{top+ph+25}" font-size="16" text-anchor="middle">{t // 60}</text>'])
         if panel.raw_groups is not None:
             raw_count = sum(len(group) for group in panel.raw_groups)
             for group in panel.raw_groups:
                 points = thin(group, max(4, int(600 * len(group) / max(1, raw_count))))
                 for when, value in points:
-                    out.append(f'<circle cx="{x(when):.2f}" cy="{y(value):.2f}" r="1.8" '
+                    out.append(f'<circle data-full-plot="" cx="{x(when):.2f}" cy="{y(value):.2f}" r="1.8" '
                                f'fill="{color}" fill-opacity="0.35" clip-path="url(#panel-{index})"/>')
-        baseline = y(0) if panel.style == 'diverging' else top + ph
-        area_color = color
         if panel.style == 'diverging':
             offset = 100 * (0 - lo) / (hi - lo)
             offset = 100 - offset
@@ -320,7 +346,6 @@ def chart_svg(data, analysis, cloud, hr_range=None, recovery=None, interaction=N
                         f'<stop offset="{offset:.4f}%" stop-color="#24679c"/></linearGradient></defs>',
                         f'<line x1="{left}" x2="{width-right}" y1="{baseline:.2f}" y2="{baseline:.2f}" '
                         'stroke="#788795" stroke-dasharray="4 3"/>'])
-            area_color = f'url(#grade-{index})'
         count = sum(len(g) for g in groups)
         for group in groups:
             points = thin(group, max(4, int(1600 * len(group) / max(1, count))))
@@ -329,9 +354,9 @@ def chart_svg(data, analysis, cloud, hr_range=None, recovery=None, interaction=N
             coords = ' '.join(f'{x(t):.2f},{y(v):.2f}' for t, v in points)
             if panel.style != 'scatter':
                 area = f'{x(points[0][0]):.2f},{baseline:.2f} {coords} {x(points[-1][0]):.2f},{baseline:.2f}'
-                out.append(f'<polygon points="{area}" fill="{area_color}" fill-opacity="0.25" '
+                out.append(f'<polygon data-full-plot="" points="{area}" fill="{area_color}" fill-opacity="0.25" '
                            f'clip-path="url(#panel-{index})"/>')
-            out.append(f'<polyline points="{coords}" fill="none" stroke="{color}" stroke-width="1.8" '
+            out.append(f'<polyline data-full-plot="" points="{coords}" fill="none" stroke="{color}" stroke-width="1.8" '
                        f'clip-path="url(#panel-{index})" stroke-linejoin="round"/>')
         out.extend([f'<text x="{left+pw/2}" y="{top+ph+49}" font-size="16" text-anchor="middle">Active workout time (min)</text>',
                     '</g>'])
@@ -346,9 +371,13 @@ def report_body(cloud, analysis, entry, retrieved, chart, recovery=None):
     summary, details = cloud['summary'], analysis['additional_metrics']
     feeling = workout_feeling(summary.get('feeling'))['rating']
     zone = cloud.get('timezone') or datetime.fromisoformat(cloud['start_local']).tzname()
-    lines = [f"Retrieved: {retrieved}; timezone {zone}; ID `{cloud['workout_key']}`.", '',
+    local_fit = entry.get('source_type') == 'local_fit'
+    distance = cloud['distance_m']
+    provenance = (f"Imported from local FIT: {retrieved}; timezone {zone}." if local_fit else
+                  f"Retrieved: {retrieved}; timezone {zone}; ID `{cloud['workout_key']}`.")
+    lines = [provenance, '',
              '| Metric | Value |', '| --- | --- |',
-             f"| Distance | {display(cloud['distance_m'] / 1000, 3)} km |",
+             f"| Distance | {display(distance / 1000 if number(distance) else None, 3)} km |",
              f"| Active / elapsed time | {duration(cloud['active_seconds'])} / {duration(cloud['elapsed_seconds'])} |",
              f"| Active pace | {duration(cloud['pace_seconds_per_km'])}/km |",
              f"| Average / maximum HR | {cloud['avg_hr_bpm']} / {cloud['max_hr_bpm']} |",
@@ -432,6 +461,8 @@ def report_body(cloud, analysis, entry, retrieved, chart, recovery=None):
 def write_outputs(project, cloud, analysis, decoded, entry, retrieved, charts=False, hr_range=None,
                   recovery=None, week_workouts=None):
     stem = datetime.fromisoformat(cloud['start_local']).strftime('%Y-%m-%d-%H%M%S')
+    if entry.get('source_type') == 'local_fit':
+        stem += f"-fit-{entry['fit_sha256'][:16]}"
     reports, chart_dir = project / 'reports', project / 'visualizations'
     reports.mkdir(exist_ok=True)
     chart = chart_dir / f'suunto-{stem}-overview.html'
