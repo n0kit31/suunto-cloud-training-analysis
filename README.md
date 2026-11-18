@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/n0kit31/suunto-cloud-training-analysis/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/n0kit31/suunto-cloud-training-analysis/actions/workflows/ci.yml)
 [![Test count](docs/badges/tests.svg)](#tests)
-[![Release: 1.1.0](https://img.shields.io/badge/release-1.1.0-blue)](CHANGELOG.md)
+[![Release: 1.1.1](https://img.shields.io/badge/release-1.1.1-blue)](CHANGELOG.md)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](LICENSE)
 [![Python: 3.9+](https://img.shields.io/badge/Python-3.9%2B-3776AB?logo=python&logoColor=white)](#requirements)
 [![Node.js: 24](https://img.shields.io/badge/Node.js-24-339933?logo=nodedotjs&logoColor=white)](Dockerfile)
@@ -433,13 +433,14 @@ personal reports out of commits and issue attachments.
 
 ## Releases
 
+**1.1.1** is a documentation release that refreshes the marathon example.
 **1.1.0** adds interactive HTML charts, expanded workout metrics, weekly
 comparisons, and optional sleep/HRV context. See [CHANGELOG.md](CHANGELOG.md)
 for release notes, and run `python3 -m suunto_cloud --version` to check the
 installed version.
 
 Stable releases are maintained on `main` and identified by version tags such
-as `v1.1.0`. Release changes are committed on `develop`, merged into `main`,
+as `v1.1.1`. Release changes are committed on `develop`, merged into `main`,
 and tagged from `main`. Development of subsequent iterations continues on `develop`.
 
 ## License
