@@ -6,6 +6,8 @@ from html import escape
 import math
 
 from suunto_cloud.analysis.metrics import number
+from suunto_cloud.reporting.recovery import value
+from suunto_cloud.reporting.workout_tiles import recovery_labels
 
 
 def clock(value):
@@ -60,6 +62,13 @@ def summary_html(context):
             facts.append(f"Recorded time in heart-rate zones 4–5 was {clock(intensity['high_seconds'])}.")
     if number(context['feeling']) and context['feeling'] in (1, 2, 3, 4, 5):
         facts.append(f"Recorded workout feeling: {amount(context['feeling'], 0)}/5.")
+    highlights = context.get('highlights') or {}
+    if number(highlights.get('temperature_c')):
+        facts.append(f"Average workout temperature: {value(highlights['temperature_c'], ' °C', 1)} (watch sensor).")
+    if highlights.get('recovery_seconds') is not None:
+        estimate, kind, until = recovery_labels(highlights)
+        deadline = f' · {until}' if until else ''
+        facts.append(f'Suunto recovery time: {estimate} ({kind.lower()}){deadline}.')
 
     comparisons = []
     ranks = week['ranks']

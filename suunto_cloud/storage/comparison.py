@@ -14,7 +14,9 @@ def comparison_workouts(project, cloud, previous=None):
     monday = start.date() - timedelta(days=start.weekday())
     reports = project / 'reports'
     for offset in range(7):
-        for path in sorted(reports.glob(f'suunto-{monday + timedelta(days=offset)}-??????.json')):
+        prefix = f'suunto-{monday + timedelta(days=offset)}-??????'
+        paths = sorted(reports.glob(prefix + '.json')) + sorted(reports.glob(prefix + '-cloud-*.json'))
+        for path in paths:
             try:
                 report = json.loads(path.read_text())
                 if isinstance(report.get('cloud'), dict):

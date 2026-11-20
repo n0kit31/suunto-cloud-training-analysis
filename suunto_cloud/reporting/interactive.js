@@ -59,13 +59,10 @@
   }
 
   function valueLabel(panel, value) {
-    if (panel.key === 'pace') {
+    if (panel.unit === 'min/km') {
       return `${clock(value * 60)} /km`;
     }
-    const units = { 'heart-rate': 'bpm', elevation: 'm', power: 'W',
-      'ground-contact': 'ms', 'step-length': 'm', speed: 'km/h', grade: '%' };
-    const unit = panel.key === 'cadence' ? (panel.label.includes('rpm') ? 'rpm' : 'steps/min') : units[panel.key];
-    return `${value.toFixed(panel.digits)} ${unit || ''}`.trim();
+    return `${value.toFixed(panel.digits)} ${panel.unit}`;
   }
 
   const overlay = element('g', { 'data-cursor-overlay': '', visibility: 'hidden', 'aria-hidden': 'true' }, svg);
@@ -164,7 +161,8 @@
         if (a < b) element('rect', { x: xAt(a), y: panel.top, width: xAt(b) - xAt(a),
           height: data.panel_height, fill: '#e8f0f8', 'fill-opacity': .65 }, layer);
       }
-      for (let tick = Math.ceil(start / 600) * 600; tick <= end; tick += 600) {
+      const step = data.tick_seconds;
+      for (let tick = Math.ceil(start / step) * step; tick <= end; tick += step) {
         const x = xAt(tick);
         element('line', { x1: x, x2: x, y1: panel.top, y2: bottom, stroke: '#dce1e6' }, layer);
         const label = element('text', { x, y: bottom + 25, 'font-size': 16, 'text-anchor': 'middle' }, layer);

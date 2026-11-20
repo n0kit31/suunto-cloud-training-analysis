@@ -1,4 +1,4 @@
-"""Calendar-based HRV and sleep panels, separate from the workout's time axis."""
+"""Calendar-based HRV, SpO₂, and sleep panels on a wake-date axis."""
 
 from datetime import date, timedelta
 from html import escape
@@ -114,6 +114,8 @@ def recovery_charts(context):
                            f'text-anchor="middle" font-weight="bold" fill="{color}">{label}</text>')
     else:
         out.append('<text x="85" y="460" font-size="16" fill="#526170">No nightly HRV samples in this window.</text>')
+    spo2 = [(row['sleep'] or {}).get('spo2_max_pct') for row in nights]
+    show_spo2 = any(value is not None for value in spo2)
     for index, row in enumerate(nights):
         weight = 'bold' if row['wake_date'] == selected and not row['after'] else 'normal'
         out.append(f'<text x="{x(index):.2f}" y="574" font-size="14" text-anchor="middle" '
@@ -121,9 +123,19 @@ def recovery_charts(context):
         if row['after']:
             divider = left + index * pitch
             out.append(f'<line data-role="after-workout-divider" x1="{divider:.2f}" x2="{divider:.2f}" '
-                       'y1="390" y2="550" stroke="#a2adb7" stroke-dasharray="4 4"/>')
-    out += ['<text x="622.5" y="598" font-size="14" text-anchor="middle">Wake date · workout local time</text>',
-            '<text x="85" y="620" font-size="13" fill="#526170">After-workout values are separate; '
+                       f'y1="390" y2="{604 if show_spo2 else 550}" stroke="#a2adb7" stroke-dasharray="4 4"/>')
+    if show_spo2:
+        out.extend(['<g data-section="spo2-history" fill="#526170" font-size="13">',
+                    '<title>Highest overnight SpO₂ by wake date</title>',
+                    '<text x="74" y="598" text-anchor="end">SpO₂ max</text>'])
+        for index, (row, value) in enumerate(zip(nights, spo2)):
+            label = '—' if value is None else f'{value:.1f}%'
+            out.append(f'<text data-wake-date="{row["wake_date"]}" x="{x(index):.2f}" y="598" '
+                       f'text-anchor="middle">{label}</text>')
+        out.append('</g>')
+    axis_y, note_y = (620, 640) if show_spo2 else (598, 620)
+    out += [f'<text x="622.5" y="{axis_y}" font-size="14" text-anchor="middle">Wake date · workout local time</text>',
+            f'<text x="85" y="{note_y}" font-size="13" fill="#526170">After-workout values are separate; '
             'they do not enter the pre-workout average or reference. Missing nights remain gaps.</text>', '</g>',
             '<g data-section="sleep-history">',
             '<text x="85" y="656" font-size="19">Sleep stages · same nights</text>']

@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/n0kit31/suunto-cloud-training-analysis/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/n0kit31/suunto-cloud-training-analysis/actions/workflows/ci.yml)
 [![Test count](docs/badges/tests.svg)](#tests)
-[![Release: 1.2.0](https://img.shields.io/badge/release-1.2.0-blue)](CHANGELOG.md)
+[![Release: 1.3.0](https://img.shields.io/badge/release-1.3.0-blue)](CHANGELOG.md)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](LICENSE)
 [![Python: 3.9+](https://img.shields.io/badge/Python-3.9%2B-3776AB?logo=python&logoColor=white)](#requirements)
 [![Node.js: 24](https://img.shields.io/badge/Node.js-24-339933?logo=nodedotjs&logoColor=white)](Dockerfile)
@@ -304,11 +304,27 @@ configured time zone. Use `workouts --all` for all pages or `workouts --since DA
 to list workouts started on or after a local calendar date. An interrupted or
 stalled page traversal leaves the previous list cache available.
 
+New Cloud FIT, GPX, report and chart filenames combine the local start time
+with a workout fingerprint. Use the paths returned by `sync` or `track`.
+`charts` also accepts timestamp-only reports saved by earlier releases.
+After an incomplete sync, `.local/sync.json` records completed outputs and
+the stage that failed. A concurrent sync for the same project exits before
+modifying the manifest.
+
 Regenerate an existing chart without downloading data again:
 
 ```sh
 python3 -m suunto_cloud charts ../reports/suunto-2026-01-15-080000.json
 ```
+
+Reports add the average temperature from the watch sensor and Suunto's recovery
+time estimate when available. The estimate uses accumulated recovery when Suunto
+reports it and falls back to the workout estimate. The local end date and time
+are calculated from the recorded workout finish. Charts use blue below 10 °C,
+teal from 10 °C up to 30 °C, and red from 30 °C for the sensor reading.
+The separate weather tile shows available weather, wind and humidity. The report
+shows Suunto's rated post-workout HR change, and its tile uses the comparison
+rating to color the result.
 
 ### Sleep and HRV context
 
@@ -330,7 +346,10 @@ python3 -m suunto_cloud charts ../reports/suunto-2026-01-15-080000.json --sleep-
 
 The chart header and report show the last completed non-nap sleep within 24 h
 before the workout: nightly HRV, seven-day mean and coverage, sleep duration and
-quality, and average/minimum nighttime HR. Complete snapshots are deduplicated
+quality, average/minimum nighttime HR, and the highest overnight SpO₂ reported
+by Suunto. The report also includes the highest SpO₂ for the after-workout night
+when available. Suunto's `MaxSpo2` fraction is converted to a percentage and
+stored as `spo2_max_pct` in the report JSON. Complete snapshots are deduplicated
 by `SleepId`. Sleep duration uses the sum of deep/light/REM stages when all are
 available, otherwise the reported `Duration`. Nighttime HR is not daytime
 resting HR. Missing values remain missing, and fewer than three observed nights
@@ -348,7 +367,8 @@ the workout caused a change. Regenerating charts preserves their saved context;
 Charts also include two calendar-based panels above the workout: nightly HRV
 over the seven-day window, and stacked deep/light/REM sleep durations for the
 same nights. The selected pre-workout night is highlighted. The HRV panel shows
-the calculated 60-day band and seven-day mean. A separately marked after-workout
+the calculated 60-day band, seven-day mean, and recorded SpO₂ maxima aligned
+with the same wake dates. A separately marked after-workout
 night may extend the calendar axis; it never enters the pre-workout statistics.
 Missing nights leave gaps, and a missing stage breakdown uses a gray total-sleep
 bar instead of invented stages. Sleep labels show duration and quality /100.
@@ -451,16 +471,13 @@ personal reports out of commits and issue attachments.
 
 ## Releases
 
-[**1.2.0**](https://github.com/n0kit31/suunto-cloud-training-analysis/releases/tag/v1.2.0)
-adds workout-list pagination, offline FIT import, and zoom and lap
-selection in workout charts. **1.1.1** refreshes the marathon example.
-**1.1.0** adds interactive HTML charts, expanded workout metrics, weekly
-comparisons, and optional sleep/HRV context. See [CHANGELOG.md](CHANGELOG.md)
-for release notes, and run `python3 -m suunto_cloud --version` to check the
-installed version.
+[**1.3.0**](https://github.com/n0kit31/suunto-cloud-training-analysis/releases/tag/v1.3.0)
+adds nightly SpO₂ alongside HRV, chart tiles for workout conditions and recovery,
+and workout-specific filenames. See [CHANGELOG.md](CHANGELOG.md) for release notes,
+and run `python3 -m suunto_cloud --version` to check the installed version.
 
 Stable releases are maintained on `main` and identified by version tags such
-as `v1.2.0`. Release changes are committed on `develop`, merged into `main`,
+as `v1.3.0`. Release changes are committed on `develop`, merged into `main`,
 and tagged from `main`. Development of subsequent iterations continues on `develop`.
 
 ## License

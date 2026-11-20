@@ -6,6 +6,19 @@ Notable changes to Suunto Cloud Training Analysis are recorded here.
 
 Future iterations are developed on the `develop` branch.
 
+## [1.3.0] - 2026-11-20
+
+### Added
+
+- Show nightly maximum SpO₂ alongside HRV in recovery reports and charts. Include the night after the workout when sleep data is available.
+- Show average watch temperature and Suunto's recovery estimate in workout summaries, with the estimated end date and time in the workout's time zone.
+- Add chart header tiles for watch temperature, weather with wind and humidity, post-workout heart-rate change rated by Suunto, and recovery time.
+
+### Fixed
+
+- Give Cloud FIT, GPX, reports, and charts workout-specific filenames to prevent overwrites when workouts start at the same time. Older timestamp-only reports can still be regenerated in place.
+- Mark synchronization complete after reports and the analysis packet are saved. Record publication failures in the sync manifest.
+
 ## [1.2.0] - 2026-11-18
 
 ### Added
@@ -82,7 +95,8 @@ Suunto workouts, with local reports and portable charts.
 - Credentials, OAuth tokens, raw workout files, and personal reports remain outside the release.
 - Licensed under GNU GPL v3 or later (`GPL-3.0-or-later`).
 
-[Unreleased]: https://github.com/n0kit31/suunto-cloud-training-analysis/compare/v1.2.0...develop
+[Unreleased]: https://github.com/n0kit31/suunto-cloud-training-analysis/compare/v1.3.0...develop
+[1.3.0]: https://github.com/n0kit31/suunto-cloud-training-analysis/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/n0kit31/suunto-cloud-training-analysis/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/n0kit31/suunto-cloud-training-analysis/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/n0kit31/suunto-cloud-training-analysis/compare/v1.0.0...v1.1.0

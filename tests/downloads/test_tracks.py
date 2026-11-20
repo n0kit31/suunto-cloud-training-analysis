@@ -1,5 +1,9 @@
-import io
+from contextlib import redirect_stdout
 from datetime import datetime, timezone
+import io
+import json
+from pathlib import Path
+from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import MagicMock, patch
 from urllib.error import HTTPError
@@ -30,6 +34,20 @@ class FetchTrackTests(unittest.TestCase):
         self.assertEqual(track.choose_workout([workout], '2026-11-04', zone=ZoneInfo('Asia/Tokyo')), workout)
         with self.assertRaises(ValueError):
             track.choose_workout([workout], '2026-11-04', zone=ZoneInfo('UTC'))
+
+    def test_track_downloads_with_the_same_start_keep_distinct_fit_files(self):
+        first, second = self.workout(), self.workout('b' * 24)
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'workouts.json').write_text(json.dumps([first, second]))
+            with patch.object(track, 'private_directory', return_value=root), \
+                    patch.object(track, 'user_timezone', return_value=timezone.utc), \
+                    patch.object(track, 'authorized_call', side_effect=[b'first FIT', b'second FIT']), \
+                    redirect_stdout(io.StringIO()):
+                for row in (first, second):
+                    track.main(['--workout-key', row['workoutKey'], '--fit-only'])
+            self.assertCountEqual([path.read_bytes() for path in (root / 'tracks').glob('*.fit')],
+                                  [b'first FIT', b'second FIT'])
 
     def test_non_fit_response_is_rejected(self):
         opener = MagicMock()

@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 
 from suunto_cloud.activities import activity_label
 from suunto_cloud.analysis.metrics import number
+from suunto_cloud.analysis.workout_highlights import workout_highlights
 from suunto_cloud.timezones import resolve_timezone
 
 
@@ -105,6 +106,7 @@ def chart_summary(cloud, analysis, peers=None):
     easy, high = zone_total(('zone1', 'zone2')), zone_total(('zone4', 'zone5'))
     return {'workout': current, 'pte': (cloud.get('summary') or {}).get('pte'),
             'feeling': (cloud.get('summary') or {}).get('feeling'),
+            'highlights': workout_highlights(cloud, analysis),
             'split_pattern': split_pattern(analysis),
             'intensity': {'classified_seconds': classified, 'easy_seconds': easy, 'high_seconds': high},
             'week': {'from': monday.isoformat(), 'to': sunday.isoformat(), 'group': current['group'],

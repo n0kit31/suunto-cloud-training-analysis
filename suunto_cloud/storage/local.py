@@ -1,5 +1,6 @@
-"""Private configuration paths and atomic JSON writes, independent of authentication."""
+"""Private paths and atomic writes, independent of authentication."""
 
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -35,7 +36,24 @@ def private_directory():
     return directory
 
 
+def cloud_artifact_stem(start, workout_key):
+    fingerprint = hashlib.sha256(workout_key.encode('utf-8')).hexdigest()[:32]
+    return f'{start:%Y-%m-%d-%H%M%S}-cloud-{fingerprint}'
+
+
 def private_json(destination, data):
+    def write(stream):
+        json.dump(data, stream, ensure_ascii=False, indent=2)
+        stream.write('\n')
+
+    return _private_write(destination, write)
+
+
+def private_text(destination, data):
+    return _private_write(destination, lambda stream: stream.write(data))
+
+
+def _private_write(destination, write):
     destination = Path(destination)
     destination.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
     destination.parent.chmod(0o700)
@@ -45,8 +63,7 @@ def private_json(destination, data):
                                          encoding='utf-8', delete=False) as stream:
             temporary = Path(stream.name)
             os.fchmod(stream.fileno(), 0o600)
-            json.dump(data, stream, ensure_ascii=False, indent=2)
-            stream.write('\n')
+            write(stream)
             stream.flush()
             os.fsync(stream.fileno())
         temporary.replace(destination)

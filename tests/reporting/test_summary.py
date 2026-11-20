@@ -69,3 +69,60 @@ class SummaryOutputTests(unittest.TestCase):
             cached.write_text('{"error": "not a valid workout list"}')
             peers = comparison_workouts(project, run('a', '2026-11-15'))
             self.assertEqual(peers, [earlier])
+
+    def test_cloud_reports_with_workout_suffix_are_available_during_regeneration(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory)
+            samples = fixture()
+            decoded = project / 'samples.json'
+            decoded.write_text(json.dumps(samples))
+            current = run('a', '2026-11-15', 5000)
+            earlier = run('b', '2026-11-10', 3000)
+            local = run('c', '2026-11-10', 9000)
+            source = {'fit_path': 'synthetic.fit', 'fit_sha256': 'synthetic', 'decoded_path': str(decoded)}
+            analysis = summarize(samples)
+            earlier_out = write_outputs(project, earlier, analysis, samples, source, 'synthetic')
+            self.assertIn('-cloud-', Path(earlier_out['json_path']).name)
+            write_outputs(project, local, analysis, samples, {**source, 'source_type': 'local_fit'}, 'synthetic')
+            out = write_outputs(project, current, analysis, samples, source, 'synthetic')
+            with contextlib.redirect_stdout(io.StringIO()):
+                charts([out['json_path']])
+            saved = json.loads(Path(out['json_path']).read_text())
+            self.assertEqual(saved['chart_summary']['week']['totals']['distance_m'], 8000)
+
+    def test_regeneration_updates_legacy_report_in_place_and_new_sync_preserves_its_notes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory)
+            samples = fixture()
+            decoded = project / 'samples.json'
+            decoded.write_text(json.dumps(samples))
+            current = run('a', '2026-11-15', 5000)
+            current.pop('cumulative_recovery_seconds')
+            current.pop('workout_recovery_seconds')
+            raw = project / 'raw-summary.json'
+            raw.write_text(json.dumps({'workoutKey': current['workout_key'], 'cumulativeRecoveryTime': 7200}))
+            source = {'fit_path': 'synthetic.fit', 'fit_sha256': 'synthetic', 'decoded_path': str(decoded)}
+            source['cloud_summary_path'] = str(raw)
+            analysis = summarize(samples)
+            reports = project / 'reports'
+            reports.mkdir()
+            legacy = reports / 'suunto-2026-11-15-090000.json'
+            legacy.write_text(json.dumps({'retrieved_at_utc': 'synthetic', 'cloud': current,
+                                          'fit': analysis, 'source': source}))
+            markdown = legacy.with_suffix('.md')
+            markdown.write_text('# Workout\n\nSynthetic assessment.\n')
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                charts([str(legacy)])
+            regenerated = json.loads(stdout.getvalue())
+            self.assertEqual(regenerated['json_path'], str(legacy.resolve()))
+            self.assertIn('Synthetic assessment.', markdown.read_text())
+            self.assertTrue(Path(regenerated['chart_path']).is_file())
+            self.assertEqual(json.loads(legacy.read_text())['cloud']['cumulative_recovery_seconds'], 7200)
+            self.assertIn('2 h 00 min (accumulated estimate)', markdown.read_text())
+
+            fresh = write_outputs(project, current, analysis, samples, source, 'fresh')
+            self.assertNotEqual(fresh['json_path'], str(legacy))
+            self.assertIn('Synthetic assessment.', Path(fresh['markdown_path']).read_text())
+            self.assertEqual(json.loads(legacy.read_text())['retrieved_at_utc'], 'synthetic')
+            other = write_outputs(project, {**current, 'workout_key': 'b'}, analysis, samples, source, 'fresh')
+            self.assertNotIn('Synthetic assessment.', Path(other['markdown_path']).read_text())

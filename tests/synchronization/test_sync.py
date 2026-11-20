@@ -1,4 +1,5 @@
 import contextlib
+import fcntl
 import io
 import json
 from pathlib import Path
@@ -64,6 +65,90 @@ class SyncAnalysisTests(unittest.TestCase):
         self.assertNotIn('analysis_packet_path', manifest)
         self.assertEqual(json.loads((self.root / 'analysis.json').read_text()), {'previous': True})
 
+    def test_workouts_with_the_same_start_keep_distinct_artifacts_across_runs(self):
+        first, second = workout(), workout('b' * 24)
+        first_fit, second_fit = b'first synthetic FIT', b'second synthetic FIT'
+        self.fetch_fit.side_effect = [first_fit, second_fit, first_fit, second_fit]
+        self.fetch_list.return_value = {'payload': [first]}
+        with contextlib.redirect_stdout(io.StringIO()):
+            previous = sync.sync(['2026-11-11'], analysis=True, charts=True, zone=ZoneInfo('UTC'))
+            self.fetch_list.return_value = {'payload': [second]}
+            sync.sync(['2026-11-11'], analysis=True, charts=True, zone=ZoneInfo('UTC'))
+            self.assertEqual(Path(previous['workouts'][0]['fit_path']).read_bytes(), first_fit)
+            self.fetch_list.return_value = {'payload': [first, second]}
+            manifest = sync.sync(['2026-11-11'], analysis=True, charts=True, zone=ZoneInfo('UTC'))
+
+        one, two = manifest['workouts']
+        for field in ('fit_path', 'decoded_path', 'analysis_path'):
+            self.assertNotEqual(one[field], two[field], field)
+            self.assertEqual(one[field], previous['workouts'][0][field])
+        for field in ('json_path', 'markdown_path', 'chart_path', 'svg_path'):
+            self.assertNotEqual(one['outputs'][field], two['outputs'][field], field)
+            self.assertEqual(one['outputs'][field], previous['workouts'][0]['outputs'][field])
+        for entry, content in zip((one, two), (first_fit, second_fit)):
+            self.assertEqual(Path(entry['fit_path']).read_bytes(), content)
+            report = json.loads(Path(entry['outputs']['json_path']).read_text())
+            self.assertEqual(report['cloud']['workout_key'], entry['workout_key'])
+            self.assertEqual(report['source']['decoded_path'], entry['decoded_path'])
+
+    def test_report_write_failure_records_partial_progress_and_allows_retry(self):
+        second = workout('b' * 24)
+        second['startTime'] += 3_600_000
+        second['stopTime'] += 3_600_000
+        self.fetch_list.return_value = {'payload': [workout(), second]}
+        packet = self.root / 'analysis.json'
+        packet.write_text('{"previous": true}')
+        write_outputs = sync.write_outputs
+
+        def fail_second(project, cloud, *args, **kwargs):
+            if cloud['workout_key'] == second['workoutKey']:
+                raise OSError('synthetic write failure')
+            return write_outputs(project, cloud, *args, **kwargs)
+
+        output = io.StringIO()
+        with patch.object(sync, 'write_outputs', side_effect=fail_second):
+            with contextlib.redirect_stdout(output), contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(sync.AccessError):
+                    sync.sync(['2026-11-11'], analysis=True, charts=True)
+        self.assertEqual(output.getvalue(), '')
+        manifest = json.loads((self.root / 'sync.json').read_text())
+        self.assertFalse(manifest['complete'])
+        self.assertNotIn('analysis_packet_path', manifest)
+        self.assertEqual(json.loads(packet.read_text()), {'previous': True})
+        first, failed = manifest['workouts']
+        self.assertTrue(Path(first['outputs']['json_path']).is_file())
+        self.assertEqual(failed['failed_stage'], 'report')
+        self.assertNotIn('synthetic write failure', failed['error'])
+        self.assertNotIn('outputs', failed)
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            retried = sync.sync(['2026-11-11'], analysis=True, charts=True)
+        self.assertTrue(retried['complete'])
+        self.assertEqual(retried['workouts'][0]['outputs'], first['outputs'])
+        self.assertTrue(json.loads(packet.read_text())['complete'])
+
+    def test_packet_write_failure_leaves_reports_recorded_and_previous_packet_intact(self):
+        packet = self.root / 'analysis.json'
+        packet.write_text('{"previous": true}')
+        private_json = sync.private_json
+
+        def fail_packet(destination, data):
+            if destination == packet:
+                raise OSError('synthetic packet failure')
+            return private_json(destination, data)
+
+        output = io.StringIO()
+        with patch.object(sync, 'private_json', side_effect=fail_packet):
+            with contextlib.redirect_stdout(output), contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(sync.AccessError):
+                    sync.sync(['2026-11-11'], analysis=True)
+        manifest = json.loads((self.root / 'sync.json').read_text())
+        self.assertFalse(manifest['complete'])
+        self.assertEqual(manifest['failed_stage'], 'analysis_packet')
+        self.assertTrue(Path(manifest['workouts'][0]['outputs']['json_path']).is_file())
+        self.assertEqual(json.loads(packet.read_text()), {'previous': True})
+        self.assertEqual(output.getvalue(), '')
+
     def test_network_failure_produces_no_success_output(self):
         self.fetch_list.side_effect = URLError('DNS unavailable')
         output = io.StringIO()
@@ -71,6 +156,16 @@ class SyncAnalysisTests(unittest.TestCase):
             sync.sync(['2026-11-11'], analysis=True)
         self.assertEqual(output.getvalue(), '')
         self.fetch_fit.assert_not_called()
+
+    def test_parallel_sync_cannot_replace_an_active_runs_manifest(self):
+        manifest = self.root / 'sync.json'
+        manifest.write_text('{"active_run": true}')
+        with (self.root / 'sync.lock').open('a') as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            with self.assertRaisesRegex(sync.AccessError, 'Another sync is already running'):
+                sync.sync(['2026-11-11'], analysis=True)
+        self.assertEqual(json.loads(manifest.read_text()), {'active_run': True})
+        self.fetch_list.assert_not_called()
 
     def test_analysis_without_decoding_is_rejected_before_network(self):
         with self.assertRaises(ValueError):
@@ -133,7 +228,7 @@ class SyncAnalysisTests(unittest.TestCase):
         entry = manifest['workouts'][0]
         self.assertEqual(manifest['timezone'], 'Pacific/Honolulu')
         self.assertEqual(entry['date'], '2026-11-10')
-        self.assertEqual(Path(entry['fit_path']).name, '2026-11-10-220000.fit')
+        self.assertTrue(Path(entry['fit_path']).name.startswith('2026-11-10-220000-'))
         packet = json.loads((self.root / 'analysis.json').read_text())
         self.assertEqual(packet['workouts'][0]['cloud']['start_local'], '2026-11-10T22:00:00-10:00')
         self.assertEqual(packet['workouts'][0]['fit']['timezone'], 'Pacific/Honolulu')

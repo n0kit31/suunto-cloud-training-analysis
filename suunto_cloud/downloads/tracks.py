@@ -17,7 +17,7 @@ from urllib.request import Request, build_opener
 from suunto_cloud.downloads.workouts import workout_records
 from suunto_cloud.authentication.oauth import NoRedirect
 from suunto_cloud.authentication.access import AccessError, authorized_call, safe_error
-from suunto_cloud.storage.local import private_directory, user_timezone
+from suunto_cloud.storage.local import cloud_artifact_stem, private_directory, user_timezone
 from suunto_cloud.timezones import local_timestamp
 from suunto_cloud.fit import SCRIPTS_DIRECTORY
 
@@ -105,7 +105,7 @@ def main(argv=None):
         records = workout_records(json.loads((private_directory() / 'workouts.json').read_text()))
         workout = choose_workout(records, args.date, args.workout_key, zone)
         local_start = local_timestamp(workout['startTime'] / 1000, zone)
-        stem = local_start.strftime('%Y-%m-%d-%H%M%S')
+        stem = cloud_artifact_stem(local_start, workout['workoutKey'])
         fit_path = output_dir / (stem + '.fit')
         gpx_path = output_dir / (stem + '.gpx')
         print(f"Downloading workout FIT: {local_start.isoformat()}, {workout.get('totalDistance', 0) / 1000:.3f} km...", flush=True)

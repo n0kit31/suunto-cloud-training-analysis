@@ -36,13 +36,21 @@ class RecoveryOutputTests(unittest.TestCase):
         return write_outputs(self.root, self.cloud, self.analysis, self.data, self.entry, 'synthetic', **options)
 
     def test_card_expands_canvas_and_keeps_every_panel_below_it(self):
-        out = self.outputs(charts=True, recovery=self.context)
+        context = recovery_context(self.cloud, snapshot([night(MaxSpo2=0.985),
+                                                         night('2026-01-16', hrv=40, MaxSpo2=0.96)]))
+        out = self.outputs(charts=True, recovery=context)
         tree = ET.parse(out['svg_path'])
         sections = [x for x in tree.iter() if x.attrib.get('data-section') == 'pre-workout-recovery']
         self.assertEqual(len(sections), 1)
         self.assertIn('Recovery panels: local wake date', Path(out['chart_path']).read_text())
         self.assertIn('50 ms', ' '.join(x.text or '' for x in sections[0].iter()))
         self.assertNotIn('40 ms', ' '.join(x.text or '' for x in sections[0].iter()))
+        self.assertIn('Highest overnight SpO₂: 98.5%', ' '.join(x.text or '' for x in sections[0].iter()))
+        spo2 = next(x for x in tree.iter() if x.attrib.get('data-section') == 'spo2-history')
+        by_date = {x.attrib['data-wake-date']: x.text for x in spo2 if 'data-wake-date' in x.attrib}
+        self.assertEqual(by_date['2026-01-14'], '—')
+        self.assertEqual(by_date['2026-01-15'], '98.5%')
+        self.assertEqual(by_date['2026-01-16'], '96.0%')
         panels = [x for x in tree.iter() if 'data-metric' in x.attrib]
         for panel in panels:
             clip = next(x for x in panel.iter() if x.tag.endswith('rect'))
@@ -50,16 +58,25 @@ class RecoveryOutputTests(unittest.TestCase):
         text = Path(out['markdown_path']).read_text()
         self.assertIn('## Night after workout', text)
         self.assertIn('-10 ms', text)
+        before, after = text.split('## Night after workout', 1)
+        self.assertIn('| Highest overnight SpO₂ | 98.5% |', before)
+        self.assertIn('highest overnight SpO₂ 96.0%', after)
         saved = json.loads(Path(out['json_path']).read_text())
-        self.assertEqual(saved['recovery'], self.context)
+        self.assertEqual(saved['recovery'], context)
+        self.assertEqual(saved['recovery']['before']['spo2_max_pct'], 98.5)
+        self.assertEqual(saved['recovery']['after']['spo2_max_pct'], 96.0)
 
     def test_chart_regeneration_retains_saved_recovery_without_an_import(self):
+        for record in (self.context['before'], self.context['after'], self.context['nights_7d'][-1]['sleep']):
+            record.pop('spo2_max_pct', None)  # Older reports predate this field.
         out = self.outputs(recovery=self.context)
         with contextlib.redirect_stdout(io.StringIO()):
             charts([out['json_path']])
         saved = json.loads(Path(out['json_path']).read_text())
         self.assertEqual(saved['recovery'], self.context)
         self.assertIn('Recovery &amp; workout feeling', Path(saved['chart_path']).read_text())
+        self.assertIn('Highest overnight SpO₂: —', Path(saved['chart_path']).read_text())
+        self.assertNotIn('data-section="spo2-history"', Path(saved['svg_path']).read_text())
 
     def test_explicit_sleep_import_updates_chart_and_preserves_existing_assessment(self):
         out = self.outputs()
