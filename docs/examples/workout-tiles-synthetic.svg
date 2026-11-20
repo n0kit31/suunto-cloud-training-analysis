@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="424" viewBox="0 0 1200 424" role="img" aria-labelledby="title desc">
+<title id="title">Synthetic workout tile examples</title>
+<desc id="desc">Three workouts illustrate the temperature colors, weather icons, heart-rate change ratings, and recovery deadlines.</desc>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<g font-family="Arial, sans-serif" fill="#17212b">
+<g transform="translate(0 -73)">
+<g data-section="workout-tiles">
+<g data-workout-tile="Average workout temperature" data-status="cold" transform="translate(85 95)">
+<rect width="260" height="116" rx="9" fill="#e8f3ff" stroke="#bcd9f5"/>
+<text x="14" y="24" font-size="13" fill="#526170">Average workout temperature</text>
+<text x="14" y="56" font-size="24" font-weight="bold" fill="#225c91">6.5 °C</text>
+<text x="14" y="79" font-size="13" fill="#526170">Watch sensor</text>
+<text x="14" y="101" font-size="12" font-weight="bold" fill="#225c91">Cold</text>
+</g>
+<g data-workout-tile="Weather" data-status="weather" transform="translate(355 95)">
+<rect width="260" height="116" rx="9" fill="#f0f6fb" stroke="#d6e4ef"/>
+<text x="14" y="24" font-size="13" fill="#526170">Weather</text>
+<text x="14" y="56" font-size="24" font-weight="bold" fill="#345875">-1.5 °C</text>
+<text x="14" y="79" font-size="13" fill="#526170">Snow</text>
+<text x="14" y="101" font-size="12" font-weight="bold" fill="#345875">Wind 9.7 km/h NE · Humidity 82%</text>
+<g data-weather-icon="" aria-hidden="true" transform="translate(187 17)"><path d="M16 38a9 9 0 0 1 1-18 13 13 0 0 1 25 1 8.5 8.5 0 0 1 2 17Z" fill="#d0dfef" stroke="#7292ac" stroke-width="1.7"/><g fill="#639bc4"><circle cx="21" cy="46" r="2"/><circle cx="31" cy="49" r="2"/><circle cx="41" cy="46" r="2"/></g></g>
+</g>
+<g data-workout-tile="Post-workout HR change" data-status="green" transform="translate(625 95)">
+<rect width="260" height="116" rx="9" fill="#e8f5eb" stroke="#c5e2cd"/>
+<text x="14" y="24" font-size="13" fill="#526170">Post-workout HR change</text>
+<text x="14" y="56" font-size="24" font-weight="bold" fill="#226b3c">−34 bpm</text>
+<text x="14" y="79" font-size="13" fill="#526170">Suunto comparison</text>
+<text x="14" y="101" font-size="12" font-weight="bold" fill="#226b3c">Excellent</text>
+</g>
+<g data-workout-tile="Recovery time" data-status="recovery" transform="translate(895 95)">
+<rect width="260" height="116" rx="9" fill="#f2effb" stroke="#ded5f1"/>
+<text x="14" y="24" font-size="13" fill="#526170">Recovery time</text>
+<text x="14" y="56" font-size="24" font-weight="bold" fill="#544383">9 h 25 min</text>
+<text x="14" y="79" font-size="13" fill="#526170">Until 2026-01-15 17:45</text>
+<text x="14" y="101" font-size="12" font-weight="bold" fill="#544383">Suunto · accumulated estimate</text>
+</g>
+</g>
+</g>
+<g transform="translate(0 59)">
+<g data-section="workout-tiles">
+<g data-workout-tile="Average workout temperature" data-status="mild" transform="translate(85 95)">
+<rect width="260" height="116" rx="9" fill="#e9f7f3" stroke="#bcded5"/>
+<text x="14" y="24" font-size="13" fill="#526170">Average workout temperature</text>
+<text x="14" y="56" font-size="24" font-weight="bold" fill="#206a5d">17.0 °C</text>
+<text x="14" y="79" font-size="13" fill="#526170">Watch sensor</text>
+<text x="14" y="101" font-size="12" font-weight="bold" fill="#206a5d">Mild</text>
+</g>
+<g data-workout-tile="Weather" data-status="weather" transform="translate(355 95)">
+<rect width="260" height="116" rx="9" fill="#f0f6fb" stroke="#d6e4ef"/>
+<text x="14" y="24" font-size="13" fill="#526170">Weather</text>
+<text x="14" y="56" font-size="24" font-weight="bold" fill="#345875">14.5 °C</text>
+<text x="14" y="79" font-size="13" fill="#526170">Partly cloudy</text>
+<text x="14" y="101" font-size="12" font-weight="bold" fill="#345875">Wind 6.1 km/h W · Humidity 56%</text>
+<g data-weather-icon="" aria-hidden="true" transform="translate(187 17)"><g transform="translate(2 0) scale(.76)"><circle cx="22" cy="23" r="10" fill="#f7bb4c"/><path d="M22 5v5m0 26v5M4 23h5m26 0h5M9 10l4 4m18 18 4 4M9 36l4-4m18-18 4-4" fill="none" stroke="#cc801b" stroke-width="2" stroke-linecap="round"/></g><path d="M16 38a9 9 0 0 1 1-18 13 13 0 0 1 25 1 8.5 8.5 0 0 1 2 17Z" fill="#d0dfef" stroke="#7292ac" stroke-width="1.7"/></g>
+</g>
+<g data-workout-tile="Post-workout HR change" data-status="yellow" transform="translate(625 95)">
+<rect width="260" height="116" rx="9" fill="#fff4d2" stroke="#edd489"/>
+<text x="14" y="24" font-size="13" fill="#526170">Post-workout HR change</text>
+<text x="14" y="56" font-size="24" font-weight="bold" fill="#886000">−24 bpm</text>
+<text x="14" y="79" font-size="13" fill="#526170">Suunto comparison</text>
+<text x="14" y="101" font-size="12" font-weight="bold" fill="#886000">Normal</text>
+</g>
+<g data-workout-tile="Recovery time" data-status="recovery" transform="translate(895 95)">
+<rect width="260" height="116" rx="9" fill="#f2effb" stroke="#ded5f1"/>
+<text x="14" y="24" font-size="13" fill="#526170">Recovery time</text>
+<text x="14" y="56" font-size="24" font-weight="bold" fill="#544383">9 h 00 min</text>
+<text x="14" y="79" font-size="13" fill="#526170">Until 2026-04-16 02:35</text>
+<text x="14" y="101" font-size="12" font-weight="bold" fill="#544383">Suunto · accumulated estimate</text>
+</g>
+</g>
+</g>
+<g transform="translate(0 191)">
+<g data-section="workout-tiles">
+<g data-workout-tile="Average workout temperature" data-status="hot" transform="translate(85 95)">
+<rect width="260" height="116" rx="9" fill="#fde8e8" stroke="#efbec2"/>
+<text x="14" y="24" font-size="13" fill="#526170">Average workout temperature</text>
+<text x="14" y="56" font-size="24" font-weight="bold" fill="#a22e36">32.5 °C</text>
+<text x="14" y="79" font-size="13" fill="#526170">Watch sensor</text>
+<text x="14" y="101" font-size="12" font-weight="bold" fill="#a22e36">Hot</text>
+</g>
+<g data-workout-tile="Weather" data-status="weather" transform="translate(355 95)">
+<rect width="260" height="116" rx="9" fill="#f0f6fb" stroke="#d6e4ef"/>
+<text x="14" y="24" font-size="13" fill="#526170">Weather</text>
+<text x="14" y="56" font-size="24" font-weight="bold" fill="#345875">30.0 °C</text>
+<text x="14" y="79" font-size="13" fill="#526170">Clear sky</text>
+<text x="14" y="101" font-size="12" font-weight="bold" fill="#345875">Wind 4.0 km/h S · Humidity 41%</text>
+<g data-weather-icon="" aria-hidden="true" transform="translate(187 17)"><g transform="translate(9 4)"><circle cx="22" cy="23" r="10" fill="#f7bb4c"/><path d="M22 5v5m0 26v5M4 23h5m26 0h5M9 10l4 4m18 18 4 4M9 36l4-4m18-18 4-4" fill="none" stroke="#cc801b" stroke-width="2" stroke-linecap="round"/></g></g>
+</g>
+<g data-workout-tile="Post-workout HR change" data-status="red" transform="translate(625 95)">
+<rect width="260" height="116" rx="9" fill="#fde8e8" stroke="#efbec2"/>
+<text x="14" y="24" font-size="13" fill="#526170">Post-workout HR change</text>
+<text x="14" y="56" font-size="24" font-weight="bold" fill="#a22e36">−15 bpm</text>
+<text x="14" y="79" font-size="13" fill="#526170">Suunto comparison</text>
+<text x="14" y="101" font-size="12" font-weight="bold" fill="#a22e36">Slow</text>
+</g>
+<g data-workout-tile="Recovery time" data-status="recovery" transform="translate(895 95)">
+<rect width="260" height="116" rx="9" fill="#f2effb" stroke="#ded5f1"/>
+<text x="14" y="24" font-size="13" fill="#526170">Recovery time</text>
+<text x="14" y="56" font-size="24" font-weight="bold" fill="#544383">15 h 30 min</text>
+<text x="14" y="79" font-size="13" fill="#526170">Until 2026-07-16 09:02</text>
+<text x="14" y="101" font-size="12" font-weight="bold" fill="#544383">Suunto · accumulated estimate</text>
+</g>
+</g>
+</g>
+</g>
+</svg>
