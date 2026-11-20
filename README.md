@@ -337,7 +337,10 @@ python3 -m suunto_cloud charts ../reports/suunto-2026-01-15-080000.json --sleep-
 
 The chart header and report show the last completed non-nap sleep within 24 h
 before the workout: nightly HRV, seven-day mean and coverage, sleep duration and
-quality, and average/minimum nighttime HR. Complete snapshots are deduplicated
+quality, average/minimum nighttime HR, and the highest overnight SpO₂ reported
+by Suunto. The report also includes the highest SpO₂ for the after-workout night
+when available. Suunto's `MaxSpo2` fraction is converted to a percentage and
+stored as `spo2_max_pct` in the report JSON. Complete snapshots are deduplicated
 by `SleepId`. Sleep duration uses the sum of deep/light/REM stages when all are
 available, otherwise the reported `Duration`. Nighttime HR is not daytime
 resting HR. Missing values remain missing, and fewer than three observed nights
@@ -355,7 +358,8 @@ the workout caused a change. Regenerating charts preserves their saved context;
 Charts also include two calendar-based panels above the workout: nightly HRV
 over the seven-day window, and stacked deep/light/REM sleep durations for the
 same nights. The selected pre-workout night is highlighted. The HRV panel shows
-the calculated 60-day band and seven-day mean. A separately marked after-workout
+the calculated 60-day band, seven-day mean, and recorded SpO₂ maxima aligned
+with the same wake dates. A separately marked after-workout
 night may extend the calendar axis; it never enters the pre-workout statistics.
 Missing nights leave gaps, and a missing stage breakdown uses a gray total-sleep
 bar instead of invented stages. Sleep labels show duration and quality /100.

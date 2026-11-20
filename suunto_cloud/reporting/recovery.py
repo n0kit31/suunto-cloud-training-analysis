@@ -85,7 +85,9 @@ def recovery_svg(context, feeling=None):
     ]
     out = ['<g data-section="pre-workout-recovery">',
            '<text x="85" y="109" font-size="20" font-weight="bold">Recovery &amp; workout feeling</text>',
-           f'<text x="85" y="135" font-size="15" fill="#526170">Sleep: {escape(night_label(night))}</text>']
+           f'<text x="85" y="135" font-size="15" fill="#526170">Sleep: {escape(night_label(night))}</text>',
+           f'<text x="1160" y="135" text-anchor="end" font-size="15" fill="#526170">'
+           f"Highest overnight SpO₂: {value(night.get('spo2_max_pct'), '%', 1)}</text>"]
     out.extend(tiles_svg(cards))
     note = ('Calculated reference: central 80% of the preceding 60 days; '
             'selected night excluded. Not the Suunto normal range.' if reference else
@@ -110,6 +112,7 @@ def recovery_markdown(context):
         week, reference = context['hrv_7d'], context['reference_60d']
         lines.extend([f"Sleep: {night_label(night)}.", '', '| Metric | Value |', '| --- | --- |',
                       f"| Nightly HRV | {value(night['hrv_ms'], ' ms')}; samples: {value(night['hrv_sample_count'])} |",
+                      f"| Highest overnight SpO₂ | {value(night.get('spo2_max_pct'), '%', 1)} |",
                       f"| 7-day average HRV | {value(week['average_ms'], ' ms', 1)}; {week['night_count']}/7 nights |",
                       f"| Sleep | {sleep_time(night['sleep_seconds'])}; quality {value(night['quality_score'])}/100 |",
                       f"| Average / minimum overnight HR | {value(night['hr_avg_bpm'])} / {value(night['hr_min_bpm'])} bpm |"])
@@ -124,7 +127,8 @@ def recovery_markdown(context):
     after = context.get('after')
     if after:
         lines.extend(['', '## Night after workout', '', f"Sleep: {night_label(after)}.", '',
-                      f"HRV {value(after['hrv_ms'], ' ms')}; sleep {sleep_time(after['sleep_seconds'])}; "
+                      f"HRV {value(after['hrv_ms'], ' ms')}; highest overnight SpO₂ "
+                      f"{value(after.get('spo2_max_pct'), '%', 1)}; sleep {sleep_time(after['sleep_seconds'])}; "
                       f"quality {value(after['quality_score'])}/100; average overnight HR {value(after['hr_avg_bpm'], ' bpm')}."])
         delta = context.get('after_hrv_change_ms')
         if delta is not None:

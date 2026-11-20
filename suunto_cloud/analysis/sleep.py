@@ -39,6 +39,7 @@ def sleep_records(payload, zone):
                   ('DeepSleepDuration', 'LightSleepDuration', 'REMSleepDuration')]
         stage_total = sum(stages) if all(v is not None for v in stages) else None
         duration = stage_total if stage_total else metric(data, 'Duration', positive=True)
+        spo2 = metric(data, 'MaxSpo2', positive=True)
         record = {'sleep_id': data.get('SleepId'), 'start': start.astimezone(zone).isoformat(),
                   'end': end.astimezone(zone).isoformat(), 'wake_date': end.astimezone(zone).date().isoformat(),
                   'sleep_seconds': duration, 'duration_method': 'sum_of_sleep_stages' if stage_total else 'Suunto Duration',
@@ -46,12 +47,13 @@ def sleep_records(payload, zone):
                   'quality_score': metric(data, 'SleepQualityScore'),
                   'hr_avg_bpm': metric(data, 'HRAvg', positive=True),
                   'hr_min_bpm': metric(data, 'HRMin', positive=True),
-                  'hrv_ms': hrv, 'hrv_sample_count': count}
+                  'hrv_ms': hrv, 'hrv_sample_count': count,
+                  'spo2_max_pct': spo2 * 100 if spo2 is not None and spo2 <= 1 else None}
         identity = str(data['SleepId']) if data.get('SleepId') is not None else (start, end)
         score = (sum(record[field] is not None for field in
                      ('sleep_seconds', 'quality_score', 'hr_avg_bpm', 'hr_min_bpm', 'hrv_ms'))
                  + sum(value is not None for value in stages),
-                 count or 0, end)
+                 count or 0, end, record['spo2_max_pct'] is not None)
         if identity not in records or score >= records[identity][0]:
             records[identity] = (score, record)
     return sorted((record for _, record in records.values()), key=lambda row: timestamp(row['end']))

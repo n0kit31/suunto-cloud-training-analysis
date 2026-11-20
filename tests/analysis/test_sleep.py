@@ -36,12 +36,22 @@ class SleepTests(unittest.TestCase):
         self.assertIsNone(result['hrv_7d']['average_ms'])
 
     def test_deduplicates_and_prefers_complete_snapshot_over_partial_updates(self):
-        full = night()
+        full = night(MaxSpo2=0.985)
         partial = deepcopy(full)
         del partial['entryData']['AvgHRV']
-        result = recovery_context(workout(), snapshot([full, full, partial]))
+        without_spo2 = night()
+        result = recovery_context(workout(), snapshot([full, partial, without_spo2]))
         self.assertEqual(result['before']['hrv_ms'], 50)
+        self.assertEqual(result['before']['spo2_max_pct'], 98.5)
         self.assertEqual(result['hrv_7d']['night_count'], 1)
+
+    def test_nightly_spo2_accepts_only_valid_suunto_fractions(self):
+        for raw, expected in ((1, 100), (None, None), (0, None), (-0.5, None),
+                              (98, None), (1.1, None), (True, None), ('0.98', None),
+                              (float('nan'), None), (float('inf'), None)):
+            with self.subTest(raw=raw):
+                result = recovery_context(workout(), snapshot([night(MaxSpo2=raw)]))
+                self.assertEqual(result['before']['spo2_max_pct'], expected)
 
     def test_excludes_naps_and_stale_nights(self):
         result = recovery_context(workout(), snapshot([night('2026-01-13'), night(IsNap=True)]))
