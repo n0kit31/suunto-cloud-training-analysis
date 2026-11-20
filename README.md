@@ -22,6 +22,7 @@ The current tools download data from Cloud API; this repository has no MCP clien
 - [Independence and API access](#independence-and-api-access)
 - [Quick start with Docker](#quick-start-with-docker)
 - [Marathon example](#example-analysis-marathon)
+- [Synthetic chart previews](#synthetic-chart-previews)
 - [Project structure](#structure)
 - [Requirements](#requirements)
 - [Local setup](#local-setup)
@@ -136,19 +137,25 @@ Step length and terrain grade are estimates; see [chart methods](#usage).
 The example includes no GPS coordinates, account or workout identifiers, or raw
 workout files.
 
-### Sleep and HRV preview (synthetic)
+## Synthetic chart previews
 
-This separate illustration uses entirely synthetic nights and a synthetic
-workout feeling rating. It is not the marathon owner's recovery data. It shows
-the recovery tiles, seven-night HRV history, calculated 60-day reference band,
-and sleep stages. Missing nights remain gaps; the after-workout night is marked
-separately and excluded from pre-workout statistics.
+### Workout conditions and recovery time
 
-![Synthetic recovery example: historical comparison tiles, nightly HRV, and stacked sleep stages](docs/examples/recovery-synthetic.svg)
+Three fictional workouts show the blue, teal, and red temperature tiles. Each
+row also shows an illustrated weather tile, Suunto's post-workout heart-rate
+comparison, and the estimated local recovery deadline.
 
-Colors describe deviations from the calculated history and the recorded feeling
-rating. They are not Suunto readiness statuses. See [sleep and HRV context](#sleep-and-hrv-context)
-for data import and calculation details.
+![Three synthetic workout chart headers with cold, mild, and hot temperature tiles, weather illustrations, heart-rate recovery ratings, and recovery deadlines](docs/examples/workout-tiles-synthetic.svg)
+
+### Nightly HRV, SpO₂, and sleep stages
+
+This example shows the recovery tiles, seven-night HRV history, calculated
+60-day reference band, and sleep stages. The SpO₂ row follows the same wake
+dates as HRV. A separate marker identifies the night after the workout, which
+is excluded from the pre-workout statistics. Missing observations remain gaps.
+See [sleep and HRV context](#sleep-and-hrv-context) for calculation details.
+
+![Synthetic sleep and recovery chart with HRV, nightly maximum SpO₂, sleep stages, and a separate post-workout night](docs/examples/recovery-synthetic.svg)
 
 ## Structure
 

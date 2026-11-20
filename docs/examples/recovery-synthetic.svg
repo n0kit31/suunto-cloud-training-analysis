@@ -1,29 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="990" viewBox="0 0 1200 990" role="img" aria-labelledby="title desc">
-<!-- generated: suunto-analysis -->
-<title id="title">Recovery preview: entirely synthetic sleep, HRV and workout feeling</title>
-<desc id="desc">Invented documentation data, independent of the marathon. Historical tiles,
-nightly HRV with a missing night, a calculated reference band, stacked sleep stages,
-and a separately marked after-workout night.</desc>
-<rect width="1200" height="990" fill="#ffffff"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="873" viewBox="0 0 1200 873" role="img" aria-labelledby="title desc">
+<title id="title">Synthetic sleep and recovery chart</title>
+<desc id="desc">Example sleep stages, nightly HRV and maximum SpO₂ by wake date. The night after the workout appears separately.</desc>
+<rect width="100%" height="100%" fill="#ffffff"/>
 <g font-family="Arial, sans-serif" fill="#17212b">
-<text x="85" y="35" font-size="25">Recovery preview · synthetic data</text>
-<text x="85" y="65" font-size="17">Illustration only · no personal sleep or HRV measurements</text>
+<g transform="translate(0 -85)">
 <g data-section="pre-workout-recovery">
 <text x="85" y="109" font-size="20" font-weight="bold">Recovery &amp; workout feeling</text>
-<text x="85" y="135" font-size="15" fill="#526170">Sleep: 2026-01-15 00:16 – 2026-01-15 07:00</text>
+<text x="85" y="135" font-size="15" fill="#526170">Sleep: 2026-07-15 00:35 – 2026-07-15 07:15</text>
+<text x="1160" y="135" text-anchor="end" font-size="15" fill="#526170">Highest overnight SpO₂: 97.5%</text>
 <g data-tile="0" data-status="yellow">
 <title>Nightly HRV: Outside reference</title>
 <rect x="85.00" y="151" width="170.83" height="112" rx="8" fill="#fff4d2" stroke="#edd489"/>
 <text x="97.00" y="174" font-size="13" fill="#526170">Nightly HRV</text>
-<text x="97.00" y="205" font-size="22" font-weight="bold">64 ms</text>
-<text x="97.00" y="228" font-size="12" fill="#526170">80 samples</text>
+<text x="97.00" y="205" font-size="22" font-weight="bold">73 ms</text>
+<text x="97.00" y="228" font-size="12" fill="#526170">82 samples</text>
 <text x="97.00" y="250" font-size="12" font-weight="bold" fill="#886000">Outside reference</text>
 </g>
 <g data-tile="1" data-status="green">
 <title>7-day average HRV: Within reference</title>
 <rect x="265.83" y="151" width="170.83" height="112" rx="8" fill="#e8f5eb" stroke="#c5e2cd"/>
 <text x="277.83" y="174" font-size="13" fill="#526170">7-day average HRV</text>
-<text x="277.83" y="205" font-size="22" font-weight="bold">51.7 ms</text>
+<text x="277.83" y="205" font-size="22" font-weight="bold">63.3 ms</text>
 <text x="277.83" y="228" font-size="12" fill="#526170">6/7 nights · calculated</text>
 <text x="277.83" y="250" font-size="12" font-weight="bold" fill="#226b3c">Within reference</text>
 </g>
@@ -31,25 +28,25 @@ and a separately marked after-workout night.</desc>
 <title>60-day HRV reference: Reference only</title>
 <rect x="446.67" y="151" width="170.83" height="112" rx="8" fill="#f3f6f8" stroke="#dce2e7"/>
 <text x="458.67" y="174" font-size="13" fill="#526170">60-day HRV reference</text>
-<text x="458.67" y="205" font-size="22" font-weight="bold">44–58 ms</text>
-<text x="458.67" y="228" font-size="12" fill="#526170">median 52 ms · 59 nights</text>
+<text x="458.67" y="205" font-size="22" font-weight="bold">47–71 ms</text>
+<text x="458.67" y="228" font-size="12" fill="#526170">median 59 ms · 59 nights</text>
 <text x="458.67" y="250" font-size="12" font-weight="bold" fill="#526170">Reference only</text>
 </g>
-<g data-tile="3" data-status="yellow">
-<title>Sleep before workout: Outside reference</title>
-<rect x="627.50" y="151" width="170.83" height="112" rx="8" fill="#fff4d2" stroke="#edd489"/>
+<g data-tile="3" data-status="red">
+<title>Sleep before workout: Large deviation</title>
+<rect x="627.50" y="151" width="170.83" height="112" rx="8" fill="#fde8e8" stroke="#efbec2"/>
 <text x="639.50" y="174" font-size="13" fill="#526170">Sleep before workout</text>
-<text x="639.50" y="205" font-size="22" font-weight="bold">6 h 24 min</text>
-<text x="639.50" y="228" font-size="12" fill="#526170">quality 68/100</text>
-<text x="639.50" y="250" font-size="12" font-weight="bold" fill="#886000">Outside reference</text>
+<text x="639.50" y="205" font-size="22" font-weight="bold">6 h 11 min</text>
+<text x="639.50" y="228" font-size="12" fill="#526170">quality 66/100</text>
+<text x="639.50" y="250" font-size="12" font-weight="bold" fill="#a22e36">Large deviation</text>
 </g>
-<g data-tile="4" data-status="yellow">
-<title>Average overnight HR: Outside reference</title>
-<rect x="808.33" y="151" width="170.83" height="112" rx="8" fill="#fff4d2" stroke="#edd489"/>
+<g data-tile="4" data-status="red">
+<title>Average overnight HR: Large deviation</title>
+<rect x="808.33" y="151" width="170.83" height="112" rx="8" fill="#fde8e8" stroke="#efbec2"/>
 <text x="820.33" y="174" font-size="13" fill="#526170">Average overnight HR</text>
-<text x="820.33" y="205" font-size="22" font-weight="bold">57 bpm</text>
-<text x="820.33" y="228" font-size="12" fill="#526170">minimum 46 bpm</text>
-<text x="820.33" y="250" font-size="12" font-weight="bold" fill="#886000">Outside reference</text>
+<text x="820.33" y="205" font-size="22" font-weight="bold">68 bpm</text>
+<text x="820.33" y="228" font-size="12" fill="#526170">minimum 60 bpm</text>
+<text x="820.33" y="250" font-size="12" font-weight="bold" fill="#a22e36">Large deviation</text>
 </g>
 <g data-tile="5" data-status="green">
 <title>Workout feeling: High rating</title>
@@ -67,48 +64,60 @@ and a separately marked after-workout night.</desc>
 <rect x="85" y="361" width="14" height="12" fill="#d9eddf"/>
 <text x="106" y="372" font-size="13">60-day reference</text>
 <line x1="330" x2="353" y1="367" y2="367" stroke="#33718f" stroke-dasharray="5 3"/>
-<text x="360" y="372" font-size="13">7-day mean: 51.7 ms</text>
+<text x="360" y="372" font-size="13">7-day mean: 63.3 ms</text>
 <circle cx="691" cy="367" r="5" fill="#17212b"/>
 <text x="704" y="372" font-size="13">Before workout</text>
 <circle cx="935" cy="367" r="5" fill="white" stroke="#788795" stroke-width="2"/>
 <text x="948" y="372" font-size="13">After workout</text>
-<rect data-role="hrv-reference-band" x="85" y="439.95" width="1075" height="55.80" fill="#d9eddf"/>
+<rect data-role="hrv-reference-band" x="85" y="429.88" width="1075" height="93.00" fill="#d9eddf"/>
 <line x1="85" x2="1160" y1="550.00" y2="550.00" stroke="#dce1e6"/>
-<text x="73" y="555.00" font-size="14" text-anchor="end">30</text>
+<text x="73" y="555.00" font-size="14" text-anchor="end">40</text>
 <line x1="85" x2="1160" y1="511.25" y2="511.25" stroke="#dce1e6"/>
-<text x="73" y="516.25" font-size="14" text-anchor="end">40</text>
+<text x="73" y="516.25" font-size="14" text-anchor="end">50</text>
 <line x1="85" x2="1160" y1="472.50" y2="472.50" stroke="#dce1e6"/>
-<text x="73" y="477.50" font-size="14" text-anchor="end">50</text>
+<text x="73" y="477.50" font-size="14" text-anchor="end">60</text>
 <line x1="85" x2="1160" y1="433.75" y2="433.75" stroke="#dce1e6"/>
-<text x="73" y="438.75" font-size="14" text-anchor="end">60</text>
+<text x="73" y="438.75" font-size="14" text-anchor="end">70</text>
 <line x1="85" x2="1160" y1="395.00" y2="395.00" stroke="#dce1e6"/>
-<text x="73" y="400.00" font-size="14" text-anchor="end">70</text>
+<text x="73" y="400.00" font-size="14" text-anchor="end">80</text>
 <text x="45" y="388" font-size="13">ms</text>
-<line data-role="hrv-7d-mean" x1="85" x2="1160" y1="466.04" y2="466.04" stroke="#33718f" stroke-dasharray="6 4"/>
-<line data-role="hrv-daily-line" x1="152.19" y1="495.75" x2="286.56" y2="488.00" stroke="#738796" stroke-width="1.8"/>
-<line data-role="hrv-daily-line" x1="555.31" y1="472.50" x2="689.69" y2="464.75" stroke="#738796" stroke-width="1.8"/>
-<line data-role="hrv-daily-line" x1="689.69" y1="464.75" x2="824.06" y2="457.00" stroke="#738796" stroke-width="1.8"/>
-<line data-role="hrv-daily-line" x1="824.06" y1="457.00" x2="958.44" y2="418.25" stroke="#738796" stroke-width="1.8"/>
-<circle data-role="night" data-value="44" cx="152.19" cy="495.75" r="5" fill="#226b3c" stroke="#226b3c" stroke-width="2"><title>2026-01-09: 44 ms</title></circle>
-<circle data-role="night" data-value="46" cx="286.56" cy="488.00" r="5" fill="#226b3c" stroke="#226b3c" stroke-width="2"><title>2026-01-10: 46 ms</title></circle>
-<circle data-role="night" data-value="50" cx="555.31" cy="472.50" r="5" fill="#226b3c" stroke="#226b3c" stroke-width="2"><title>2026-01-12: 50 ms</title></circle>
-<circle data-role="night" data-value="52" cx="689.69" cy="464.75" r="5" fill="#226b3c" stroke="#226b3c" stroke-width="2"><title>2026-01-13: 52 ms</title></circle>
-<circle data-role="night" data-value="54" cx="824.06" cy="457.00" r="5" fill="#226b3c" stroke="#226b3c" stroke-width="2"><title>2026-01-14: 54 ms</title></circle>
-<circle data-role="selected-night" data-value="64" cx="958.44" cy="418.25" r="7" fill="#886000" stroke="#17212b" stroke-width="2"><title>2026-01-15: 64 ms</title></circle>
-<text x="958.44" y="403.25" font-size="14" text-anchor="middle" font-weight="bold" fill="#886000">64</text>
-<circle data-role="after-workout" data-value="38" cx="1092.81" cy="519.00" r="5" fill="white" stroke="#788795" stroke-width="2"><title>2026-01-16: 38 ms</title></circle>
-<text x="1092.81" y="504.00" font-size="14" text-anchor="middle" font-weight="bold" fill="#788795">After: 38</text>
-<text x="152.19" y="574" font-size="14" text-anchor="middle" font-weight="normal">01-09</text>
-<text x="286.56" y="574" font-size="14" text-anchor="middle" font-weight="normal">01-10</text>
-<text x="420.94" y="574" font-size="14" text-anchor="middle" font-weight="normal">01-11</text>
-<text x="555.31" y="574" font-size="14" text-anchor="middle" font-weight="normal">01-12</text>
-<text x="689.69" y="574" font-size="14" text-anchor="middle" font-weight="normal">01-13</text>
-<text x="824.06" y="574" font-size="14" text-anchor="middle" font-weight="normal">01-14</text>
-<text x="958.44" y="574" font-size="14" text-anchor="middle" font-weight="bold">01-15</text>
-<text x="1092.81" y="574" font-size="14" text-anchor="middle" font-weight="normal">01-16</text>
-<line data-role="after-workout-divider" x1="1025.62" x2="1025.62" y1="390" y2="550" stroke="#a2adb7" stroke-dasharray="4 4"/>
-<text x="622.5" y="598" font-size="14" text-anchor="middle">Wake date · workout local time</text>
-<text x="85" y="620" font-size="13" fill="#526170">After-workout values are separate; they do not enter the pre-workout average or reference. Missing nights remain gaps.</text>
+<line data-role="hrv-7d-mean" x1="85" x2="1160" y1="459.58" y2="459.58" stroke="#33718f" stroke-dasharray="6 4"/>
+<line data-role="hrv-daily-line" x1="152.19" y1="507.38" x2="286.56" y2="491.88" stroke="#738796" stroke-width="1.8"/>
+<line data-role="hrv-daily-line" x1="555.31" y1="460.88" x2="689.69" y2="445.38" stroke="#738796" stroke-width="1.8"/>
+<line data-role="hrv-daily-line" x1="689.69" y1="445.38" x2="824.06" y2="429.88" stroke="#738796" stroke-width="1.8"/>
+<line data-role="hrv-daily-line" x1="824.06" y1="429.88" x2="958.44" y2="422.12" stroke="#738796" stroke-width="1.8"/>
+<circle data-role="night" data-value="51" cx="152.19" cy="507.38" r="5" fill="#226b3c" stroke="#226b3c" stroke-width="2"><title>2026-07-09: 51 ms</title></circle>
+<circle data-role="night" data-value="55" cx="286.56" cy="491.88" r="5" fill="#226b3c" stroke="#226b3c" stroke-width="2"><title>2026-07-10: 55 ms</title></circle>
+<circle data-role="night" data-value="63" cx="555.31" cy="460.88" r="5" fill="#226b3c" stroke="#226b3c" stroke-width="2"><title>2026-07-12: 63 ms</title></circle>
+<circle data-role="night" data-value="67" cx="689.69" cy="445.38" r="5" fill="#226b3c" stroke="#226b3c" stroke-width="2"><title>2026-07-13: 67 ms</title></circle>
+<circle data-role="night" data-value="71" cx="824.06" cy="429.88" r="5" fill="#226b3c" stroke="#226b3c" stroke-width="2"><title>2026-07-14: 71 ms</title></circle>
+<circle data-role="selected-night" data-value="73" cx="958.44" cy="422.12" r="7" fill="#886000" stroke="#17212b" stroke-width="2"><title>2026-07-15: 73 ms</title></circle>
+<text x="958.44" y="407.12" font-size="14" text-anchor="middle" font-weight="bold" fill="#886000">73</text>
+<circle data-role="after-workout" data-value="54" cx="1092.81" cy="495.75" r="5" fill="white" stroke="#788795" stroke-width="2"><title>2026-07-16: 54 ms</title></circle>
+<text x="1092.81" y="480.75" font-size="14" text-anchor="middle" font-weight="bold" fill="#788795">After: 54</text>
+<text x="152.19" y="574" font-size="14" text-anchor="middle" font-weight="normal">07-09</text>
+<text x="286.56" y="574" font-size="14" text-anchor="middle" font-weight="normal">07-10</text>
+<text x="420.94" y="574" font-size="14" text-anchor="middle" font-weight="normal">07-11</text>
+<text x="555.31" y="574" font-size="14" text-anchor="middle" font-weight="normal">07-12</text>
+<text x="689.69" y="574" font-size="14" text-anchor="middle" font-weight="normal">07-13</text>
+<text x="824.06" y="574" font-size="14" text-anchor="middle" font-weight="normal">07-14</text>
+<text x="958.44" y="574" font-size="14" text-anchor="middle" font-weight="bold">07-15</text>
+<text x="1092.81" y="574" font-size="14" text-anchor="middle" font-weight="normal">07-16</text>
+<line data-role="after-workout-divider" x1="1025.62" x2="1025.62" y1="390" y2="604" stroke="#a2adb7" stroke-dasharray="4 4"/>
+<g data-section="spo2-history" fill="#526170" font-size="13">
+<title>Highest overnight SpO₂ by wake date</title>
+<text x="74" y="598" text-anchor="end">SpO₂ max</text>
+<text data-wake-date="2026-07-09" x="152.19" y="598" text-anchor="middle">98.0%</text>
+<text data-wake-date="2026-07-10" x="286.56" y="598" text-anchor="middle">99.0%</text>
+<text data-wake-date="2026-07-11" x="420.94" y="598" text-anchor="middle">—</text>
+<text data-wake-date="2026-07-12" x="555.31" y="598" text-anchor="middle">97.0%</text>
+<text data-wake-date="2026-07-13" x="689.69" y="598" text-anchor="middle">—</text>
+<text data-wake-date="2026-07-14" x="824.06" y="598" text-anchor="middle">99.0%</text>
+<text data-wake-date="2026-07-15" x="958.44" y="598" text-anchor="middle">97.5%</text>
+<text data-wake-date="2026-07-16" x="1092.81" y="598" text-anchor="middle">99.0%</text>
+</g>
+<text x="622.5" y="620" font-size="14" text-anchor="middle">Wake date · workout local time</text>
+<text x="85" y="640" font-size="13" fill="#526170">After-workout values are separate; they do not enter the pre-workout average or reference. Missing nights remain gaps.</text>
 </g>
 <g data-section="sleep-history">
 <text x="85" y="656" font-size="19">Sleep stages · same nights</text>
@@ -123,52 +132,55 @@ and a separately marked after-workout night.</desc>
 <line x1="85" x2="1160" y1="860.00" y2="860.00" stroke="#dce1e6"/>
 <text x="73" y="865.00" font-size="14" text-anchor="end">0</text>
 <line x1="85" x2="1160" y1="822.50" y2="822.50" stroke="#dce1e6"/>
-<text x="73" y="827.50" font-size="14" text-anchor="end">2</text>
+<text x="73" y="827.50" font-size="14" text-anchor="end">2.5</text>
 <line x1="85" x2="1160" y1="785.00" y2="785.00" stroke="#dce1e6"/>
-<text x="73" y="790.00" font-size="14" text-anchor="end">4</text>
+<text x="73" y="790.00" font-size="14" text-anchor="end">5</text>
 <line x1="85" x2="1160" y1="747.50" y2="747.50" stroke="#dce1e6"/>
-<text x="73" y="752.50" font-size="14" text-anchor="end">6</text>
+<text x="73" y="752.50" font-size="14" text-anchor="end">7.5</text>
 <line x1="85" x2="1160" y1="710.00" y2="710.00" stroke="#dce1e6"/>
-<text x="73" y="715.00" font-size="14" text-anchor="end">8</text>
+<text x="73" y="715.00" font-size="14" text-anchor="end">10</text>
 <text x="40" y="702" font-size="13">hours</text>
-<rect data-stage="deep" data-wake-date="2026-01-09" x="120.19" y="835.00" width="64.00" height="25.00" fill="#4b57a9" opacity="1"><title>2026-01-09: deep, 80 min</title></rect>
-<rect data-stage="light" data-wake-date="2026-01-09" x="120.19" y="744.38" width="64.00" height="90.62" fill="#8d9ce8" opacity="1"><title>2026-01-09: light, 290 min</title></rect>
-<rect data-stage="rem" data-wake-date="2026-01-09" x="120.19" y="713.12" width="64.00" height="31.25" fill="#bd75c4" opacity="1"><title>2026-01-09: rem, 100 min</title></rect>
-<text x="152.19" y="884" font-size="14" text-anchor="middle" font-weight="normal">01-09</text>
-<text x="152.19" y="906" font-size="12" text-anchor="middle" fill="#526170">7:50 · 76</text>
-<rect data-stage="deep" data-wake-date="2026-01-10" x="254.56" y="833.44" width="64.00" height="26.56" fill="#4b57a9" opacity="1"><title>2026-01-10: deep, 85 min</title></rect>
-<rect data-stage="light" data-wake-date="2026-01-10" x="254.56" y="742.81" width="64.00" height="90.62" fill="#8d9ce8" opacity="1"><title>2026-01-10: light, 290 min</title></rect>
-<rect data-stage="rem" data-wake-date="2026-01-10" x="254.56" y="710.00" width="64.00" height="32.81" fill="#bd75c4" opacity="1"><title>2026-01-10: rem, 105 min</title></rect>
-<text x="286.56" y="884" font-size="14" text-anchor="middle" font-weight="normal">01-10</text>
-<text x="286.56" y="906" font-size="12" text-anchor="middle" fill="#526170">8:00 · 77</text>
-<text x="420.94" y="884" font-size="14" text-anchor="middle" font-weight="normal">01-11</text>
+<rect data-stage="deep" data-wake-date="2026-07-09" x="120.19" y="837.75" width="64.00" height="22.25" fill="#4b57a9" opacity="1"><title>2026-07-09: deep, 89 min</title></rect>
+<rect data-stage="light" data-wake-date="2026-07-09" x="120.19" y="766.75" width="64.00" height="71.00" fill="#8d9ce8" opacity="1"><title>2026-07-09: light, 284 min</title></rect>
+<rect data-stage="rem" data-wake-date="2026-07-09" x="120.19" y="745.25" width="64.00" height="21.50" fill="#bd75c4" opacity="1"><title>2026-07-09: rem, 86 min</title></rect>
+<text x="152.19" y="884" font-size="14" text-anchor="middle" font-weight="normal">07-09</text>
+<text x="152.19" y="906" font-size="12" text-anchor="middle" fill="#526170">7:39 · 75</text>
+<rect data-stage="deep" data-wake-date="2026-07-10" x="254.56" y="840.75" width="64.00" height="19.25" fill="#4b57a9" opacity="1"><title>2026-07-10: deep, 77 min</title></rect>
+<rect data-stage="light" data-wake-date="2026-07-10" x="254.56" y="767.50" width="64.00" height="73.25" fill="#8d9ce8" opacity="1"><title>2026-07-10: light, 293 min</title></rect>
+<rect data-stage="rem" data-wake-date="2026-07-10" x="254.56" y="744.75" width="64.00" height="22.75" fill="#bd75c4" opacity="1"><title>2026-07-10: rem, 91 min</title></rect>
+<text x="286.56" y="884" font-size="14" text-anchor="middle" font-weight="normal">07-10</text>
+<text x="286.56" y="906" font-size="12" text-anchor="middle" fill="#526170">7:41 · 76</text>
+<text x="420.94" y="884" font-size="14" text-anchor="middle" font-weight="normal">07-11</text>
 <text x="420.94" y="906" font-size="12" text-anchor="middle" fill="#526170">No data</text>
-<rect data-stage="deep" data-wake-date="2026-01-12" x="523.31" y="835.00" width="64.00" height="25.00" fill="#4b57a9" opacity="1"><title>2026-01-12: deep, 80 min</title></rect>
-<rect data-stage="light" data-wake-date="2026-01-12" x="523.31" y="755.31" width="64.00" height="79.69" fill="#8d9ce8" opacity="1"><title>2026-01-12: light, 255 min</title></rect>
-<rect data-stage="rem" data-wake-date="2026-01-12" x="523.31" y="725.62" width="64.00" height="29.69" fill="#bd75c4" opacity="1"><title>2026-01-12: rem, 95 min</title></rect>
-<text x="555.31" y="884" font-size="14" text-anchor="middle" font-weight="normal">01-12</text>
-<text x="555.31" y="906" font-size="12" text-anchor="middle" fill="#526170">7:10 · 79</text>
-<rect data-stage="unknown" data-wake-date="2026-01-13" x="657.69" y="722.50" width="64.00" height="137.50" fill="#cad2da" opacity="1"><title>2026-01-13: unknown, 440 min</title></rect>
-<text x="689.69" y="884" font-size="14" text-anchor="middle" font-weight="normal">01-13</text>
-<text x="689.69" y="906" font-size="12" text-anchor="middle" fill="#526170">7:20 · 80</text>
-<rect data-stage="deep" data-wake-date="2026-01-14" x="792.06" y="831.88" width="64.00" height="28.12" fill="#4b57a9" opacity="1"><title>2026-01-14: deep, 90 min</title></rect>
-<rect data-stage="light" data-wake-date="2026-01-14" x="792.06" y="752.19" width="64.00" height="79.69" fill="#8d9ce8" opacity="1"><title>2026-01-14: light, 255 min</title></rect>
-<rect data-stage="rem" data-wake-date="2026-01-14" x="792.06" y="719.38" width="64.00" height="32.81" fill="#bd75c4" opacity="1"><title>2026-01-14: rem, 105 min</title></rect>
-<text x="824.06" y="884" font-size="14" text-anchor="middle" font-weight="normal">01-14</text>
-<text x="824.06" y="906" font-size="12" text-anchor="middle" fill="#526170">7:30 · 81</text>
-<rect data-stage="deep" data-wake-date="2026-01-15" x="926.44" y="835.00" width="64.00" height="25.00" fill="#4b57a9" opacity="1"><title>2026-01-15: deep, 80 min</title></rect>
-<rect data-stage="light" data-wake-date="2026-01-15" x="926.44" y="768.12" width="64.00" height="66.88" fill="#8d9ce8" opacity="1"><title>2026-01-15: light, 214 min</title></rect>
-<rect data-stage="rem" data-wake-date="2026-01-15" x="926.44" y="740.00" width="64.00" height="28.12" fill="#bd75c4" opacity="1"><title>2026-01-15: rem, 90 min</title></rect>
-<rect data-role="selected-sleep" x="926.44" y="740.00" width="64.00" height="120.00" fill="none" stroke="#17212b" stroke-width="2"/>
-<text x="958.44" y="884" font-size="14" text-anchor="middle" font-weight="bold">01-15</text>
-<text x="958.44" y="906" font-size="12" text-anchor="middle" fill="#526170">6:24 · 68</text>
-<rect data-stage="deep" data-wake-date="2026-01-16" x="1060.81" y="833.44" width="64.00" height="26.56" fill="#4b57a9" opacity="0.5"><title>2026-01-16: deep, 85 min</title></rect>
-<rect data-stage="light" data-wake-date="2026-01-16" x="1060.81" y="742.81" width="64.00" height="90.62" fill="#8d9ce8" opacity="0.5"><title>2026-01-16: light, 290 min</title></rect>
-<rect data-stage="rem" data-wake-date="2026-01-16" x="1060.81" y="713.12" width="64.00" height="29.69" fill="#bd75c4" opacity="0.5"><title>2026-01-16: rem, 95 min</title></rect>
-<text x="1092.81" y="884" font-size="14" text-anchor="middle" font-weight="normal">01-16</text>
-<text x="1092.81" y="906" font-size="12" text-anchor="middle" fill="#526170">7:50 · 83</text>
+<rect data-stage="deep" data-wake-date="2026-07-12" x="523.31" y="839.25" width="64.00" height="20.75" fill="#4b57a9" opacity="1"><title>2026-07-12: deep, 83 min</title></rect>
+<rect data-stage="light" data-wake-date="2026-07-12" x="523.31" y="770.50" width="64.00" height="68.75" fill="#8d9ce8" opacity="1"><title>2026-07-12: light, 275 min</title></rect>
+<rect data-stage="rem" data-wake-date="2026-07-12" x="523.31" y="745.25" width="64.00" height="25.25" fill="#bd75c4" opacity="1"><title>2026-07-12: rem, 101 min</title></rect>
+<text x="555.31" y="884" font-size="14" text-anchor="middle" font-weight="normal">07-12</text>
+<text x="555.31" y="906" font-size="12" text-anchor="middle" fill="#526170">7:39 · 78</text>
+<rect data-stage="deep" data-wake-date="2026-07-13" x="657.69" y="838.50" width="64.00" height="21.50" fill="#4b57a9" opacity="1"><title>2026-07-13: deep, 86 min</title></rect>
+<rect data-stage="light" data-wake-date="2026-07-13" x="657.69" y="767.50" width="64.00" height="71.00" fill="#8d9ce8" opacity="1"><title>2026-07-13: light, 284 min</title></rect>
+<rect data-stage="rem" data-wake-date="2026-07-13" x="657.69" y="741.00" width="64.00" height="26.50" fill="#bd75c4" opacity="1"><title>2026-07-13: rem, 106 min</title></rect>
+<text x="689.69" y="884" font-size="14" text-anchor="middle" font-weight="normal">07-13</text>
+<text x="689.69" y="906" font-size="12" text-anchor="middle" fill="#526170">7:56 · 79</text>
+<rect data-stage="deep" data-wake-date="2026-07-14" x="792.06" y="837.75" width="64.00" height="22.25" fill="#4b57a9" opacity="1"><title>2026-07-14: deep, 89 min</title></rect>
+<rect data-stage="light" data-wake-date="2026-07-14" x="792.06" y="764.50" width="64.00" height="73.25" fill="#8d9ce8" opacity="1"><title>2026-07-14: light, 293 min</title></rect>
+<rect data-stage="rem" data-wake-date="2026-07-14" x="792.06" y="736.75" width="64.00" height="27.75" fill="#bd75c4" opacity="1"><title>2026-07-14: rem, 111 min</title></rect>
+<text x="824.06" y="884" font-size="14" text-anchor="middle" font-weight="normal">07-14</text>
+<text x="824.06" y="906" font-size="12" text-anchor="middle" fill="#526170">8:13 · 80</text>
+<rect data-stage="deep" data-wake-date="2026-07-15" x="926.44" y="843.75" width="64.00" height="16.25" fill="#4b57a9" opacity="1"><title>2026-07-15: deep, 65 min</title></rect>
+<rect data-stage="light" data-wake-date="2026-07-15" x="926.44" y="785.75" width="64.00" height="58.00" fill="#8d9ce8" opacity="1"><title>2026-07-15: light, 232 min</title></rect>
+<rect data-stage="rem" data-wake-date="2026-07-15" x="926.44" y="767.25" width="64.00" height="18.50" fill="#bd75c4" opacity="1"><title>2026-07-15: rem, 74 min</title></rect>
+<rect data-role="selected-sleep" x="926.44" y="767.25" width="64.00" height="92.75" fill="none" stroke="#17212b" stroke-width="2"/>
+<text x="958.44" y="884" font-size="14" text-anchor="middle" font-weight="bold">07-15</text>
+<text x="958.44" y="906" font-size="12" text-anchor="middle" fill="#526170">6:11 · 66</text>
+<rect data-stage="deep" data-wake-date="2026-07-16" x="1060.81" y="840.00" width="64.00" height="20.00" fill="#4b57a9" opacity="0.5"><title>2026-07-16: deep, 80 min</title></rect>
+<rect data-stage="light" data-wake-date="2026-07-16" x="1060.81" y="771.25" width="64.00" height="68.75" fill="#8d9ce8" opacity="0.5"><title>2026-07-16: light, 275 min</title></rect>
+<rect data-stage="rem" data-wake-date="2026-07-16" x="1060.81" y="748.50" width="64.00" height="22.75" fill="#bd75c4" opacity="0.5"><title>2026-07-16: rem, 91 min</title></rect>
+<text x="1092.81" y="884" font-size="14" text-anchor="middle" font-weight="normal">07-16</text>
+<text x="1092.81" y="906" font-size="12" text-anchor="middle" fill="#526170">7:26 · 75</text>
 <line x1="1025.62" x2="1025.62" y1="705" y2="860" stroke="#a2adb7" stroke-dasharray="4 4"/>
 <text x="622.5" y="932" font-size="14" text-anchor="middle">Wake date · labels: sleep h:mm · quality /100</text>
 </g>
-<text x="85" y="974" font-size="14">Generated with the current recovery renderer. Entirely synthetic data.</text>
-</g></svg>
+</g>
+</g>
+</svg>
