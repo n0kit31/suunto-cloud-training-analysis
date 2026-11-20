@@ -15,6 +15,22 @@ def run(key, day, distance=3000, duration=1000, load=20, activity=1):
 
 
 class ChartSummaryTests(TestCase):
+    def test_recovery_deadline_uses_elapsed_seconds_across_a_clock_change(self):
+        raw = workout('a' * 24, '2026-03-28', 1)
+        raw.update(cumulativeRecoveryTime=4 * 3600, recoveryTime=2 * 3600)
+        cloud = cloud_metrics(raw, ZoneInfo('Europe/Warsaw'))
+        cloud['stop_local'] = '2026-03-28T23:30:00+01:00'
+        analysis = {'session': {'avg_temperature': 13, 'recovery_time': 60}}
+        highlights = chart_summary(cloud, analysis)['highlights']
+        self.assertEqual(highlights, {'temperature_c': 13, 'recovery_seconds': 14400,
+                                      'recovery_kind': 'cumulative', 'recovery_until': '2026-03-29T04:30:00+02:00'})
+
+        cloud.update(cumulative_recovery_seconds=None, workout_recovery_seconds=None, stop_local=None)
+        highlights = chart_summary(cloud, analysis)['highlights']
+        self.assertEqual(highlights['recovery_seconds'], 60)
+        self.assertEqual(highlights['recovery_kind'], 'workout')
+        self.assertIsNone(highlights['recovery_until'])
+
     def test_calendar_week_deduplicates_sources_and_separates_walks(self):
         current = run('a', '2026-11-15', 5000, 1500, 30)
         earlier = run('b', '2026-11-10', activity=22)

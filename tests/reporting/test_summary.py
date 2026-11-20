@@ -97,7 +97,12 @@ class SummaryOutputTests(unittest.TestCase):
             decoded = project / 'samples.json'
             decoded.write_text(json.dumps(samples))
             current = run('a', '2026-11-15', 5000)
+            current.pop('cumulative_recovery_seconds')
+            current.pop('workout_recovery_seconds')
+            raw = project / 'raw-summary.json'
+            raw.write_text(json.dumps({'workoutKey': current['workout_key'], 'cumulativeRecoveryTime': 7200}))
             source = {'fit_path': 'synthetic.fit', 'fit_sha256': 'synthetic', 'decoded_path': str(decoded)}
+            source['cloud_summary_path'] = str(raw)
             analysis = summarize(samples)
             reports = project / 'reports'
             reports.mkdir()
@@ -112,6 +117,8 @@ class SummaryOutputTests(unittest.TestCase):
             self.assertEqual(regenerated['json_path'], str(legacy.resolve()))
             self.assertIn('Synthetic assessment.', markdown.read_text())
             self.assertTrue(Path(regenerated['chart_path']).is_file())
+            self.assertEqual(json.loads(legacy.read_text())['cloud']['cumulative_recovery_seconds'], 7200)
+            self.assertIn('2 h 00 min (accumulated estimate)', markdown.read_text())
 
             fresh = write_outputs(project, current, analysis, samples, source, 'fresh')
             self.assertNotEqual(fresh['json_path'], str(legacy))

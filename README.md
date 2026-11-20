@@ -317,6 +317,15 @@ Regenerate an existing chart without downloading data again:
 python3 -m suunto_cloud charts ../reports/suunto-2026-01-15-080000.json
 ```
 
+Reports add the average temperature from the watch sensor and Suunto's recovery
+time estimate when available. The estimate uses accumulated recovery when Suunto
+reports it and falls back to the workout estimate. The local end date and time
+are calculated from the recorded workout finish. Charts use blue below 10 °C,
+teal from 10 °C up to 30 °C, and red from 30 °C for the sensor reading.
+The separate weather tile shows available weather, wind and humidity. The report
+shows Suunto's rated post-workout HR change, and its tile uses the comparison
+rating to color the result.
+
 ### Sleep and HRV context
 
 Analyses automatically read `.local/sleep.json` when present. This private

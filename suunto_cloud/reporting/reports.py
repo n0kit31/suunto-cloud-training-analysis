@@ -8,8 +8,10 @@ from pathlib import Path
 
 from suunto_cloud.storage.local import cloud_artifact_stem, private_json, private_text
 from suunto_cloud.analysis.metrics import number
+from suunto_cloud.analysis.workout_highlights import cloud_recovery_times, workout_highlights
 from suunto_cloud.reporting.recovery import recovery_markdown, recovery_svg, workout_feeling
 from suunto_cloud.reporting.interactive import chart_html
+from suunto_cloud.reporting.workout_tiles import post_workout_hr, recovery_labels, workout_tiles_svg
 from suunto_cloud.analysis.chart_summary import chart_summary
 from suunto_cloud.analysis.sleep import recovery_context
 from suunto_cloud.storage.comparison import comparison_workouts
@@ -62,12 +64,16 @@ def _workout_chart(data, analysis, cloud, hr_range, recovery, interactive):
     chart = prepare_chart(data, analysis, cloud, hr_range, interactive)
     if chart is None:
         return None, None
-    recovery_header, header_offset = recovery_svg(recovery, (cloud.get('summary') or {}).get('feeling'))
-    svg = _render_chart_svg(chart, recovery, recovery_header, header_offset)
+    tiles, tile_offset = workout_tiles_svg(cloud, workout_highlights(cloud, analysis))
+    recovery_header, recovery_offset = recovery_svg(recovery, (cloud.get('summary') or {}).get('feeling'))
+    if tile_offset and recovery_header:
+        recovery_header = [f'<g transform="translate(0 {tile_offset})">', *recovery_header, '</g>']
+    header_offset = tile_offset + recovery_offset
+    svg = _render_chart_svg(chart, recovery, tiles + recovery_header, header_offset)
     return svg, interaction_payload(chart, header_offset) if interactive else None
 
 
-def _render_chart_svg(chart, recovery, recovery_header, header_offset):
+def _render_chart_svg(chart, recovery, header, header_offset):
     width, left, right, ph, pw = WIDTH, LEFT, RIGHT, PANEL_HEIGHT, PLOT_WIDTH
     panels, total, work_bands = chart.panels, chart.total_seconds, chart.work_bands
     height = 140 + len(panels) * PANEL_SPACING + header_offset
@@ -101,7 +107,7 @@ def _render_chart_svg(chart, recovery, recovery_header, header_offset):
            '<g font-family="Arial, sans-serif" fill="#17212b">',
            f'<text x="85" y="35" font-size="{heading_size}">{heading}</text>',
            f'<text x="85" y="65" font-size="17">{subtitle}</text>']
-    out.extend(recovery_header)
+    out.extend(header)
     for index, panel in enumerate(panels):
         title, groups, lo, hi = panel.title, panel.groups, panel.lo, panel.hi
         color, inverted = panel.color, panel.inverted
@@ -163,6 +169,19 @@ def _render_chart_svg(chart, recovery, recovery_header, header_offset):
 def report_body(cloud, analysis, entry, retrieved, chart, recovery=None):
     summary, details = cloud['summary'], analysis['additional_metrics']
     feeling = workout_feeling(summary.get('feeling'))['rating']
+    highlights = workout_highlights(cloud, analysis)
+    highlight_rows = []
+    if highlights['temperature_c'] is not None:
+        temperature = display(highlights['temperature_c'])
+        highlight_rows.append(f'| Average workout temperature | {temperature} °C (watch sensor) |')
+    hr = post_workout_hr(cloud)
+    if hr and hr[1]:
+        change, rating, _ = hr
+        highlight_rows.append(f'| Post-workout HR change (Suunto) | {change} · {rating} |')
+    if highlights['recovery_seconds'] is not None:
+        estimate, kind, until = recovery_labels(highlights)
+        deadline = f' · {until}' if until else ''
+        highlight_rows.append(f'| Suunto recovery time | {estimate} ({kind.lower()}){deadline} |')
     zone = cloud.get('timezone') or datetime.fromisoformat(cloud['start_local']).tzname()
     local_fit = entry.get('source_type') == 'local_fit'
     distance = cloud['distance_m']
@@ -178,6 +197,7 @@ def report_body(cloud, analysis, entry, retrieved, chart, recovery=None):
              f"| TSS | {display((cloud['tss'] or {}).get('trainingStressScore'), 3)}; {(cloud['tss'] or {}).get('calculationMethod')} |",
              f"| PTE / estimated VO₂max | {display(summary.get('pte'))} / {display((cloud['fitness'] or {}).get('estimatedVo2Max'))} |",
              f"| Workout feeling | {str(feeling) + '/5 (recorded after workout)' if feeling is not None else '—'} |",
+             *highlight_rows,
              *recovery_markdown(recovery),
              '', '## Laps and running mechanics', '',
              'One non-overlapping lap type was selected. Pace uses active time and distance; mechanics use available paired samples.', '',
@@ -313,12 +333,25 @@ def _legacy_markdown(report_path, workout_key):
     return None
 
 
+def _restore_recovery_times(cloud, source):
+    raw_path = source.get('cloud_summary_path')
+    if 'cumulative_recovery_seconds' in cloud or not cloud.get('workout_key') or not raw_path:
+        return cloud
+    try:
+        raw = json.loads(Path(raw_path).read_text())
+    except (OSError, ValueError, TypeError):
+        return cloud
+    if isinstance(raw, dict) and raw.get('workoutKey') == cloud['workout_key']:
+        return {**cloud, **cloud_recovery_times(raw)}
+    return cloud
+
+
 def regenerate_report(report_path, hr_range=None, sleep_data=None):
     report_path = report_path.resolve(strict=True)
     project = report_path.parent.parent
     report = json.loads(report_path.read_text())
     source = report['source']
-    cloud = report['cloud']
+    cloud = _restore_recovery_times(report['cloud'], source)
     decoded = json.loads(Path(source['decoded_path']).read_text())
     recovery = (recovery_context(cloud, read_sleep(sleep_data, required=True))
                 if sleep_data else report.get('recovery'))

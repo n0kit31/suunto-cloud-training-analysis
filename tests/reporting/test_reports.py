@@ -34,6 +34,35 @@ class OutputTests(unittest.TestCase):
         series = pace_series([(float(i), {'speed': 1000 / 300}) for i in range(20)], 0)
         self.assertEqual([v for _, v in series], [5, 5])
 
+    def test_workout_tiles_follow_measurement_sources_and_suunto_ratings(self):
+        self.cloud.update(timezone='Europe/Warsaw', stop_local='2026-01-15T19:10:00+01:00',
+                          cumulative_recovery_seconds=43200, workout_recovery_seconds=3600,
+                          weather={'temperature': 281.15, 'humidity': 76, 'windSpeed': 2,
+                                   'windDirection': 270, 'weatherIcon': '02n'})
+        for celsius, temperature_color, rating, hr_color in (
+                (9, 'cold', 'Excellent', 'green'), (10, 'mild', 'Normal', 'yellow'),
+                (30, 'hot', 'Slow', 'red'), (31, 'hot', 'Invalid', 'unknown')):
+            with self.subTest(temperature=celsius, rating=rating):
+                self.cloud['summary'].update(avgTemperature=celsius + 273.15,
+                                             heartRateRecovery={'drop': -23, 'comparisonLevel': rating})
+                out = write_outputs(self.root, self.cloud, self.analysis, self.data, self.entry, 'synthetic', charts=True)
+                tree = ET.parse(out['svg_path'])
+                cards = {el.get('data-workout-tile'): el for el in tree.iter() if el.get('data-workout-tile')}
+                self.assertEqual(len(cards), 4)
+                self.assertEqual(cards['Average workout temperature'].get('data-status'), temperature_color)
+                self.assertEqual(cards['Post-workout HR change'].get('data-status'), hr_color)
+                weather = cards['Weather']
+                self.assertTrue(any(el.get('data-weather-icon') is not None for el in weather.iter()))
+                self.assertIn('Wind 7.2 km/h W · Humidity 76%', [el.text for el in weather])
+                self.assertIn('Until 2026-01-16 07:10', [el.text for el in cards['Recovery time']])
+                md = Path(out['markdown_path']).read_text()
+                html_summary = Path(out['chart_path']).read_text().split('<div class="chart-sheet">', 1)[0]
+                for content in (md, html_summary):
+                    self.assertIn(f'{celsius:.1f} °C (watch sensor)', content)
+                    self.assertIn('12 h 00 min (accumulated estimate) · Until 2026-01-16 07:10', content)
+                    self.assertNotIn('Humidity 76%', content)
+                self.assertEqual('−23 bpm' in md, rating != 'Invalid')
+
     def test_activity_labels_use_suunto_ids_and_fall_back_to_fit(self):
         for activity_id, expected in ((0, 'Walking'), (1, 'Running'), (2, 'Cycling'),
                                       (3, 'Cross-country skiing'), (11, 'Hiking'), (22, 'Trail running')):

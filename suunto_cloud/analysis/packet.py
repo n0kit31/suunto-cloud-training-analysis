@@ -1,6 +1,7 @@
 """Small analysis input assembled from fresh Cloud summaries and decoded FIT."""
 
 from suunto_cloud.timezones import local_timestamp, timezone_name
+from suunto_cloud.analysis.workout_highlights import cloud_recovery_times
 
 
 def cloud_metrics(workout, zone=None):
@@ -27,6 +28,7 @@ def cloud_metrics(workout, zone=None):
         'descent_m': summary.get('descent', workout.get('totalDescent')),
         'steps': workout.get('stepCount'),
         'energy_kcal': workout.get('energyConsumption'),
+        **cloud_recovery_times(workout),
         'tss': workout.get('tss'),
         'alternative_tss': workout.get('tssList', []),
         'tags': workout.get('suuntoTags', []),
