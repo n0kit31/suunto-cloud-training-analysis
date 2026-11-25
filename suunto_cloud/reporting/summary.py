@@ -30,10 +30,8 @@ def amount(value, digits=1):
     return f'{rounded:.{digits}f}'
 
 
-def summary_html(context):
-    if not context:
-        return ''
-    row, week = context['workout'], context['week']
+def summary_observations(context):
+    row = context['workout']
     km = row['distance_m'] / 1000 if number(row['distance_m']) else None
     facts = [f"{amount(km, 2)} km in {clock(row['active_seconds'])} of active time "
              f"({pace(row['pace_seconds_per_km'])}), with average / maximum heart rate "
@@ -69,7 +67,14 @@ def summary_html(context):
         estimate, kind, until = recovery_labels(highlights)
         deadline = f' · {until}' if until else ''
         facts.append(f'Suunto recovery time: {estimate} ({kind.lower()}){deadline}.')
+    return facts
 
+
+def summary_html(context):
+    if not context:
+        return ''
+    row, week = context['workout'], context['week']
+    facts = summary_observations(context)
     comparisons = []
     ranks = week['ranks']
     if ranks['distance_m']:

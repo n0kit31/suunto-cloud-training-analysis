@@ -1,0 +1,11 @@
+services:
+  worker:
+    environment:
+      OPENAI_API_KEY_FILE: /run/secrets/suunto_openai_api_key
+      SUUNTO_WEB_OPENAI_MODEL: "${SUUNTO_WEB_OPENAI_MODEL:-gpt-6.1-terra}"
+    secrets:
+      - suunto_openai_api_key
+
+secrets:
+  suunto_openai_api_key:
+    file: "${SUUNTO_WEB_OPENAI_KEY_PATH:?Set SUUNTO_WEB_OPENAI_KEY_PATH to a key file outside the checkout}"

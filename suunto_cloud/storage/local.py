@@ -12,7 +12,8 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def config_path():
-    return ROOT / 'config.json'
+    configured = os.environ.get('SUUNTO_CONFIG_PATH')
+    return Path(configured) if configured else ROOT / 'config.json'
 
 
 def user_timezone():
@@ -30,7 +31,8 @@ def user_timezone():
 
 
 def private_directory():
-    directory = ROOT / '.local'
+    configured = os.environ.get('SUUNTO_PRIVATE_DIR')
+    directory = Path(configured) if configured else ROOT / '.local'
     directory.mkdir(mode=0o700, exist_ok=True)
     directory.chmod(0o700)
     return directory

@@ -22,6 +22,7 @@ The current tools download data from Cloud API; this repository has no MCP clien
 - [Independence and API access](#independence-and-api-access)
 - [Quick start with Docker](#quick-start-with-docker)
 - [Marathon example](#example-analysis-marathon)
+- [Local web app](#local-web-app)
 - [Synthetic chart previews](#synthetic-chart-previews)
 - [Project structure](#structure)
 - [Requirements](#requirements)
@@ -94,6 +95,23 @@ docker compose run --rm -T suunto sync --date 2026-01-15 --analysis --brief
 Replace the example date with your workout date. Add `--charts` to the last
 command to generate charts. Reports are saved in `../reports/` and charts in
 `../visualizations/`. See the [Docker guide](docs/docker.md) for details.
+
+## Local web app
+
+Run the workout library in Docker and open `http://127.0.0.1:3000`. Use it
+to browse analyses and charts, upload FIT files, and synchronize new
+activities from Suunto after authorization.
+
+```sh
+export SUUNTO_UID="$(id -u)" SUUNTO_GID="$(id -g)"
+docker compose up -d --build
+```
+
+The first successful Suunto sync imports 30 calendar days. Later syncs
+add new workouts and refresh changed records. SQLite stores the library
+and job state. The Python analysis results, original FIT files, and charts
+remain available after a restart. See [configuration, storage, and optional
+AI interpretation](docs/web.md).
 
 ## Example analysis: marathon
 

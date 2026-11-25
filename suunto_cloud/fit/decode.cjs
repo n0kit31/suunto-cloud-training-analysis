@@ -8,8 +8,13 @@ async function decode(input, output) {
   if (path.resolve(input) === path.resolve(output)) throw new Error('Input and output files must differ.');
   const Parser = loadParser();
   const parser = new Parser({ force: false, mode: 'list', lengthUnit: 'm', speedUnit: 'm/s' });
-  const data = await new Promise((resolve, reject) => parser.parse(fs.readFileSync(input),
-    (error, result) => error ? reject(new Error('FIT decoding failed.')) : resolve(result)));
+  let data;
+  parser.parse(fs.readFileSync(input), (error, result) => {
+    if (error) throw new Error('FIT decoding failed.');
+    data = result;
+  });
+  // The parser calls back synchronously, but can return silently on an invalid CRC.
+  if (!data) throw new Error('FIT decoding failed.');
   privateWrite(output, JSON.stringify(data, null, 2) + '\n');
   return data;
 }

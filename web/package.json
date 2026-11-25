@@ -1,0 +1,27 @@
+{
+  "name": "suunto-training-web",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "vite build client --outDir ../dist",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fastify/multipart": "10.1.9",
+    "@fastify/static": "10.1.12",
+    "fastify": "5.12.8",
+    "lucide-react": "1.80.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.3",
+    "@types/react": "19.3.2",
+    "@types/react-dom": "19.3.0",
+    "typescript": "7.0.2",
+    "vite": "7.3.8"
+  }
+}

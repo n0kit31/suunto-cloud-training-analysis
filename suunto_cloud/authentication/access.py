@@ -3,6 +3,7 @@
 
 import argparse
 import base64
+from contextlib import contextmanager
 import fcntl
 import getpass
 import json
@@ -22,21 +23,36 @@ class AccessError(RuntimeError):
     pass
 
 
+class RefreshHTTPError(AccessError):
+    def __init__(self, status, retry_after):
+        super().__init__(f'OAuth refresh failed: HTTP {status}. Tokens were not changed.')
+        self.status = status
+        self.retry_after = retry_after
+
+
 def load_config():
-    config = json.loads(config_path().read_text())
+    try:
+        config = json.loads(config_path().read_text())
+    except FileNotFoundError:
+        raise AccessError('Suunto is not configured. Enter the OAuth application settings first.') from None
     if not isinstance(config, dict) or not isinstance(config.get('client_id'), str) or not config['client_id']:
         raise AccessError('Missing Client ID in config.json.')
     return config
 
 
-def load_credentials():
-    config = load_config()
+def load_saved_credentials(client_id):
     path = private_directory() / 'credentials.json'
     credentials = json.loads(path.read_text()) if path.is_file() else {}
     if not isinstance(credentials, dict):
         raise AccessError('Invalid credentials.json format.')
-    if credentials and credentials.get('client_id') != config['client_id']:
+    if credentials and credentials.get('client_id') != client_id:
         raise AccessError('Saved credentials belong to a different Client ID. Run python3 -m suunto_cloud access --configure.')
+    return credentials
+
+
+def load_credentials():
+    config = load_config()
+    credentials = load_saved_credentials(config['client_id'])
     for field, variable in [('client_secret', 'SUUNTO_CLIENT_SECRET'),
                              ('subscription_key', 'SUUNTO_SUBSCRIPTION_KEY')]:
         if os.environ.get(variable):
@@ -61,7 +77,8 @@ def configure():
         if not value:
             raise AccessError('Both credentials are required; the configuration file was not changed.')
         credentials[field] = value
-    private_json(path, credentials)
+    with authentication_lock():
+        private_json(path, credentials)
     print('Credentials saved to .local/credentials.json (0600, directory 0700, excluded from Git).')
     print('This confirms local storage. The sync command checks connectivity and credential validity.')
 
@@ -114,7 +131,7 @@ def refresh_tokens(tokens, credentials):
             raise AccessError('Refresh token rejected. Run python3 -m suunto_cloud oauth to authorize again; do not paste tokens into chat.') from None
         if error == 'invalid_client' or exc.code == 401:
             raise AccessError('OAuth refresh: check the client secret and Client ID; update saved credentials with python3 -m suunto_cloud access --configure.') from None
-        raise AccessError(f'OAuth refresh failed: HTTP {exc.code}. Tokens were not changed.') from None
+        raise RefreshHTTPError(exc.code, exc.headers.get('Retry-After') if exc.headers else None) from None
     if not isinstance(result, dict) or not isinstance(result.get('access_token'), str) or not result['access_token']:
         raise AccessError('Invalid refresh response. Tokens were not changed.')
     try:
@@ -131,12 +148,18 @@ def refresh_tokens(tokens, credentials):
     return updated
 
 
-def get_access_token(force=False, rejected_token=None):
+@contextmanager
+def authentication_lock():
     lock_path = private_directory() / 'auth.lock'
     descriptor = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
     with os.fdopen(descriptor, 'a') as lock:
         os.fchmod(lock.fileno(), 0o600)
         fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+        yield
+
+
+def get_access_token(force=False, rejected_token=None):
+    with authentication_lock():
         tokens = load_tokens()
         # Another reader may already have refreshed the token rejected by the API.
         if is_current(tokens) and (not force or (rejected_token is not None and tokens['access_token'] != rejected_token)):

@@ -2,6 +2,7 @@ name: suunto-cloud
 
 services:
   suunto:
+    profiles: [cli]
     image: suunto-cloud-training-analysis:local
     build:
       context: .
@@ -45,3 +46,76 @@ services:
         target: /app/visualizations
         bind:
           create_host_path: false
+
+  web-data-init:
+    image: node:24-bookworm-slim
+    user: "0:0"
+    entrypoint: [sh, -ec]
+    command:
+      - |
+        chmod 0700 /data /auth
+        chown "$$1:$$2" /data /auth
+      - init
+      - "${SUUNTO_UID:-1000}"
+      - "${SUUNTO_GID:-1000}"
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, FOWNER]
+    security_opt: [no-new-privileges:true]
+    volumes:
+      - web-data:/data
+      - web-auth:/auth
+
+  web:
+    image: suunto-training-web:local
+    build:
+      context: .
+      target: web
+    user: "${SUUNTO_UID:-1000}:${SUUNTO_GID:-1000}"
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    depends_on:
+      web-data-init:
+        condition: service_completed_successfully
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+      SUUNTO_WEB_DATA: /data
+    ports:
+      - "127.0.0.1:${SUUNTO_WEB_PORT:-3000}:3000"
+    volumes:
+      - web-data:/data
+
+  worker:
+    image: suunto-training-worker:local
+    build:
+      context: .
+      target: worker
+    user: "${SUUNTO_UID:-1000}:${SUUNTO_GID:-1000}"
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    stop_grace_period: 15s
+    depends_on:
+      web-data-init:
+        condition: service_completed_successfully
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m,mode=1777
+    environment:
+      SUUNTO_WEB_DATA: /data
+      SUUNTO_CONFIG_PATH: /auth/config.json
+      SUUNTO_PRIVATE_DIR: /auth/.local
+      SUUNTO_TIMEZONE: "${SUUNTO_TIMEZONE:-}"
+      TZ: "${TZ:-}"
+    volumes:
+      - web-data:/data
+      - ${SUUNTO_WEB_AUTH_DIR:-web-auth}:/auth
+
+volumes:
+  web-data:
+  web-auth:

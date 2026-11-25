@@ -7,10 +7,18 @@ config.json
 .npmrc
 credentials*.json
 tokens*.json
+openai-api-key
+anthropic-api-key
 *.pem
 *.key
 *.p12
 *.pfx
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.db
+*.db-*
 
 # Personal training data and generated outputs (also outside .local).
 *.fit
@@ -29,6 +37,7 @@ TRAINING*.md
 
 # Local dependencies and caches.
 node_modules/
+/web/dist/
 .venv/
 venv/
 __pycache__/
