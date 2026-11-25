@@ -45,7 +45,7 @@ Add `--charts` for charts. The image uses the local tag
 
 For local dates in Docker, configure your time zone in `config.json` or export
 `SUUNTO_TIMEZONE` or `TZ` before running Compose. The container otherwise uses
-its own system zone, normally UTC. See [time zone selection](../README.md#time-zones)
+its own system zone, normally UTC. See [time zone selection](cli.md#time-zones)
 for precedence and examples.
 
 If `credentials.json` and `tokens.json` already exist in `.local/`, the container
@@ -93,8 +93,9 @@ path to `charts` to regenerate the charts from the stored samples.
 
 | Host path | Container path | Access |
 | --- | --- | --- |
-| `config.json` | `/app/suunto-cloud/config.json` | Read-only |
-| `.local/` | `/app/suunto-cloud/.local/` | Read/write |
+| Root config from the checkout or `SUUNTO_WEB_AUTH_DIR` | `/auth-config/config.json` | Read-only |
+| Auth data in `.local/` under the selected auth root | `/auth/.local/` | Read/write |
+| Checkout `.local/` for CLI files and caches | `/app/suunto-cloud/.local/` | Read/write |
 | `../reports/` | `/app/reports/` | Read/write |
 | `../visualizations/` | `/app/visualizations/` | Read/write |
 

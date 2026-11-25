@@ -32,7 +32,7 @@ function timestamp(value) {
   return new Date(value).getTime();
 }
 
-function trackFromRecords(data, name) {
+function trackSegments(data) {
   const records = data.records || [];
   const resumes = [];
   let paused = false;
@@ -69,6 +69,11 @@ function trackFromRecords(data, name) {
     current.push({ lat, lon, time, altitude });
   }
   if (current.length) segments.push(current);
+  return { segments, skipped, recordCount: records.length };
+}
+
+function trackFromRecords(data, name) {
+  const { segments, skipped, recordCount } = trackSegments(data);
   const points = segments.flat();
   if (!points.length) throw new Error('FIT contains no valid GPS points with timestamps. GPX was not created.');
   const lines = [
@@ -89,7 +94,7 @@ function trackFromRecords(data, name) {
   return {
     gpx: lines.join('\n'),
     summary: {
-      record_count: records.length,
+      record_count: recordCount,
       gps_point_count: points.length,
       segment_count: segments.length,
       records_without_valid_gps_or_time: skipped,
@@ -121,7 +126,7 @@ async function convert(input, output) {
   return result.summary;
 }
 
-module.exports = { trackFromRecords, convert, loadParser, privateWrite };
+module.exports = { trackFromRecords, trackSegments, convert, loadParser, privateWrite };
 
 if (require.main === module) {
   const [input, output] = process.argv.slice(2);

@@ -47,6 +47,41 @@ ENTRYPOINT ["python3", "-m", "suunto_cloud"]
 CMD ["--help"]
 
 
+FROM node:24-bookworm-slim AS web-build
+WORKDIR /build/web
+COPY web/package.json web/package-lock.json ./
+RUN npm ci --ignore-scripts --no-audit --no-fund
+COPY web/tsconfig.json ./
+COPY web/client ./client
+COPY web/server ./server
+COPY web/shared ./shared
+RUN npm run check && npm run build \
+    && npm prune --omit=dev --ignore-scripts --no-audit --no-fund
+
+
+FROM node:24-bookworm-slim AS web
+WORKDIR /app/web
+COPY --from=web-build /build/web/package.json ./
+COPY --from=web-build /build/web/node_modules ./node_modules
+COPY --from=web-build /build/web/server ./server
+COPY --from=web-build /build/web/shared ./shared
+COPY --from=web-build /build/web/dist ./dist
+COPY --from=node-dependencies /dependencies/node_modules /app/node_modules
+COPY suunto_cloud/fit/*.cjs /app/suunto_cloud/fit/
+COPY LICENSE THIRD_PARTY_NOTICES.md ./
+ENV NODE_ENV=production SUUNTO_WEB_DIST=/app/web/dist
+USER 1000:1000
+ENTRYPOINT ["sh", "-c", "umask 077 && exec node server/main.ts"]
+
+
+FROM runtime AS worker
+COPY web/package.json ./web/
+COPY web/server ./web/server
+COPY web/shared ./web/shared
+ENV NODE_ENV=production
+ENTRYPOINT ["sh", "-c", "umask 077 && exec node web/server/worker.ts"]
+
+
 FROM runtime AS test
 COPY tests ./tests
 COPY scripts/update-test-badge.py ./scripts/update-test-badge.py

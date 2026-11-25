@@ -19,6 +19,13 @@ The versions below are recorded in `package-lock.json`. Installation with
 In the Docker image, the original notices are under
 `/app/suunto-cloud/node_modules/<package>/LICENSE*`.
 
+## Web application dependencies
+
+The web dependencies are recorded in `web/package-lock.json`. The web image
+retains npm package license files under `/app/web/node_modules`. Vite
+generates the license notices for the browser bundle in
+`/app/web/dist/frontend-licenses.md`.
+
 ## Container runtime
 
 Node.js is copied from the official `node:24-bookworm-slim` image. Its matching

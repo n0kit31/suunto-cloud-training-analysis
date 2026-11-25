@@ -4,17 +4,27 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { loadParser, privateWrite } = require('./export_gpx.cjs');
 
-async function decode(input, output) {
-  if (path.resolve(input) === path.resolve(output)) throw new Error('Input and output files must differ.');
+function decodeBuffer(buffer) {
   const Parser = loadParser();
   const parser = new Parser({ force: false, mode: 'list', lengthUnit: 'm', speedUnit: 'm/s' });
-  const data = await new Promise((resolve, reject) => parser.parse(fs.readFileSync(input),
-    (error, result) => error ? reject(new Error('FIT decoding failed.')) : resolve(result)));
+  let data;
+  parser.parse(buffer, (error, result) => {
+    if (error) throw new Error('FIT decoding failed.');
+    data = result;
+  });
+  // The parser calls back synchronously, but can return silently on an invalid CRC.
+  if (!data) throw new Error('FIT decoding failed.');
+  return data;
+}
+
+async function decode(input, output) {
+  if (path.resolve(input) === path.resolve(output)) throw new Error('Input and output files must differ.');
+  const data = decodeBuffer(fs.readFileSync(input));
   privateWrite(output, JSON.stringify(data, null, 2) + '\n');
   return data;
 }
 
-module.exports = { decode };
+module.exports = { decode, decodeBuffer };
 if (require.main === module) {
   const [input, output] = process.argv.slice(2);
   if (!input || !output) {
