@@ -22,6 +22,9 @@ from suunto_cloud.timezones import local_timestamp
 from suunto_cloud.fit import SCRIPTS_DIRECTORY
 
 
+FIT_MAX_BYTES = 64 * 1024 * 1024
+
+
 def choose_workout(records, selected_date=None, workout_key=None, zone=None):
     if workout_key:
         matches = [w for w in records if w.get('workoutKey') == workout_key]
@@ -63,8 +66,8 @@ def fetch_fit(workout_key, access_token, subscription_key):
         # A signed download URL is fetched without either authentication header.
         response = opener.open(Request(location, headers={'Accept': 'application/octet-stream'}), timeout=30)
     with response:
-        data = response.read(64 * 1024 * 1024 + 1)
-    if len(data) > 64 * 1024 * 1024:
+        data = response.read(FIT_MAX_BYTES + 1)
+    if len(data) > FIT_MAX_BYTES:
         raise ValueError('Response exceeded the 64 MiB limit.')
     if len(data) < 12 or data[8:12] != b'.FIT':
         raise ValueError('Suunto did not return a binary FIT file; the response was not saved as a track.')

@@ -37,6 +37,15 @@ FIT_SUBSPORT_NAMES = {
 }
 
 
+def foot_activity(cloud, fit_sport):
+    activity = cloud.get('activity_id')
+    if activity in (1, 22, 53, 103, 115) or fit_sport == 'running':
+        return 'running'
+    if activity in (0, 11, 24, 70) or fit_sport in ('walking', 'hiking'):
+        return 'walking'
+    return None
+
+
 def readable_name(name):
     if not isinstance(name, str) or not name.strip():
         return None

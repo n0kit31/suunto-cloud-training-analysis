@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 from urllib.error import HTTPError
 from urllib.parse import parse_qs
 
-from suunto_cloud.authentication import oauth
+from suunto_cloud.authentication import oauth, web_settings
 from suunto_cloud.storage import local
 
 
@@ -71,6 +71,19 @@ class OAuthTests(unittest.TestCase):
         self.assertEqual(body["code"], ["a+b&c"])
         self.assertEqual(body["redirect_uri"], [config["redirect_uri"]])
         self.assertNotIn("password", body)
+
+    def test_oauth_publication_preserves_credentials_changed_during_callback(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(local, 'ROOT', Path(directory)):
+            original = {'clientId': 'test-client', 'clientSecret': 'initial-secret', 'subscriptionKey': 'initial-key'}
+            web_settings.save_settings(original)
+            config = local.read_config()
+            web_settings.save_settings({**original, 'clientSecret': 'updated-secret', 'subscriptionKey': 'updated-key'})
+            token_path = oauth.complete_authorization(config, 'initial-secret', 'initial-secret',
+                                                      {'access_token': 'test-only-token', 'client_id': 'test-client'})
+            saved = oauth.saved_application_credentials('test-client')
+            self.assertEqual(saved['subscription_key'], 'updated-key')
+            self.assertEqual(saved['client_secret'], 'updated-secret')
+            self.assertTrue(json.loads(token_path.read_text())['authorization_id'])
 
     def test_token_401_reports_stage_without_echoing_server_description(self):
         body = b'{"error":"invalid_client","error_description":"test-secret-do-not-print"}'

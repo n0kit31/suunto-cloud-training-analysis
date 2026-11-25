@@ -28,8 +28,8 @@ class AccessTests(unittest.TestCase):
         self.credentials = {'client_id': 'test-app', 'client_secret': 'test-secret', 'subscription_key': 'test-key'}
         self.tokens = {'client_id': 'test-app', 'access_token': 'old-token', 'refresh_token': 'old-refresh',
                        'expires_in': 3600, 'received_at_unix': int(time.time()) - 7200}
-        access.private_json(access.private_directory() / 'credentials.json', self.credentials)
-        access.private_json(access.private_directory() / 'tokens.json', self.tokens)
+        access.private_json(access.authentication_directory() / 'credentials.json', self.credentials)
+        access.private_json(access.authentication_directory() / 'tokens.json', self.tokens)
 
     def response(self, payload):
         opener = MagicMock()
@@ -38,12 +38,12 @@ class AccessTests(unittest.TestCase):
 
     def test_valid_token_needs_no_network_and_private_storage(self):
         self.tokens['received_at_unix'] = int(time.time())
-        access.private_json(access.private_directory() / 'tokens.json', self.tokens)
+        access.private_json(access.authentication_directory() / 'tokens.json', self.tokens)
         with patch.object(access, 'refresh_tokens') as refresh:
             self.assertEqual(access.get_access_token(), 'old-token')
         refresh.assert_not_called()
-        self.assertEqual((access.private_directory() / 'tokens.json').stat().st_mode & 0o777, 0o600)
-        self.assertEqual(access.private_directory().stat().st_mode & 0o777, 0o700)
+        self.assertEqual((access.authentication_directory() / 'tokens.json').stat().st_mode & 0o777, 0o600)
+        self.assertEqual(access.authentication_directory().stat().st_mode & 0o777, 0o700)
 
     def test_expired_token_refresh_rotates_and_persists_before_returning(self):
         opener = self.response({'access_token': 'new-token', 'refresh_token': 'new-refresh', 'expires_in': 86400})
@@ -66,25 +66,25 @@ class AccessTests(unittest.TestCase):
         for response in [{'access_token': 'new-token'}, {'access_token': 'new-token', 'expires_in': 30, 'refresh_token': ''},
                          {'access_token': '', 'expires_in': 86400}]:
             with self.subTest(response=response):
-                before = (access.private_directory() / 'tokens.json').read_bytes()
+                before = (access.authentication_directory() / 'tokens.json').read_bytes()
                 with patch.object(access, 'build_opener', return_value=self.response(response)), self.assertRaises(access.AccessError):
                     access.get_access_token()
-                self.assertEqual((access.private_directory() / 'tokens.json').read_bytes(), before)
+                self.assertEqual((access.authentication_directory() / 'tokens.json').read_bytes(), before)
 
     def test_invalid_grant_is_redacted_and_keeps_tokens(self):
         opener = MagicMock()
         opener.open.side_effect = HTTPError(access.TOKEN_URL, 400, 'Bad', {},
             io.BytesIO(b'{"error":"invalid_grant","error_description":"do-not-print-secret"}'))
-        before = (access.private_directory() / 'tokens.json').read_bytes()
+        before = (access.authentication_directory() / 'tokens.json').read_bytes()
         with patch.object(access, 'build_opener', return_value=opener), self.assertRaises(access.AccessError) as error:
             access.get_access_token()
         self.assertIn('suunto_cloud oauth', str(error.exception))
         self.assertNotIn('do-not-print-secret', str(error.exception))
-        self.assertEqual((access.private_directory() / 'tokens.json').read_bytes(), before)
+        self.assertEqual((access.authentication_directory() / 'tokens.json').read_bytes(), before)
 
     def test_other_client_credentials_are_rejected(self):
         self.credentials['client_id'] = 'different-app'
-        access.private_json(access.private_directory() / 'credentials.json', self.credentials)
+        access.private_json(access.authentication_directory() / 'credentials.json', self.credentials)
         with self.assertRaises(access.AccessError):
             access.load_credentials()
 
@@ -105,7 +105,7 @@ class AccessTests(unittest.TestCase):
 
     def test_second_reader_reuses_new_token_after_401(self):
         self.tokens.update({'access_token': 'already-refreshed', 'received_at_unix': int(time.time())})
-        access.private_json(access.private_directory() / 'tokens.json', self.tokens)
+        access.private_json(access.authentication_directory() / 'tokens.json', self.tokens)
         with patch.object(access, 'refresh_tokens') as refresh:
             self.assertEqual(access.get_access_token(force=True, rejected_token='old-token'), 'already-refreshed')
         refresh.assert_not_called()
