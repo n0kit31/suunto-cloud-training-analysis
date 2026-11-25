@@ -23,7 +23,12 @@ The current tools download data from Cloud API; this repository has no MCP clien
 - [Independence and API access](#independence-and-api-access)
 - [CLI quick start with Docker](#quick-start-with-docker)
 - [Local web app](#local-web-app)
-- [Web app screenshots](#web-app-screenshots)
+  - [Using the library](#using-the-library)
+  - [How it runs](#how-it-runs)
+  - [Web app screenshots](#web-app-screenshots)
+    - [Activity list](#activity-list)
+    - [Workout overview](#workout-overview)
+    - [App settings](#app-settings)
 - [Marathon example](#example-analysis-marathon)
 - [Synthetic chart previews](#synthetic-chart-previews)
 - [Project structure](#structure)
@@ -141,19 +146,19 @@ configuration guide](docs/web.md#storage-and-performance)
 
 ### Web app screenshots
 
-These screenshots use synthetic FIT workouts. They show the activity list,
-a trail-run overview, and the provider settings.
+The screenshots use synthetic FIT workouts.
 
-![Activity list with FIT import, sync, filters, and job status](docs/screenshots/activity-list.png)
+#### Activity list
 
-<details>
-<summary>Workout overview and application settings</summary>
+![Activity list with color-coded icons for trail running, running, cycling, hiking, swimming, and walking](docs/screenshots/activity-list.png)
+
+#### Workout overview
 
 ![Trail-running overview with session metrics, a watch model, and interactive charts](docs/screenshots/workout-overview.png)
 
-![Application settings with Suunto, OpenAI, and Claude sections and a blank API key field](docs/screenshots/app-settings.png)
+#### App settings
 
-</details>
+![App settings with Suunto, OpenAI, and Claude sections over the color-coded activity list](docs/screenshots/app-settings.png)
 
 ## Example analysis: marathon
 
