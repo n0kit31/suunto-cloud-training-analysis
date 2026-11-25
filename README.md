@@ -9,8 +9,8 @@
 [![Docker Compose](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](docs/docker.md)
 
 Analyze Suunto workouts locally with a web app and CLI. Import single-session
-FIT files, open interactive charts, and sync Suunto Cloud activities with
-approved API access.
+FIT files, explore routes on a map with synchronized charts, and sync Suunto
+Cloud activities with approved API access.
 
 ## Local web app
 
@@ -26,6 +26,9 @@ Open `http://127.0.0.1:3000`.
 
 - **Import FIT** works offline. Filter the library by sport or date and open
   activities to see metrics, laps, charts, and the watch model when available.
+- **GPS routes** appear above the charts. Move the chart cursor to see the
+  corresponding point on the route. The OpenStreetMap basemap uses an internet
+  connection and the route is drawn from the local FIT.
 - **Suunto sync** imports the most recent 30 calendar days on the first
   successful sync. Later syncs fetch new and changed workouts. Use **Last sync
   result** and **Errors** to check the outcome.
@@ -38,13 +41,16 @@ share private Suunto authorization. [Setup, storage, and AI settings](docs/web.m
 
 ### Web app screenshots
 
-The screenshots use synthetic FIT workouts.
+The screenshots use synthetic FIT workouts and routes. Map data ©
+[OpenStreetMap contributors](https://www.openstreetmap.org/copyright).
 
 ![Activity list with color-coded sport icons and filters](docs/screenshots/activity-list.png)
 
-| Workout overview | App settings |
+![Trail running workout with the GPS route and start and finish markers](docs/screenshots/workout-overview.png)
+
+| Chart cursor on the route | App settings |
 | --- | --- |
-| ![Trail run metrics, watch model, and charts](docs/screenshots/workout-overview.png) | ![Suunto, OpenAI, and Claude settings](docs/screenshots/app-settings.png) |
+| ![Blue route position synchronized with the heart-rate chart](docs/screenshots/workout-route-cursor.png) | ![Suunto, OpenAI, and Claude settings](docs/screenshots/app-settings.png) |
 
 ## CLI and documentation
 

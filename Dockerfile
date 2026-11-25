@@ -66,6 +66,8 @@ COPY --from=web-build /build/web/node_modules ./node_modules
 COPY --from=web-build /build/web/server ./server
 COPY --from=web-build /build/web/shared ./shared
 COPY --from=web-build /build/web/dist ./dist
+COPY --from=node-dependencies /dependencies/node_modules /app/node_modules
+COPY suunto_cloud/fit/*.cjs /app/suunto_cloud/fit/
 COPY LICENSE THIRD_PARTY_NOTICES.md ./
 ENV NODE_ENV=production SUUNTO_WEB_DIST=/app/web/dist
 USER 1000:1000

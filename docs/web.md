@@ -21,6 +21,14 @@ The interface defaults to English. Select **PL** in the header for Polish.
 For local time in both the library and plots, set `SUUNTO_TIMEZONE` to an
 IANA zone such as `Europe/Warsaw` before starting. The default is UTC.
 
+Activities with GPS show a map above the charts. Move the cursor over a
+workout chart to highlight the matching route position in active time. You
+can pin the cursor and scroll back to the map. The marker disappears when
+GPS coverage is too sparse to place it. The route is drawn in the browser
+from the retained FIT, including for older workouts. The OpenStreetMap
+basemap loads automatically and its tile requests reveal the area shown.
+The route is still visible when the basemap tiles are unavailable.
+
 ## Connect Suunto
 
 An approved Suunto API application and valid Developer API subscription are

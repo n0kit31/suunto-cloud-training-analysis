@@ -21,7 +21,7 @@ def fit_crc(data):
     return struct.pack('<H', checksum)
 
 
-def fit_activity(start=1_000_000_000, device_model=None):
+def fit_activity(start=1_000_000_000, device_model=None, gps=False):
     def definition(local, message, *fields):
         return struct.pack('<BBBHB', 0x40 | local, 0, 0, message, len(fields)) + bytes(
             byte for field in fields for byte in field)
@@ -36,9 +36,12 @@ def fit_activity(start=1_000_000_000, device_model=None):
         data += struct.pack('<BBI', 0, 4, start)
     data += definition(1, 21, timestamp, (0, 1, 0), (1, 1, 0))
     data += struct.pack('<BIBB', 1, start, 0, 0)
-    data += definition(2, 20, timestamp, (3, 1, 2), (5, 4, 0x86), (6, 2, 0x84))
+    coordinates = ((0, 4, 0x85), (1, 4, 0x85)) if gps else ()
+    data += definition(2, 20, timestamp, (3, 1, 2), (5, 4, 0x86), (6, 2, 0x84), *coordinates)
     for second in range(61):
         data += struct.pack('<BIBIH', 2, start + second, 130 + second % 10, second * 300, 3000)
+        if gps:
+            data += struct.pack('<ii', second * 10, second * 100)
     data += struct.pack('<BIBB', 1, start + 60, 0, 4)
     data += definition(3, 18, timestamp, (2, 4, 0x86), (5, 1, 0), (7, 4, 0x86),
                        (8, 4, 0x86), (9, 4, 0x86), (16, 1, 2), (17, 1, 2))
@@ -207,7 +210,7 @@ def main(override_path):
         assert result['error'] and result['added'] == result['updated'] == result['failed'] == 0
         assert request(base, '/api/status')[0]['lastSyncResult'] == result
 
-        content = fit_activity(device_model='Suunto Race 2')
+        content = fit_activity(device_model='Suunto Race 2', gps=True)
         assert upload(base, content)['files'][0]['status'] == 'queued'
         workout = eventually(lambda: ready_workout(base, 1))
         path = '/workouts/' + workout['id']
@@ -231,7 +234,15 @@ def main(override_path):
             embedded, headers = request(base, '/api' + path + f'/chart?lang={language}&embed=1')
             assert headers['Content-Language'] == language
             assert b'suunto-chart-height' in embedded and b'chart-data' in embedded
+            assert b'suunto-chart-cursor' in embedded and b'main > .help { display: none; }' in embedded
         assert b'suunto-chart-height' not in chart
+        assert b'suunto-chart-cursor' not in chart
+        preview, _ = request(base, '/api' + path + '/route')
+        route, headers = request(base, '/api' + path + '/route?view=map')
+        assert 'no-store' in headers['Cache-Control']
+        assert [point[2] for point in route['segments'][0]] == list(range(61))
+        assert len(preview['segments'][0]) == len(route['segments'][0])
+        assert all(len(point) == 2 for point in preview['segments'][0])
         assert b'<html lang="en"' in request(base, path)[0]
         request(base, '/api' + path + '/source.fit', expected=404)
         assert upload(base, content)['files'][0]['status'] == 'duplicate'
@@ -254,7 +265,10 @@ def main(override_path):
         }, expected=202)
         eventually(lambda: request(base, '/api' + path)[0]['analysisVersion'] > details['analysisVersion'])
         assert upload(base, fit_activity(1_000_100_000))['files'][0]['status'] == 'queued'
-        assert eventually(lambda: ready_workout(base, 2))['id'] != workout['id']
+        indoor = eventually(lambda: ready_workout(base, 2))
+        assert indoor['id'] != workout['id']
+        empty_route, _ = request(base, '/api/workouts/' + indoor['id'] + '/route?view=map')
+        assert empty_route == {'segments': None}
         corrupt = content[:-1] + bytes([content[-1] ^ 0xFF])
         invalid = upload(base, corrupt)['files'][0]
         assert invalid['status'] == 'queued'
@@ -286,7 +300,8 @@ def main(override_path):
             availability[provider] = False
             assert request(base, '/api/status')[0]['interpretationAvailability'] == availability
             compose('exec', '-T', 'worker', 'sh', '-ec', f'test ! -e /auth/.local/{filename}')
-        print('Web smoke test passed: private settings, job errors, FIT device, chart isolation, deduplication, and persistence.')
+        print('Web smoke test passed: private settings, job errors, FIT device, GPS routes, chart isolation, '
+              'deduplication, and persistence.')
     except Exception:
         compose('logs', '--tail', '45', 'web', 'worker')
         raise

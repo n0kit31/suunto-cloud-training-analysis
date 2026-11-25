@@ -2,7 +2,7 @@ import { Readable } from 'node:stream';
 import type { FileHandle } from 'node:fs/promises';
 
 const head = '<head>';
-const resizeScript = `<script>
+const embedAssets = `<style>main > .help { display: none; }</style><script>
 (() => {
   if (window.parent === window) return;
   document.documentElement.style.overflowY = 'hidden';
@@ -17,12 +17,28 @@ const resizeScript = `<script>
     };
     new ResizeObserver(sendHeight).observe(document.body);
     sendHeight();
+
+    // Observe the inspector shared by stored and newly generated charts.
+    const slider = document.getElementById('cursor-slider');
+    const overlay = document.querySelector('[data-cursor-overlay]');
+    if (!slider || !overlay) return;
+    let previousTime = null;
+    const sendCursor = () => {
+      const time = overlay.getAttribute('visibility') === 'visible' ? Number(slider.value) : null;
+      if (time === previousTime) return;
+      previousTime = time;
+      window.parent.postMessage({ type: 'suunto-chart-cursor', time }, '*');
+    };
+    const cursor = new MutationObserver(sendCursor);
+    cursor.observe(slider, { attributes: true, attributeFilter: ['aria-valuetext'] });
+    cursor.observe(overlay, { attributes: true, attributeFilter: ['visibility'] });
+    sendCursor();
   });
 })();
 </script>`;
 
 export function embedChart(html: string) {
-  return html.replace(head, head + resizeScript);
+  return html.replace(head, head + embedAssets);
 }
 
 export function streamEmbeddedChart(file: FileHandle) {
@@ -36,7 +52,7 @@ export function streamEmbeddedChart(file: FileHandle) {
         if (index !== -1) {
           const end = index + head.length;
           yield chunk.subarray(0, end);
-          yield Buffer.from(resizeScript);
+          yield Buffer.from(embedAssets);
           yield chunk.subarray(end);
           continue;
         }

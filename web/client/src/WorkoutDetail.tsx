@@ -2,7 +2,7 @@ import { useLanguage } from './i18n';
 import type { Language } from './i18n';
 import { providers, providerNames } from '../../shared/providers';
 import type { Provider } from '../../shared/providers';
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Activity, ChartNoAxesCombined, CircleAlert, Clock3, HeartPulse, ListOrdered, LoaderCircle, RefreshCw, Route, Sparkles, Timer,
 } from 'lucide-react';
@@ -10,6 +10,7 @@ import type { Detail, Lap } from './api';
 import { errorLabel } from './api';
 import { StatePanel } from './components';
 import { ChartFrame } from './ChartFrame';
+import { WorkoutRoute } from './WorkoutRoute';
 import { distance, duration, missing, numeric, observationText, pace } from './format';
 import type { DateLabels } from './format';
 
@@ -111,6 +112,21 @@ function ProviderInterpretation({ provider, workout, dates, interpretationAvaila
   );
 }
 
+function WorkoutVisuals({ workout }: { workout: Detail }) {
+  const { language, t } = useLanguage();
+  const [cursorTime, setCursorTime] = useState<number | null>(null);
+  const chartUrl = `/api/workouts/${encodeURIComponent(workout.id)}/chart?lang=${language}&embed=1&revision=${workout.analysisVersion}`;
+
+  return <>
+    <WorkoutRoute id={workout.id} analysisVersion={workout.analysisVersion} cursorTime={cursorTime} />
+    <section className="panel" aria-labelledby="chart-heading">
+      <div className="panel__header"><h2 id="chart-heading"><ChartNoAxesCombined size={21} aria-hidden="true" />{t('Wykresy')}</h2></div>
+      {workout.chart ? <ChartFrame title={t('Interaktywne wykresy treningu')} src={chartUrl} onCursor={setCursorTime} /> :
+        <div className="panel__body"><p className="muted">{t('W danych tej aktywności brakuje pomiarów do wyświetlenia wykresów.')}</p></div>}
+    </section>
+  </>;
+}
+
 export function WorkoutDetail({ workout, dates, retry, ...interpretationActions }:
   InterpretationActions & { workout: Detail; dates: DateLabels; retry: () => void }) {
   const { pending } = interpretationActions;
@@ -158,12 +174,7 @@ export function WorkoutDetail({ workout, dates, retry, ...interpretationActions 
       </StatePanel>}
 
       {hasAnalysis && <>
-        <section className="panel" aria-labelledby="chart-heading">
-          <div className="panel__header"><h2 id="chart-heading"><ChartNoAxesCombined size={21} aria-hidden="true" />{t("Wykresy")}</h2></div>
-          {workout.chart ? <ChartFrame key={workout.deviceModel ?? ''} title={t("Interaktywne wykresy treningu")}
-            src={`/api/workouts/${encodeURIComponent(workout.id)}/chart?lang=${language}&embed=1&revision=${workout.analysisVersion}`} /> :
-            <div className="panel__body"><p className="muted">{t("W danych tej aktywności brakuje pomiarów do wyświetlenia wykresów.")}</p></div>}
-        </section>
+        <WorkoutVisuals key={JSON.stringify([workout.id, workout.analysisVersion, workout.deviceModel, language])} workout={workout} />
         {(available.length > 0 || workout.observations.length > 0) && <section className="panel" aria-labelledby="metrics-heading">
           <div className="panel__header"><h2 id="metrics-heading"><Activity size={21} aria-hidden="true" />{t("Pomiary i obserwacje")}</h2></div>
           <div className="panel__body">

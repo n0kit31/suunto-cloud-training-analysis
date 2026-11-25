@@ -17,6 +17,9 @@ Notable changes to Suunto Cloud Training Analysis are recorded here.
   type and an English or Polish interface. Workout details show metrics, laps,
   interactive charts, and the watch model when its name or supported product ID
   is available in the FIT file.
+- Show a GPS route map above the charts with green start and red finish markers.
+  The chart cursor highlights the corresponding location using active time,
+  accounting for pauses. Older activities can reuse their retained FIT files.
 - Generate optional OpenAI or Claude interpretations on demand using selected
   workout metrics and lap summaries. Save each provider's results separately
   and manage its local API key from the app settings.
@@ -26,8 +29,9 @@ Notable changes to Suunto Cloud Training Analysis are recorded here.
 - Store web app data in a persistent Docker volume. Share the private Suunto
   configuration and OAuth tokens between the CLI and the worker. Save Suunto
   API settings from the app before completing OAuth. [Storage and configuration](docs/web.md)
-- Document the web workflow and show the activity list, workout overview, and
-  settings with synthetic data. [Web app screenshots](README.md#web-app-screenshots)
+- Move embedded charts up by removing the long instructions. Refresh the
+  workout screenshots with a synthetic route and synchronized cursor.
+  [Web app screenshots](README.md#web-app-screenshots)
 
 ### Fixed
 

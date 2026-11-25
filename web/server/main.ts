@@ -2,12 +2,15 @@ import multipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
 import Fastify from 'fastify';
 import type { FastifyReply } from 'fastify';
+import { execFile } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { createWriteStream } from 'node:fs';
-import { mkdir, open, readFile, rm } from 'node:fs/promises';
+import { mkdir, open, readFile, rm, stat } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 import { authBodyLimit, authSettings, aiSettings } from './auth-channel.ts';
 import { providers, providerNames } from '../shared/providers.ts';
 import type { AISettingsUpdate, SuuntoSettingsUpdate } from './auth-channel.ts';
@@ -17,6 +20,8 @@ import { artifactDirectory, isId, Store, uploadDirectory } from './store.ts';
 
 const maxFitBytes = 64 * 1024 * 1024;
 const maxFiles = 10;
+const routeScript = fileURLToPath(new URL('../../suunto_cloud/fit/preview_route.cjs', import.meta.url));
+const execute = promisify(execFile);
 const localHost = /^(localhost|127\.0\.0\.1|\[::1\])(?::[0-9]{1,5})?$/i;
 const chartPolicy = [
   "sandbox allow-scripts allow-downloads", "default-src 'none'", "script-src 'unsafe-inline'",
@@ -24,7 +29,7 @@ const chartPolicy = [
   "frame-ancestors 'self'",
 ].join('; ');
 const pagePolicy = [
-  "default-src 'self'", "style-src 'self' 'unsafe-inline'", "img-src 'self' data:",
+  "default-src 'self'", "style-src 'self' 'unsafe-inline'", "img-src 'self' data: https://tile.openstreetmap.org",
   "base-uri 'none'", "object-src 'none'", "form-action 'self'", "frame-ancestors 'none'",
 ].join('; ');
 
@@ -232,6 +237,35 @@ async function main() {
 
   app.get<{ Params: { id: string } }>('/api/workouts/:id', (request, reply) => {
     return store.detail(request.params.id) ?? failure(reply, 404, 'This workout was not found.');
+  });
+  const routesInProgress = new Map<string, Promise<{ segments: number[][][] | null }>>();
+  app.get<{ Params: { id: string }; Querystring: { view?: string } }>('/api/workouts/:id/route', async (request, reply) => {
+    const row = store.workout(request.params.id);
+    if (!row) return failure(reply, 404, 'This workout was not found.');
+    const artifact = row.artifact_id;
+    if (!artifact || !isId(artifact)) return { segments: null };
+    const view = request.query.view === 'map' ? 'map' : 'preview';
+    const routeKey = artifact + ':' + view;
+    let route = routesInProgress.get(routeKey);
+    if (!route) {
+      if (routesInProgress.size >= 2) return failure(reply, 503, 'Route previews are busy.');
+      const fitPath = join(artifactDirectory, artifact, 'source.fit');
+      route = (async () => {
+        const fit = await stat(fitPath, { throwIfNoEntry: false });
+        if (!fit?.isFile()) return { segments: null };
+        if (fit.size > maxFitBytes) throw new Error('FIT exceeds the size limit.');
+        const { stdout } = await execute(process.execPath, ['--max-old-space-size=256', routeScript, fitPath, view], {
+          maxBuffer: 256 * 1024, timeout: 20_000,
+        });
+        return { segments: JSON.parse(stdout) };
+      })().finally(() => routesInProgress.delete(routeKey));
+      routesInProgress.set(routeKey, route);
+    }
+    try {
+      return await route;
+    } catch {
+      return failure(reply, 422, 'The workout route could not be read.');
+    }
   });
   app.get<{ Params: { id: string }; Querystring: { lang?: string; embed?: string } }>('/api/workouts/:id/chart', async (request, reply) => {
     const row = store.workout(request.params.id);
