@@ -121,10 +121,10 @@ docker compose up -d --build web worker
    workouts and refresh changed records. The app shows progress and reports the
    outcome of a sync started from the current page. Click **Errors** to inspect
    or dismiss failed jobs. [Suunto authorization steps](docs/web.md#connect-suunto)
-3. Filter the **Activity List** by sport or date and open a workout to see its
-   metrics, laps, and charts. The chart shows the watch model when the FIT file
-   contains a supported device name. Use the language menu to switch from
-   English to Polish.
+3. Filter the **Activity List** by sport or date. Each activity type has a
+   consistent icon color. Open a workout to see metrics, laps, and charts. The
+   chart shows the watch model when the FIT file contains a supported device
+   name. Use the language menu to switch from English to Polish.
 4. For an optional AI interpretation, save an API key in **App settings → OpenAI**
    or **Claude**. In an analyzed workout, select **Interpret activity** under the
    provider you want to use. Only that action sends selected numeric metrics and

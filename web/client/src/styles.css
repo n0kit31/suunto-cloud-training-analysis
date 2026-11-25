@@ -465,8 +465,8 @@ h1 {
   width: 39px;
   height: 39px;
   border-radius: 10px;
-  background: var(--surface-soft);
-  color: var(--muted);
+  background: hsl(var(--sport-hue, 0) 70% 93%);
+  color: hsl(var(--sport-hue, 0) var(--sport-saturation, 58%) 29%);
 }
 .sport-icon--trail { background: var(--accent-soft); color: var(--accent-ink); }
 .table-state .source-label { display: block; margin-top: 0.2rem; }

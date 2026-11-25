@@ -1,5 +1,5 @@
 import React from 'react';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { Activity, Bike, Dumbbell, Footprints, Mountain, Waves } from 'lucide-react';
 import type { Workout } from './api';
 import { normalizeSport } from './format';
@@ -11,6 +11,50 @@ const statusLabels: Record<Workout['status'], string> = {
   ready: 'Gotowe',
   failed: 'Błąd analizy',
 };
+
+const activityHues = new Map([
+  ['run', 255],
+  ['running', 255],
+  ['road running', 243],
+  ['track running', 266],
+  ['treadmill running', 284],
+  ['vertical running', 18],
+  ['walking', 39],
+  ['nordic walking', 62],
+  ['hiking', 143],
+  ['trekking', 105],
+  ['cycling', 211],
+  ['biking', 211],
+  ['road cycling', 220],
+  ['mountain biking', 164],
+  ['gravel cycling', 27],
+  ['indoor cycling', 232],
+  ['swimming', 183],
+  ['pool swimming', 194],
+  ['open water swimming', 200],
+  ['strength training', 315],
+  ['weight training', 315],
+  ['gym', 296],
+  ['fitness class', 326],
+  ['cross country skiing', 225],
+  ['rowing', 158],
+  ['climbing', 14],
+  ['triathlon', 350],
+  ['multisport', 277],
+]);
+
+function activityStyle(key: string): CSSProperties {
+  const knownHue = activityHues.get(key);
+  if (knownHue !== undefined) return { '--sport-hue': knownHue } as CSSProperties;
+
+  // Keep colours for additional FIT and Suunto sports independent of list order.
+  let hash = 2166136261;
+  for (const character of key) hash = Math.imul(hash ^ character.codePointAt(0)!, 16777619);
+  return {
+    '--sport-hue': ((hash >>> 0) % 36_000) / 100,
+    '--sport-saturation': `${40 + ((hash >>> 24) % 33)}%`,
+  } as CSSProperties;
+}
 
 function activityIcon(key: string) {
   if (/hik|trekk|wędr/.test(key)) return Mountain;
@@ -35,12 +79,12 @@ function TrailRunningIcon() {
 }
 
 export function SportIcon({ sport }: { sport: string }) {
-  const key = normalizeSport(sport);
+  const key = normalizeSport(sport).replace(/\s+/g, ' ');
   if (/\btrail run(?:ning)?\b|\bbieg (?:terenowy|górski)\b/.test(key)) {
     return <span className="sport-icon sport-icon--trail"><TrailRunningIcon /></span>;
   }
   const Icon = activityIcon(key);
-  return <span className="sport-icon"><Icon size={20} aria-hidden="true" /></span>;
+  return <span className="sport-icon" style={activityStyle(key)}><Icon size={20} aria-hidden="true" /></span>;
 }
 
 export function WorkoutStatus({ status }: { status: Workout['status'] }) {
