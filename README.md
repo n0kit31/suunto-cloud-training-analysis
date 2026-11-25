@@ -8,10 +8,11 @@
 [![Node.js: 24](https://img.shields.io/badge/Node.js-24-339933?logo=nodedotjs&logoColor=white)](Dockerfile)
 [![Docker Compose](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](docs/docker.md)
 
-A CLI for downloading data from Suunto Cloud API and analyzing FIT files.
-Supports OAuth with automatic token refresh, GPX export, and JSON and Markdown
-reports with laps, heart rate, pace, pauses, and running mechanics. Interactive HTML charts
-are optional.
+A local web app and CLI for analyzing FIT files and downloading workouts from
+Suunto Cloud API. The web app lets you import FIT files, browse your activity
+library, and open interactive charts. An approved Suunto API application enables
+cloud synchronization. The CLI also exports GPX and creates JSON and Markdown
+reports with laps, heart rate, pace, pauses, and running mechanics.
 
 Data from the official Suunto MCP can be added through an external integration.
 The current tools download data from Cloud API; this repository has no MCP client.
@@ -20,9 +21,10 @@ The current tools download data from Cloud API; this repository has no MCP clien
 
 - [Highlights](#highlights)
 - [Independence and API access](#independence-and-api-access)
-- [Quick start with Docker](#quick-start-with-docker)
-- [Marathon example](#example-analysis-marathon)
+- [CLI quick start with Docker](#quick-start-with-docker)
 - [Local web app](#local-web-app)
+- [Web app screenshots](#web-app-screenshots)
+- [Marathon example](#example-analysis-marathon)
 - [Synthetic chart previews](#synthetic-chart-previews)
 - [Project structure](#structure)
 - [Requirements](#requirements)
@@ -37,6 +39,7 @@ The current tools download data from Cloud API; this repository has no MCP clien
 
 ## Highlights
 
+- Browse a local workout library with sport and date filters, background analysis, and optional AI interpretations.
 - Page through workout history and fetch original FIT files with automatic OAuth refresh.
 - Import single-session FIT files offline and save a separate report.
 - Analyze pace, heart rate, power, laps, pauses, running mechanics, and SuuntoPlus fields.
@@ -98,20 +101,59 @@ command to generate charts. Reports are saved in `../reports/` and charts in
 
 ## Local web app
 
-Run the workout library in Docker and open `http://127.0.0.1:3000`. Use it
-to browse analyses and charts, upload FIT files, and synchronize new
-activities from Suunto after authorization.
+Start the web app from the repository root, then open `http://127.0.0.1:3000`.
+Set `SUUNTO_TIMEZONE` to an IANA time zone before starting to use local time in
+the activity list and charts. The following example uses `Europe/Warsaw`.
 
 ```sh
 export SUUNTO_UID="$(id -u)" SUUNTO_GID="$(id -g)"
-docker compose up -d --build
+export SUUNTO_TIMEZONE=Europe/Warsaw
+docker compose up -d --build web worker
 ```
 
-The first successful Suunto sync imports 30 calendar days. Later syncs
-add new workouts and refresh changed records. SQLite stores the library
-and job state. The Python analysis results, original FIT files, and charts
-remain available after a restart. See [configuration, storage, and optional
-AI interpretation](docs/web.md).
+### Using the library
+
+1. Select **Import FIT** to add one or more single-session FIT files. You can
+   use this workflow offline with the local app.
+2. To add Suunto Cloud activities, enter your approved API credentials in
+   **App settings → Suunto** and complete the OAuth sign-in. The first successful
+   sync covers 30 calendar days. Use **Fetch new activities** to import new
+   workouts and refresh changed records. The app shows progress and reports the
+   outcome of a sync started from the current page. Click **Errors** to inspect
+   or dismiss failed jobs. [Suunto authorization steps](docs/web.md#connect-suunto)
+3. Filter the **Activity List** by sport or date and open a workout to see its
+   metrics, laps, and charts. The chart shows the watch model when the FIT file
+   contains a supported device name. Use the language menu to switch from
+   English to Polish.
+4. For an optional AI interpretation, save an API key in **App settings → OpenAI**
+   or **Claude**. In an analyzed workout, select **Interpret activity** under the
+   provider you want to use. Only that action sends selected numeric metrics and
+   laps to the provider, and each provider's result is saved separately. You can
+   remove saved keys from the app settings. [AI configuration and data handling](docs/web.md#optional-ai-interpretation)
+
+### How it runs
+
+React and Fastify serve the interface and local API. A separate worker runs
+the existing Python analyzer in the background. A Docker volume holds SQLite,
+original FIT files, and generated charts, so the library survives a container
+restart. The worker stores credentials in its private auth mount. [Storage and
+configuration guide](docs/web.md#storage-and-performance)
+
+### Web app screenshots
+
+These screenshots use synthetic FIT workouts. They show the activity list,
+a trail-run overview, and the provider settings.
+
+![Activity list with FIT import, sync, filters, and job status](docs/screenshots/activity-list.png)
+
+<details>
+<summary>Workout overview and application settings</summary>
+
+![Trail-running overview with session metrics, a watch model, and interactive charts](docs/screenshots/workout-overview.png)
+
+![Application settings with Suunto, OpenAI, and Claude sections and a blank API key field](docs/screenshots/app-settings.png)
+
+</details>
 
 ## Example analysis: marathon
 
