@@ -4,6 +4,8 @@ Notable changes to Suunto Cloud Training Analysis are recorded here.
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-11-25
+
 ### Added
 
 - Run a local workout library with React, Fastify, SQLite, and Docker Compose.
@@ -39,6 +41,7 @@ Notable changes to Suunto Cloud Training Analysis are recorded here.
   rejected first import when authorization is corrected.
 - Update the open chart after reanalysis and use the same cadence units in the
   chart and workout summary.
+- Number displayed workout laps sequentially from 1.
 - Report rejected OpenAI keys separately from quota errors. Localize API errors
   in the web client and isolate Compose smoke tests from private auth directories.
 
@@ -131,7 +134,8 @@ Suunto workouts, with local reports and portable charts.
 - Credentials, OAuth tokens, raw workout files, and personal reports remain outside the release.
 - Licensed under GNU GPL v3 or later (`GPL-3.0-or-later`).
 
-[Unreleased]: https://github.com/n0kit31/suunto-cloud-training-analysis/compare/v1.3.0...develop
+[Unreleased]: https://github.com/n0kit31/suunto-cloud-training-analysis/compare/v1.4.0...develop
+[1.4.0]: https://github.com/n0kit31/suunto-cloud-training-analysis/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/n0kit31/suunto-cloud-training-analysis/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/n0kit31/suunto-cloud-training-analysis/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/n0kit31/suunto-cloud-training-analysis/compare/v1.1.0...v1.1.1

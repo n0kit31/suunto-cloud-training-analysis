@@ -374,11 +374,11 @@ personal reports out of commits and issue attachments.
 
 ## Releases
 
-[**1.3.0**](https://github.com/n0kit31/suunto-cloud-training-analysis/releases/tag/v1.3.0)
-adds nightly SpO₂ alongside HRV, chart tiles for workout conditions and recovery,
-and workout-specific filenames. See [CHANGELOG.md](../CHANGELOG.md) for release notes,
-and run `python3 -m suunto_cloud --version` to check the installed version.
+[**1.4.0**](https://github.com/n0kit31/suunto-cloud-training-analysis/releases/tag/v1.4.0)
+adds the local workout library with Suunto Cloud sync, GPS maps synchronized
+with charts, and optional AI interpretations. See [CHANGELOG.md](../CHANGELOG.md)
+for release notes, and run `python3 -m suunto_cloud --version` to check the installed version.
 
 Stable releases are maintained on `main` and identified by version tags such
-as `v1.3.0`. Release changes are committed on `develop`, merged into `main`,
+as `v1.4.0`. Release changes are committed on `develop`, merged into `main`,
 and tagged from `main`. Development of subsequent iterations continues on `develop`.
