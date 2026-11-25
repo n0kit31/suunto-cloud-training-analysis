@@ -45,7 +45,7 @@ Add `--charts` for charts. The image uses the local tag
 
 For local dates in Docker, configure your time zone in `config.json` or export
 `SUUNTO_TIMEZONE` or `TZ` before running Compose. The container otherwise uses
-its own system zone, normally UTC. See [time zone selection](../README.md#time-zones)
+its own system zone, normally UTC. See [time zone selection](cli.md#time-zones)
 for precedence and examples.
 
 If `credentials.json` and `tokens.json` already exist in `.local/`, the container
