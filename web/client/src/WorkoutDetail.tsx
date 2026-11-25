@@ -54,8 +54,8 @@ function Laps({ laps }: { laps: Lap[] }) {
           <thead><tr><th scope="col">{t("Okrążenie")}</th>{columns.map((column) => (
             <th scope="col" key={column.label}>{t(column.label)}</th>
           ))}</tr></thead>
-          <tbody>{laps.map((lap) => (
-            <tr key={lap.index}><th scope="row">{lap.index}</th>{columns.map((column) => (
+          <tbody>{laps.map((lap, position) => (
+            <tr key={lap.index}><th scope="row">{position + 1}</th>{columns.map((column) => (
               <td key={column.label}>{column.value(lap, language)}</td>
             ))}</tr>
           ))}</tbody>
