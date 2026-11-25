@@ -10,23 +10,33 @@ Notable changes to Suunto Cloud Training Analysis are recorded here.
   A background worker reuses the Python analyzer for offline single-session FIT
   imports and Suunto Cloud workouts. [Web app guide](docs/web.md)
 - Import the most recent 30 calendar days on the first successful Suunto sync.
-  Later syncs fetch new and changed workouts. Show progress and completion
-  notifications for syncs started from the current page, with an error list that
-  supports individual and bulk dismissal.
+  Later syncs fetch new and changed workouts. Save the latest outcome across
+  page reloads, with a completion notification and an error list that supports
+  individual and bulk dismissal.
 - Filter the library by sport or date, with distinct icon colors by activity
   type and an English or Polish interface. Workout details show metrics, laps,
-  interactive charts, and the watch model when the FIT file includes its name.
+  interactive charts, and the watch model when its name or supported product ID
+  is available in the FIT file.
 - Generate optional OpenAI or Claude interpretations on demand using selected
   workout metrics and lap summaries. Save each provider's results separately
   and manage its local API key from the app settings.
 
 ### Changed
 
-- Store web app data in a persistent Docker volume and keep Suunto credentials
-  and AI keys in the worker's private auth mount. Save Suunto API settings from
-  the app before completing OAuth. [Storage and configuration](docs/web.md)
+- Store web app data in a persistent Docker volume. Share the private Suunto
+  configuration and OAuth tokens between the CLI and the worker. Save Suunto
+  API settings from the app before completing OAuth. [Storage and configuration](docs/web.md)
 - Document the web workflow and show the activity list, workout overview, and
   settings with synthetic data. [Web app screenshots](README.md#web-app-screenshots)
+
+### Fixed
+
+- Keep credential updates made while an OAuth sign-in is in progress. Resume a
+  rejected first import when authorization is corrected.
+- Update the open chart after reanalysis and use the same cadence units in the
+  chart and workout summary.
+- Report rejected OpenAI keys separately from quota errors. Localize API errors
+  in the web client and isolate Compose smoke tests from private auth directories.
 
 ## [1.3.0] - 2026-11-20
 

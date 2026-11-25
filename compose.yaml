@@ -1,5 +1,20 @@
 name: suunto-cloud
 
+x-auth-config: &auth-config
+  type: bind
+  source: ${SUUNTO_WEB_AUTH_DIR:-.}
+  target: /auth-config
+  read_only: true
+  bind:
+    create_host_path: false
+
+x-auth-private: &auth-private
+  type: bind
+  source: ${SUUNTO_WEB_AUTH_DIR:-.}/.local
+  target: /auth/.local
+  bind:
+    create_host_path: false
+
 services:
   suunto:
     profiles: [cli]
@@ -19,18 +34,16 @@ services:
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=64m,mode=1777
     environment:
+      SUUNTO_CONFIG_PATH: /auth-config/config.json
+      SUUNTO_AUTH_DIR: /auth/.local
       SUUNTO_OAUTH_BIND_HOST: 0.0.0.0
       SUUNTO_TIMEZONE: "${SUUNTO_TIMEZONE:-}"
       TZ: "${TZ:-}"
     ports:
       - "127.0.0.1:8765:8765"
     volumes:
-      - type: bind
-        source: ./config.json
-        target: /app/suunto-cloud/config.json
-        read_only: true
-        bind:
-          create_host_path: false
+      - *auth-config
+      - *auth-private
       - type: bind
         source: ./.local
         target: /app/suunto-cloud/.local
@@ -53,8 +66,8 @@ services:
     entrypoint: [sh, -ec]
     command:
       - |
-        chmod 0700 /data /auth
-        chown "$$1:$$2" /data /auth
+        chmod 0700 /data
+        chown "$$1:$$2" /data
       - init
       - "${SUUNTO_UID:-1000}"
       - "${SUUNTO_GID:-1000}"
@@ -64,7 +77,6 @@ services:
     security_opt: [no-new-privileges:true]
     volumes:
       - web-data:/data
-      - web-auth:/auth
 
   web:
     image: suunto-training-web:local
@@ -108,14 +120,14 @@ services:
       - /tmp:rw,noexec,nosuid,size=64m,mode=1777
     environment:
       SUUNTO_WEB_DATA: /data
-      SUUNTO_CONFIG_PATH: /auth/config.json
+      SUUNTO_CONFIG_PATH: /auth-config/config.json
       SUUNTO_PRIVATE_DIR: /auth/.local
       SUUNTO_TIMEZONE: "${SUUNTO_TIMEZONE:-}"
       TZ: "${TZ:-}"
     volumes:
       - web-data:/data
-      - ${SUUNTO_WEB_AUTH_DIR:-web-auth}:/auth
+      - *auth-config
+      - *auth-private
 
 volumes:
   web-data:
-  web-auth:

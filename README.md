@@ -113,6 +113,7 @@ the activity list and charts. The following example uses `Europe/Warsaw`.
 ```sh
 export SUUNTO_UID="$(id -u)" SUUNTO_GID="$(id -g)"
 export SUUNTO_TIMEZONE=Europe/Warsaw
+mkdir -p "${SUUNTO_WEB_AUTH_DIR:-.}/.local"
 docker compose up -d --build web worker
 ```
 
@@ -123,13 +124,14 @@ docker compose up -d --build web worker
 2. To add Suunto Cloud activities, enter your approved API credentials in
    **App settings → Suunto** and complete the OAuth sign-in. The first successful
    sync covers 30 calendar days. Use **Fetch new activities** to import new
-   workouts and refresh changed records. The app shows progress and reports the
-   outcome of a sync started from the current page. Click **Errors** to inspect
+   workouts and refresh changed records. The app resumes an interrupted first
+   import after authorization is corrected. **Last sync result** shows the
+   outcome after reloads. Click **Errors** to inspect
    or dismiss failed jobs. [Suunto authorization steps](docs/web.md#connect-suunto)
 3. Filter the **Activity List** by sport or date. Each activity type has a
    consistent icon color. Open a workout to see metrics, laps, and charts. The
-   chart shows the watch model when the FIT file contains a supported device
-   name. Use the language menu to switch from English to Polish.
+   chart shows the watch model when the FIT file contains a device name or a
+   recognized product ID. Use the language menu to switch from English to Polish.
 4. For an optional AI interpretation, save an API key in **App settings → OpenAI**
    or **Claude**. In an analyzed workout, select **Interpret activity** under the
    provider you want to use. Only that action sends selected numeric metrics and
@@ -141,7 +143,7 @@ docker compose up -d --build web worker
 React and Fastify serve the interface and local API. A separate worker runs
 the existing Python analyzer in the background. A Docker volume holds SQLite,
 original FIT files, and generated charts, so the library survives a container
-restart. The worker stores credentials in its private auth mount. [Storage and
+restart. The CLI and web worker share Suunto credentials in a private mount. [Storage and
 configuration guide](docs/web.md#storage-and-performance)
 
 ### Web app screenshots

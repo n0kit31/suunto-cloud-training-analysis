@@ -10,7 +10,8 @@ Set the container user to your local UID and GID and start the services.
 
 ```sh
 export SUUNTO_UID="$(id -u)" SUUNTO_GID="$(id -g)"
-docker compose up -d --build
+mkdir -p "${SUUNTO_WEB_AUTH_DIR:-.}/.local"
+docker compose up -d --build web worker
 ```
 
 Open `http://127.0.0.1:3000`. Set `SUUNTO_WEB_PORT` before starting if you
@@ -39,24 +40,31 @@ docker compose run --rm --no-deps -p 127.0.0.1:8765:8765 \
 ```
 
 Follow the displayed authorization link in your browser. The worker starts the
-initial 30-day import once authorization is available. Use **Fetch new
-activities** for subsequent syncs. The button shows when the worker is fetching
-or analyzing data, and a notification reports the final outcome. The existing
-`access --configure` terminal setup is
-also available.
+initial 30-day import once authorization is available. An initial import that
+stopped on an authorization error resumes after you update the credentials or
+sign in again. Use **Fetch new activities** for subsequent syncs. The button
+shows progress and a notification reports completion. Expand **Last sync
+result** in the activity list to see the outcome again after reloading.
 
 Click the **Errors** counter to see the failed job, its message, and the linked
 activity where available. Remove individual errors or clear the list. The
-workout overview shows the recording model when the FIT file identifies it.
+workout overview shows the recording model when the FIT file provides a name
+or a recognized product identifier.
 
 ## Storage and performance
 
 - The `web-data` Docker volume holds the SQLite database, the job queue, input
   FIT files and generated charts. Compose stores this volume outside the
   checkout and mounts it into the web and worker containers at runtime.
-- The worker gets its own writable auth mount for the Suunto configuration
-  and token files. By default this is the `web-auth` Docker volume. The
-  `SUUNTO_WEB_AUTH_DIR` setting selects your private directory instead.
+- The CLI and web worker share the checkout's `config.json` and `.local/` by
+  default. Compose mounts the configuration source read-only. New application
+  settings saved by the GUI are read from `.local/config.json` when the root
+  configuration has no client ID. OAuth tokens and credentials live in the
+  shared writable `.local/` directory. The web server has neither auth mount.
+- Set `SUUNTO_WEB_AUTH_DIR` to an existing private directory with the same
+  layout to use it for both services. If a previous installation used the
+  `web-auth` Docker volume, configure the selected shared location before
+  switching. The activity library is stored in the separate `web-data` volume.
 - `docker compose stop` or `docker compose down` preserves Docker volumes.
   `docker compose down -v` deletes the project's volumes and stored workouts.
 - The list uses indexed, paginated SQLite queries. Details and charts use

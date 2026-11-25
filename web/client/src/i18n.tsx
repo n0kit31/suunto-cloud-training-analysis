@@ -29,6 +29,7 @@ const english: Record<string, string> = {
   'Wczytywanie błędów…': 'Loading errors…',
   'Brak błędów zadań.': 'No job errors.',
   'Synchronizacja Suunto': 'Suunto sync',
+  'Wynik ostatniej synchronizacji': 'Last sync result',
   'Analiza treningu': 'Activity analysis',
   'Usuń błąd': 'Remove error',
   'Wyczyść listę błędów': 'Clear errors',
@@ -206,6 +207,8 @@ const english: Record<string, string> = {
   'Nie udało się przygotować interpretacji. Spróbuj ponownie później.': 'Could not generate the interpretation. Try again later.',
   'Brak dostępnego limitu OpenAI API. Sprawdź saldo środków i limity wydatków na platformie OpenAI.':
     'OpenAI API quota is unavailable. Check your API credit balance and spending limits.',
+  'OpenAI odrzuciło klucz API. Sprawdź klucz na platformie OpenAI i zaktualizuj go w ustawieniach aplikacji.':
+    'OpenAI rejected the API key. Check your key in OpenAI Platform and update it in app settings.',
   'Saldo środków Claude API jest za niskie. Sprawdź rozliczenia w Claude Console.':
     'Claude API credit balance is too low. Check billing in Claude Console.',
   'Claude odrzuciło klucz API. Sprawdź klucz w Claude Console i zaktualizuj go w ustawieniach aplikacji.':

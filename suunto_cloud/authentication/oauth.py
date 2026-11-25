@@ -14,7 +14,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, urlencode, urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
-from suunto_cloud.storage.local import config_path, private_directory, private_json
+from suunto_cloud.storage.local import authentication_directory, authentication_lock, private_json, read_config
 AUTHORIZE_URL = "https://cloudapi-oauth.suunto.com/oauth/authorize"
 TOKEN_URL = "https://cloudapi-oauth.suunto.com/oauth/token"
 
@@ -134,7 +134,26 @@ def exchange_code(config, secret, code):
 
 
 def save_tokens(tokens, filename='tokens.json'):
-    return private_json(private_directory() / filename, tokens)
+    return private_json(authentication_directory() / filename, tokens)
+
+
+def saved_application_credentials(client_id):
+    path = authentication_directory() / 'credentials.json'
+    saved = json.loads(path.read_text()) if path.is_file() else {}
+    return saved if isinstance(saved, dict) and saved.get('client_id') == client_id else {}
+
+
+def complete_authorization(config, secret, initial_secret, tokens):
+    with authentication_lock():
+        current = read_config()
+        if any(current.get(field) != config[field] for field in ('client_id', 'redirect_uri')):
+            raise ValueError('Suunto application settings changed during authorization. Start OAuth again.')
+        saved = saved_application_credentials(config['client_id'])
+        current_secret = saved.get('client_secret')
+        if current_secret and current_secret != initial_secret:
+            secret = current_secret
+        save_tokens({**saved, 'client_id': config['client_id'], 'client_secret': secret}, 'credentials.json')
+        return save_tokens({**tokens, 'authorization_id': secrets.token_hex(16)})
 
 
 def callback_address(port):
@@ -149,10 +168,12 @@ def main(argv=None):
     parser.add_argument("--settings", action="store_true", help="Show settings without signing in")
     parser.add_argument("--prompt-secret", action="store_true", help="Enter the secret manually, ignoring SUUNTO_CLIENT_SECRET")
     args = parser.parse_args(argv)
-    config = json.loads(config_path().read_text())
+    config = read_config()
     if args.settings:
         print(json.dumps(config, indent=2))
         return
+    if config.get('client_id') in (None, '', 'YOUR_SUUNTO_CLIENT_ID') or not config.get('redirect_uri'):
+        raise ValueError('Configure the Suunto OAuth application before signing in.')
     redirect = urlsplit(config["redirect_uri"])
     if (redirect.scheme != "http" or redirect.hostname != "127.0.0.1"
             or not redirect.port or redirect.query or redirect.fragment
@@ -162,10 +183,7 @@ def main(argv=None):
     with HTTPServer(callback_address(redirect.port), callback_handler(state, config["redirect_uri"])) as server:
         server.timeout = 1
         server.callback_received = False
-        credentials_path = private_directory() / 'credentials.json'
-        saved = json.loads(credentials_path.read_text()) if credentials_path.is_file() else {}
-        if not isinstance(saved, dict) or saved.get('client_id') != config['client_id']:
-            saved = {}
+        saved = saved_application_credentials(config['client_id'])
         secret = None if args.prompt_secret else (os.environ.get("SUUNTO_CLIENT_SECRET") or saved.get('client_secret'))
         if secret:
             print("Client secret: using saved configuration or an environment variable.", flush=True)
@@ -193,8 +211,7 @@ def main(argv=None):
             raise ValueError("Suunto denied authorization or reported an authorization error.")
         print("Valid callback received. Exchanging authorization code for tokens...", flush=True)
         tokens = exchange_code(config, secret, server.authorization_code)
-        destination = save_tokens(tokens)
-        save_tokens({**saved, 'client_id': config['client_id'], 'client_secret': secret}, 'credentials.json')
+        destination = complete_authorization(config, secret, saved.get('client_secret'), tokens)
     print(f"Authorization completed. Tokens saved locally: {destination}")
 
 

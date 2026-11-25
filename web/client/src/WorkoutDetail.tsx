@@ -161,7 +161,7 @@ export function WorkoutDetail({ workout, dates, retry, ...interpretationActions 
         <section className="panel" aria-labelledby="chart-heading">
           <div className="panel__header"><h2 id="chart-heading"><ChartNoAxesCombined size={21} aria-hidden="true" />{t("Wykresy")}</h2></div>
           {workout.chart ? <ChartFrame key={workout.deviceModel ?? ''} title={t("Interaktywne wykresy treningu")}
-            src={`/api/workouts/${encodeURIComponent(workout.id)}/chart?lang=${language}&embed=1`} /> :
+            src={`/api/workouts/${encodeURIComponent(workout.id)}/chart?lang=${language}&embed=1&revision=${workout.analysisVersion}`} /> :
             <div className="panel__body"><p className="muted">{t("W danych tej aktywności brakuje pomiarów do wyświetlenia wykresów.")}</p></div>}
         </section>
         {(available.length > 0 || workout.observations.length > 0) && <section className="panel" aria-labelledby="metrics-heading">

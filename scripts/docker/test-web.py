@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import struct
 import subprocess
+import tempfile
 import time
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -97,19 +98,46 @@ def ready_workout(base, total):
     return None
 
 
-def main():
+def main(override_path):
     repo = Path(__file__).resolve().parents[2]
     project = f'suunto-web-test-{uuid4().hex[:8]}'
     environment = {**os.environ, 'SUUNTO_UID': str(os.getuid()), 'SUUNTO_GID': str(os.getgid()),
                    'SUUNTO_WEB_PORT': '0', 'SUUNTO_TIMEZONE': 'Europe/Warsaw'}
-    environment.pop('SUUNTO_WEB_AUTH_DIR', None)
+    environment['SUUNTO_WEB_AUTH_DIR'] = '/synthetic-auth-bind-must-not-be-mounted'
+    environment.pop('COMPOSE_ENV_FILES', None)
+
+    volumes = [
+        {'type': 'volume', 'source': 'smoke-config', 'target': '/auth-config', 'read_only': True},
+        {'type': 'volume', 'source': 'smoke-auth', 'target': '/auth/.local'},
+    ]
+    override_path.write_text(json.dumps({
+        'volumes': {'smoke-config': {}, 'smoke-auth': {}},
+        'services': {
+            'worker': {'volumes': volumes},
+            'suunto': {'volumes': [*volumes, {**volumes[1], 'target': '/app/suunto-cloud/.local'}]},
+            'web-data-init': {
+                'volumes': [{'type': 'volume', 'source': 'smoke-auth', 'target': '/smoke-auth'}],
+                'command': ['chmod 0700 /data /smoke-auth && chown "$$1:$$2" /data /smoke-auth',
+                            'init', str(os.getuid()), str(os.getgid())],
+            },
+        },
+    }))
 
     def compose(*args, **kwargs):
-        return subprocess.run(['docker', 'compose', '-f', 'compose.yaml', '-p', project, *args],
+        return subprocess.run(['docker', 'compose', '--env-file', os.devnull, '-f', 'compose.yaml',
+                               '-f', str(override_path), '-p', project, *args],
                               cwd=repo, env=environment, check=True, **kwargs)
 
     try:
+        configuration = json.loads(compose('--profile', 'cli', 'config', '--format', 'json',
+                                          capture_output=True, text=True).stdout)
+        for service in ('suunto', 'worker'):
+            mounts = {mount['target']: mount for mount in configuration['services'][service]['volumes']}
+            for target, volume in [('/auth-config', 'smoke-config'), ('/auth/.local', 'smoke-auth')]:
+                assert (mounts[target]['type'], mounts[target]['source']) == ('volume', volume)
         compose('up', '-d', '--build', 'web', 'worker')
+        compose('exec', '-T', 'worker', 'node', '--input-type=module', '-',
+                input=(repo / 'scripts/docker/test-web-state.mjs').read_text(), text=True)
         address = compose('port', 'web', '3000', capture_output=True, text=True).stdout.strip()
         base = f'http://{address}'
         assert eventually(lambda: request(base, '/api/status')[0]['timeZone']) == 'Europe/Warsaw'
@@ -177,6 +205,7 @@ def main():
         assert eventually(lambda: request(base, result_path)[0]['status'] == 'failed')
         result, _ = request(base, result_path)
         assert result['error'] and result['added'] == result['updated'] == result['failed'] == 0
+        assert request(base, '/api/status')[0]['lastSyncResult'] == result
 
         content = fit_activity(device_model='Suunto Race 2')
         assert upload(base, content)['files'][0]['status'] == 'queued'
@@ -215,10 +244,15 @@ def main():
         address = compose('port', 'web', '3000', capture_output=True, text=True).stdout.strip()
         base = f'http://{address}'
         assert eventually(lambda: ready_workout(base, 1))['id'] == workout['id']
+        assert request(base, '/api/status')[0]['lastSyncResult'] == result
         assert request(base, settings_path)[0] == settings
         for provider in availability:
             assert request(base, f'/api/{provider}/settings')[0] == {'configured': True, 'editable': True}
         assert request(base, '/api' + path + '/chart')[0] == chart
+        request(base, '/api' + path + '/retry', body=b'{}', headers={
+            'X-Suunto-Request': '1', 'Origin': base, 'Content-Type': 'application/json',
+        }, expected=202)
+        eventually(lambda: request(base, '/api' + path)[0]['analysisVersion'] > details['analysisVersion'])
         assert upload(base, fit_activity(1_000_100_000))['files'][0]['status'] == 'queued'
         assert eventually(lambda: ready_workout(base, 2))['id'] != workout['id']
         corrupt = content[:-1] + bytes([content[-1] ^ 0xFF])
@@ -261,4 +295,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    with tempfile.TemporaryDirectory() as directory:
+        main(Path(directory) / 'compose.json')

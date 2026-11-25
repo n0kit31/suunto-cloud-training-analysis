@@ -352,6 +352,9 @@ h1 {
   color: var(--accent-ink);
 }
 .stat p { margin-bottom: 0.18rem; color: var(--muted); font-size: 0.885rem; }
+.sync-result { margin-top: 0.25rem; font-size: 0.82rem; }
+.sync-result summary { cursor: pointer; color: var(--accent-ink); }
+.sync-result p { margin-top: 0.35rem; }
 .stat strong { font-size: 1.135rem; font-weight: 715; letter-spacing: -0.035em; font-variant-numeric: tabular-nums; }
 .stat__failures {
   padding: 0.12rem 0.25rem;

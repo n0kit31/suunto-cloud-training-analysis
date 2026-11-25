@@ -158,6 +158,9 @@ export async function interpretWorkout(workout: InterpretationInput, signal?: Ab
       }
     } else {
       await response.body?.cancel()
+      if (response.status === 401) {
+        throw new InterpretationProviderError('OpenAI rejected the API key. Check your key in OpenAI Platform and update it in app settings.')
+      }
     }
     throw new Error(`OpenAI rejected the request (HTTP ${response.status}).`)
   }

@@ -6,7 +6,7 @@ import {
   Settings, Upload, Watch,
 } from 'lucide-react';
 import { errorLabel, messageFromError, submit, useResource } from './api';
-import type { Detail, ImportResult, Status, SyncResult, Workout, Workouts } from './api';
+import type { Detail, ImportResult, Status, Workout, Workouts } from './api';
 import { SourceLabel, SportIcon, StatePanel, WorkoutStatus } from './components';
 import { distance, duration, formatDates, missing, numeric, sportLabel } from './format';
 import type { DateLabels } from './format';
@@ -15,10 +15,11 @@ import { AppSettings } from './AppSettings';
 import { LanguageMenu } from './LanguageMenu';
 import { JobErrors } from './JobErrors';
 import type { SettingsSection } from './AppSettings';
-import { SyncToast, syncOutcome } from './SyncToast';
+import { SyncMessage, SyncToast, syncOutcome } from './SyncToast';
 import type { SyncNotice } from './SyncToast';
 
 const pageSize = 20;
+const syncNoticeStorageKey = 'suunto-web-last-sync-notice';
 const noFilters = { sport: '', from: '', to: '' };
 
 type Filters = typeof noFilters;
@@ -91,7 +92,14 @@ function StatStrip({ total, status, dates, filtered, onErrors }: {
       </div>
       <div className="stat">
         <span className="stat__icon"><CalendarDays size={19} aria-hidden="true" /></span>
-        <div><p>{t("Ostatnia synchronizacja")}</p><strong>{status?.lastSyncedAt ? dates.dateTime(status.lastSyncedAt) : missing}</strong></div>
+        <div>
+          <p>{t('Ostatnia synchronizacja')}</p>
+          <strong>{status?.lastSyncedAt ? dates.dateTime(status.lastSyncedAt) : missing}</strong>
+          {status?.lastSyncResult && <details className="sync-result">
+            <summary>{t('Wynik ostatniej synchronizacji')}</summary>
+            <p><SyncMessage notice={syncOutcome(status.lastSyncResult)} /></p>
+          </details>}
+        </div>
       </div>
       <div className="stat">
         <span className="stat__icon"><Clock3 size={19} aria-hidden="true" /></span>
@@ -203,14 +211,13 @@ export function App() {
   const revisionCounter = useRef(0);
   const [pending, setPending] = useState<string | null>(null);
   const [syncRevision, setSyncRevision] = useState(0);
-  const [syncJob, setSyncJob] = useState<number | null>(null);
+  const lastSyncNotice = useRef<string | null>(null);
   const [syncNotice, setSyncNotice] = useState<SyncNotice | null>(null);
   const [settingsSection, setSettingsSection] = useState<SettingsSection | null>(null);
   const [showErrors, setShowErrors] = useState(false);
   const [action, setAction] = useState<{ path: string; notice: Notice } | null>(null);
   const [knownSports, setKnownSports] = useState<string[]>([]);
   const status = useResource<Status>('/api/status', revision, 3_000);
-  const sync = useResource<SyncResult>(syncJob === null ? null : `/api/sync/${syncJob}`, 0, 1_500);
   const timeZone = status.data?.timeZone ?? undefined;
   const dates = useMemo(() => formatDates(timeZone, language), [timeZone, language]);
   const active = Boolean(status.data && status.data.jobs.queued + status.data.jobs.running);
@@ -257,12 +264,27 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    const result = sync.data;
-    if (result?.status !== 'done' && result?.status !== 'failed') return;
-    setSyncNotice(syncOutcome(result));
-    setSyncJob(null);
-    refresh();
-  }, [sync.data, refresh]);
+    const result = status.data?.lastSyncResult;
+    if (!result) return;
+    const key = `${result.id}:${result.scheduledAt}`;
+    const outcome = syncOutcome(result);
+    let cancelled = false;
+    function notify() {
+      if (cancelled || lastSyncNotice.current === key) return;
+      lastSyncNotice.current = key;
+      try {
+        if (localStorage.getItem(syncNoticeStorageKey) === key) return;
+        localStorage.setItem(syncNoticeStorageKey, key);
+      } catch {
+        // The in-memory key still prevents repeated notices while the page is open.
+      }
+      setSyncNotice(outcome);
+      refresh();
+    }
+    if (navigator.locks) void navigator.locks.request(syncNoticeStorageKey, notify).catch(notify);
+    else notify();
+    return () => { cancelled = true; };
+  }, [status.data?.lastSyncResult, refresh]);
 
   useEffect(() => {
     if (!syncNotice) return;
@@ -277,8 +299,7 @@ export function App() {
     setPending('sync');
     setSyncNotice(null);
     try {
-      const { jobId, queued } = await submit<{ jobId: number; queued: boolean }>('/api/sync');
-      setSyncJob(jobId);
+      const { queued } = await submit<{ queued: boolean }>('/api/sync');
       setSyncNotice({
         tone: 'info', text: queued ? 'Uruchomiono synchronizację z Suunto.' : 'Synchronizacja z Suunto już trwa.',
       });
@@ -396,8 +417,7 @@ export function App() {
                   {t(pending === 'import' ? 'Wysyłanie plików…' : 'Importuj FIT')}
                 </button>
                 <button className={`button button--primary${syncBusy ? ' button--working' : ''}`} type="button"
-                  disabled={Boolean(pending) || Boolean(status.error) || syncBusy || rateLimited ||
-                    (syncJob !== null && syncPhase !== 'authorization')}
+                  disabled={Boolean(pending) || Boolean(status.error) || syncBusy || rateLimited}
                   aria-busy={syncBusy}
                   onClick={() => void synchronize()}>
                   {syncBusy ? <LoaderCircle className="spinning" size={18} aria-hidden="true" />

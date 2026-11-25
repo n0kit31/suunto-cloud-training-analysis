@@ -178,24 +178,19 @@ async function main() {
   });
   try {
     await mkdir(artifactDirectory, { recursive: true, mode: 0o700 });
-    let previousLocalAuth: boolean | null = null;
     let nextAuthCheck = 0;
     let nextCloudAt = 0;
     while (!shutdown.signal.aborted) {
       const now = Date.now();
       if (now >= nextAuthCheck) {
         for (const provider of providers) store.setInterpretationAvailable(provider, interpretationConfigured(provider));
-        const { authorized, timeZone } = await bridge<{ authorized: boolean; timeZone?: string }>(
+        const auth = await bridge<{ revision: string | null; timeZone: string }>(
           ['auth-status'], shutdown.signal,
-        ).catch(() => ({ authorized: false, timeZone: undefined }));
-        if (timeZone && timeZone !== store.setting('timeZone', null)) store.setSetting('timeZone', timeZone);
-        const current = store.setting<boolean | null>('authorized', null);
-        const rejectedBySuunto = current === false && store.setting('syncErrorCode', null) === 'AUTH_REQUIRED';
-        if (current !== authorized && (!authorized || !rejectedBySuunto || previousLocalAuth === false)) {
-          store.setSetting('authorized', authorized);
+        ).catch(() => null);
+        if (auth) {
+          if (auth.timeZone !== store.setting('timeZone', null)) store.setSetting('timeZone', auth.timeZone);
+          store.observeAuthorization(auth.revision, now);
         }
-        if (authorized && store.setting<boolean | null>('authorized', null)) store.bootstrapIfNeeded(now);
-        previousLocalAuth = authorized;
         nextAuthCheck = now + 15_000;
       }
       if (shutdown.signal.aborted) break;
@@ -204,14 +199,17 @@ async function main() {
         await processJob(store, job, shutdown.signal);
         if (job.cloud) nextCloudAt = Date.now() + cloudInterval;
       } else {
-        const workout = store.nextDeviceBackfill();
+        const workout = store.nextDeviceBackfill(Date.now());
         if (workout) {
           const artifact = workout.artifact_id;
           const signal = AbortSignal.any([shutdown.signal, AbortSignal.timeout(15_000)]);
           const device = isId(artifact) ? await bridge<{ deviceModel: string | null }>(
             ['device-model', '--fit', join(artifactDirectory, artifact, 'source.fit')], signal,
-          ).catch(() => null) : null;
-          if (!shutdown.signal.aborted) store.finishDeviceBackfill(workout.id, artifact, device?.deviceModel ?? null);
+          ).catch(() => null) : { deviceModel: null };
+          if (!shutdown.signal.aborted) {
+            if (device) store.finishDeviceBackfill(workout.id, artifact, device.deviceModel);
+            else store.deferDeviceBackfill(workout.id, artifact, Date.now() + 60_000);
+          }
           continue;
         }
         await pause(500, undefined, { signal: shutdown.signal }).catch(() => {});

@@ -3,8 +3,6 @@
 
 import argparse
 import base64
-from contextlib import contextmanager
-import fcntl
 import getpass
 import json
 import os
@@ -15,7 +13,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, build_opener
 
 from suunto_cloud.authentication.oauth import NoRedirect, TOKEN_URL
-from suunto_cloud.storage.local import config_path, private_directory, private_json
+from suunto_cloud.storage.local import authentication_directory, authentication_lock, private_json, read_config
 from suunto_cloud.timezones import TimeZoneError
 
 
@@ -31,17 +29,15 @@ class RefreshHTTPError(AccessError):
 
 
 def load_config():
-    try:
-        config = json.loads(config_path().read_text())
-    except FileNotFoundError:
-        raise AccessError('Suunto is not configured. Enter the OAuth application settings first.') from None
-    if not isinstance(config, dict) or not isinstance(config.get('client_id'), str) or not config['client_id']:
+    config = read_config()
+    client = config.get('client_id')
+    if not isinstance(client, str) or not client or client == 'YOUR_SUUNTO_CLIENT_ID':
         raise AccessError('Missing Client ID in config.json.')
     return config
 
 
 def load_saved_credentials(client_id):
-    path = private_directory() / 'credentials.json'
+    path = authentication_directory() / 'credentials.json'
     credentials = json.loads(path.read_text()) if path.is_file() else {}
     if not isinstance(credentials, dict):
         raise AccessError('Invalid credentials.json format.')
@@ -65,7 +61,7 @@ def load_credentials():
 
 def configure():
     config = load_config()
-    path = private_directory() / 'credentials.json'
+    path = authentication_directory() / 'credentials.json'
     if not sys.stdin.isatty():
         raise AccessError('Run configuration in your interactive terminal; do not pass credentials as arguments.')
     print('One-time Suunto setup. Credential input is hidden.')
@@ -84,7 +80,7 @@ def configure():
 
 
 def load_tokens():
-    path = private_directory() / 'tokens.json'
+    path = authentication_directory() / 'tokens.json'
     if not path.is_file():
         raise AccessError('No saved tokens. Run python3 -m suunto_cloud oauth.')
     tokens = json.loads(path.read_text())
@@ -144,18 +140,12 @@ def refresh_tokens(tokens, credentials):
     # Some servers rotate refresh tokens; others omit the unchanged token.
     updated = {**tokens, **result, 'expires_in': expires,
                'received_at_unix': int(time.time()), 'client_id': credentials['client_id']}
-    private_json(private_directory() / 'tokens.json', updated)
+    if 'authorization_id' in tokens:
+        updated['authorization_id'] = tokens['authorization_id']
+    else:
+        updated.pop('authorization_id', None)
+    private_json(authentication_directory() / 'tokens.json', updated)
     return updated
-
-
-@contextmanager
-def authentication_lock():
-    lock_path = private_directory() / 'auth.lock'
-    descriptor = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
-    with os.fdopen(descriptor, 'a') as lock:
-        os.fchmod(lock.fileno(), 0o600)
-        fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
-        yield
 
 
 def get_access_token(force=False, rejected_token=None):

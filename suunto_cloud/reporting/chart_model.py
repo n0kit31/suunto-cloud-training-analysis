@@ -7,7 +7,7 @@ from datetime import datetime
 from statistics import mean, median
 from typing import Optional
 
-from suunto_cloud.activities import activity_label
+from suunto_cloud.activities import activity_label, foot_activity
 from suunto_cloud.analysis.chart_metrics import grade_samples, step_length
 from suunto_cloud.analysis.metrics import active_samples, number, seconds
 
@@ -187,17 +187,16 @@ def prepare_chart(data, analysis, cloud, hr_range=None, interactive=False):
         return value if number(value) and (value > 0 if positive else value >= 0) else None
 
     sport = (data.get('sessions') or [{}])[0].get('sport')
-    running = sport == 'running' or cloud.get('activity_id') in (1, 22)
-    on_foot = running or sport in ('walking', 'hiking') or cloud.get('activity_id') == 11
-    power_title = 'Running power' if running else 'Power'
+    foot = foot_activity(cloud, sport)
+    power_title = 'Running power' if foot == 'running' else 'Power'
     add_metric('power', f'{power_title} (W) · 15 s moving average',
                samples(lambda r: nonnegative_field(r, 'power')), '#b47719', 'W', 10)
-    cadence_unit, cadence_factor = ('steps/min', 2) if on_foot else ('rpm', 1)
+    cadence_unit, cadence_factor = ('steps/min', 2) if foot else ('rpm', 1)
     cadence = [(t, value * cadence_factor) for t, value in
                samples(lambda r: nonnegative_field(r, 'cadence', positive=True))]
     add_metric('cadence', f'Cadence ({cadence_unit}) · dots + 15 s median trend',
                cadence, '#7554a3', cadence_unit, 5, smooth=moving_median, style='scatter')
-    if on_foot:
+    if foot:
         add_metric('ground-contact', 'Ground contact (ms) · dots + 15 s median trend',
                    samples(lambda r: nonnegative_field(r, 'stance_time', positive=True)),
                    '#98603a', 'ms', 10, smooth=moving_median, style='scatter')

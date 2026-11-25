@@ -34,6 +34,13 @@ export function syncOutcome(result: SyncResult): SyncNotice {
 
 const icons = { info: Info, success: CircleCheck, warning: CircleAlert, error: CircleAlert };
 
+export function SyncMessage({ notice }: { notice: SyncNotice }) {
+  const { t } = useLanguage();
+  return <>{t(notice.text, notice.count === undefined ? undefined : { count: notice.count })}
+    {notice.reason && <> {t(notice.reason)}</>}
+    {notice.changes && <> {t('Dodano {added}, zaktualizowano {updated}.', notice.changes)}</>}</>;
+}
+
 export function SyncToast({ notice, dismiss }: { notice: SyncNotice; dismiss: () => void }) {
   const { t } = useLanguage();
   const Icon = icons[notice.tone];
@@ -41,9 +48,7 @@ export function SyncToast({ notice, dismiss }: { notice: SyncNotice; dismiss: ()
     <div className={`sync-toast sync-toast--${notice.tone}`}>
       <div className="sync-toast__message" role={notice.tone === 'error' ? 'alert' : 'status'}>
         <Icon size={20} aria-hidden="true" />
-        <p>{t(notice.text, notice.count === undefined ? undefined : { count: notice.count })}
-          {notice.reason && <> {t(notice.reason)}</>}
-          {notice.changes && <> {t('Dodano {added}, zaktualizowano {updated}.', notice.changes)}</>}</p>
+        <p><SyncMessage notice={notice} /></p>
       </div>
       <button type="button" className="sync-toast__close" aria-label={t("Zamknij powiadomienie")} onClick={dismiss}>
         <X size={16} aria-hidden="true" />

@@ -1,9 +1,7 @@
 """Read public Suunto settings and save credentials in the worker's private directory."""
 
-import json
-
-from suunto_cloud.authentication.access import AccessError, authentication_lock, load_saved_credentials
-from suunto_cloud.storage.local import config_path, private_directory, private_json
+from suunto_cloud.authentication.access import AccessError, load_saved_credentials
+from suunto_cloud.storage.local import authentication_directory, authentication_lock, private_json, read_config
 
 
 DEFAULT_CALLBACK = 'http://127.0.0.1:8765/callback'
@@ -15,10 +13,7 @@ class InvalidSettings(ValueError):
 
 
 def read_configuration():
-    path = config_path()
-    config = json.loads(path.read_text()) if path.is_file() else {}
-    if not isinstance(config, dict):
-        raise ValueError('Invalid Suunto configuration.')
+    config = read_config()
     client = config.get('client_id')
     if client == 'YOUR_SUUNTO_CLIENT_ID':
         client = None
@@ -72,11 +67,11 @@ def save_settings(payload):
             raise InvalidSettings('Enter both the client secret and the subscription key.')
 
         if current_client is None:
-            private_json(config_path(), {
-                **config, 'client_id': client,
+            private_json(authentication_directory() / 'config.json', {
+                'client_id': client,
                 'redirect_uri': config.get('redirect_uri') or DEFAULT_CALLBACK,
             })
-        private_json(private_directory() / 'credentials.json', {
+        private_json(authentication_directory() / 'credentials.json', {
             **existing, 'client_id': client, 'client_secret': secret, 'subscription_key': subscription,
         })
     return read_settings()

@@ -174,7 +174,14 @@ export class Store {
             WHERE alias_of IS NULL AND device_model IS NULL AND artifact_id IS NOT NULL;
           PRAGMA user_version = 5;
         `);
-      } else if (version !== 5) {
+      }
+      if (typeof version === 'number' && version >= 0 && version < 6) {
+        this.db.exec(`
+          ALTER TABLE workouts ADD COLUMN device_retry_at INTEGER NOT NULL DEFAULT 0;
+          UPDATE workouts SET device_model = NULL WHERE device_model = '';
+          PRAGMA user_version = 6;
+        `);
+      } else if (version !== 6) {
         throw new Error('Unsupported database schema.');
       }
     });
@@ -230,6 +237,7 @@ export class Store {
       : pending.scans > 0 ? 'listing' : 'analyzing';
     return {
       lastSyncedAt: this.setting<number | null>('lastSyncedAt', null),
+      lastSyncResult: this.lastSyncResult(),
       authorized,
       interpretationAvailable: this.interpretationAvailable('openai'),
       interpretationAvailability: {
@@ -307,6 +315,7 @@ export class Store {
       laps: analysis?.laps ?? [],
       observations: analysis?.observations ?? [],
       chart: Boolean(analysis?.chart && row.artifact_id),
+      analysisVersion: row.analysis_version,
       deviceModel: row.device_model || null,
       interpretations,
       interpretation: interpretations.openai.result,
@@ -315,18 +324,24 @@ export class Store {
     };
   }
 
-  nextDeviceBackfill() {
+  nextDeviceBackfill(now: number) {
     return this.db.prepare(`
       SELECT id, artifact_id FROM workouts
-      WHERE alias_of IS NULL AND device_model IS NULL AND artifact_id IS NOT NULL
+      WHERE alias_of IS NULL AND device_model IS NULL AND artifact_id IS NOT NULL AND device_retry_at <= ?
       ORDER BY started_at DESC LIMIT 1
-    `).get() as { id: string; artifact_id: string } | undefined;
+    `).get(now) as { id: string; artifact_id: string } | undefined;
   }
 
   finishDeviceBackfill(id: string, artifact: string, model: string | null) {
     this.db.prepare(`
       UPDATE workouts SET device_model = ? WHERE id = ? AND artifact_id = ? AND device_model IS NULL
     `).run(model ?? '', id, artifact);
+  }
+
+  deferDeviceBackfill(id: string, artifact: string, retryAt: number) {
+    this.db.prepare(`
+      UPDATE workouts SET device_retry_at = ? WHERE id = ? AND artifact_id = ? AND device_model IS NULL
+    `).run(retryAt, id, artifact);
   }
 
   private interpretation(workout: WorkoutRow, provider: Provider) {
@@ -374,7 +389,7 @@ export class Store {
 
   syncResult(id: number) {
     const result = this.db.prepare(`
-      SELECT sync.status, sync.error,
+      SELECT sync.status, sync.error, sync.available_at AS scheduledAt,
         count(*) FILTER (WHERE analysis.status IN ('queued', 'running')) AS pending,
         count(*) FILTER (WHERE analysis.status = 'done' AND item.is_new = 1) AS added,
         count(*) FILTER (WHERE analysis.status = 'done' AND item.is_new = 0) AS updated,
@@ -384,20 +399,45 @@ export class Store {
       LEFT JOIN jobs AS analysis ON analysis.id = item.analysis_id
       WHERE sync.id = ? AND sync.kind = 'sync'
       GROUP BY sync.id
-    `).get(id) as { status: JobState; error: string | null; pending: number; added: number; updated: number; failed: number } | undefined;
+    `).get(id) as { status: JobState; error: string | null; scheduledAt: number; pending: number; added: number;
+      updated: number; failed: number } | undefined;
     if (!result) return undefined;
     const { status, error, pending, added, updated, failed } = result;
     return {
+      id, scheduledAt: result.scheduledAt,
       status: status === 'superseded' ? 'failed' : status === 'done' && pending > 0 ? 'running' : status,
       error, added, updated, failed,
     };
   }
 
-  bootstrapIfNeeded(now: number) {
+  private lastSyncResult() {
+    const row = this.db.prepare(`
+      SELECT sync.id FROM jobs AS sync WHERE sync.workout_id IS NULL AND sync.kind = 'sync'
+        AND (sync.status IN ('failed', 'superseded') OR (sync.status = 'done' AND NOT EXISTS (
+          SELECT 1 FROM sync_analysis_jobs AS item JOIN jobs AS analysis ON analysis.id = item.analysis_id
+          WHERE item.sync_id = sync.id AND analysis.status IN ('queued', 'running')
+        )))
+      ORDER BY sync.id DESC LIMIT 1
+    `).get() as { id: number } | undefined;
+    return row ? this.syncResult(row.id) : null;
+  }
+
+  observeAuthorization(revision: string | null, now: number) {
     return this.transaction(() => {
-      if (!this.setting('bootstrapScheduled', false)) {
+      const previous = this.setting<string | null>('authorizationRevision', null);
+      const rejected = this.setting<string | null>('syncErrorCode', null) === 'AUTH_REQUIRED';
+      const changed = revision !== null && revision !== previous;
+      const authorized = revision !== null && (!rejected || changed);
+      if (changed) this.setSetting('authorizationRevision', revision);
+      if (this.setting<boolean | null>('authorized', null) !== authorized) this.setSetting('authorized', authorized);
+      if (authorized && rejected) {
+        this.setSetting('syncError', null);
+        this.setSetting('syncErrorCode', null);
+      }
+      if (authorized && this.setting<number | null>('lastSyncedAt', null) === null
+          && this.setting<string | null>('bootstrapRevision', null) !== revision) {
         this.enqueue('sync', null, now, true);
-        this.setSetting('bootstrapScheduled', true);
+        this.setSetting('bootstrapRevision', revision);
       }
     });
   }
@@ -524,7 +564,6 @@ export class Store {
       this.setSetting('lastSyncedAt', now);
       this.setSetting('syncError', null);
       this.setSetting('syncErrorCode', null);
-      this.setSetting('bootstrapScheduled', true);
       this.finish(job);
       return true;
     });

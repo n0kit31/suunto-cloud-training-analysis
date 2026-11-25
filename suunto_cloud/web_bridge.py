@@ -14,7 +14,7 @@ import time
 from urllib.error import HTTPError, URLError
 from zoneinfo import ZoneInfo
 
-from suunto_cloud.activities import activity_label
+from suunto_cloud.activities import activity_label, foot_activity
 from suunto_cloud.analysis.chart_summary import chart_summary
 from suunto_cloud.analysis.fit import stamp, summarize
 from suunto_cloud.analysis.metrics import number
@@ -30,7 +30,7 @@ from suunto_cloud.fit.import_command import fit_summary
 from suunto_cloud.reporting.interactive import chart_html
 from suunto_cloud.reporting.reports import chart_svg
 from suunto_cloud.reporting.summary import summary_observations
-from suunto_cloud.storage.local import private_text, user_timezone
+from suunto_cloud.storage.local import authentication_directory, private_text, user_timezone
 
 LAP_METRICS = {
     'distanceM': 'distance_m', 'activeSeconds': 'active_seconds',
@@ -79,15 +79,25 @@ def api_error(status, retry_after, fit_download):
     return BridgeError('ANALYSIS_FAILED', 'Suunto rejected the request.')
 
 
-def configuration_available():
+def authorization_revision():
     try:
         credentials = load_credentials()
         tokens = load_tokens()
     except (AccessError, OSError, ValueError, TypeError):
-        return False
+        return None
     can_refresh = (isinstance(tokens.get('refresh_token'), str)
                    and tokens['refresh_token'] and credentials.get('client_secret'))
-    return bool(credentials.get('subscription_key', '').strip() and (is_current(tokens) or can_refresh))
+    if not credentials.get('subscription_key', '').strip() or not (is_current(tokens) or can_refresh):
+        return None
+    path = authentication_directory() / 'credentials.json'
+    try:
+        saved = path.stat()
+        credentials_revision = (saved.st_mtime_ns, saved.st_ino)
+    except FileNotFoundError:
+        credentials_revision = None
+    # Automatic token refresh preserves the sign-in ID. It must not trigger a new import after rejection.
+    revision = (credentials['client_id'], credentials_revision, tokens.get('authorization_id'))
+    return hashlib.sha256(json.dumps(revision).encode()).hexdigest()
 
 
 def web_timezone():
@@ -173,9 +183,7 @@ def workout_metrics(cloud, analysis, context, summary):
     session = analysis['session']
     timer = analysis['timer']
     highlights = context['highlights']
-    fit_sport = session.get('sport')
-    on_foot = (fit_sport in ('running', 'walking', 'hiking')
-               or cloud.get('activity_id') in (0, 1, 11, 22, 24, 53, 70, 103, 115))
+    on_foot = foot_activity(cloud, session.get('sport'))
     cadence = numeric(session.get('avg_cadence'))
     return {
         'maxHr': first_metric(cloud.get('max_hr_bpm'), session.get('max_heart_rate')),
@@ -207,6 +215,15 @@ def read_fit(path):
     return content
 
 
+# Suunto API Zone's DeviceProductIDs table, plus Vertical 2 verified from a FIT file ID.
+# https://aspartnercontent.blob.core.windows.net/apizone/docs/DeviceProductIDs.pdf
+SUUNTO_DEVICE_MODELS = {
+    22: 'Suunto Ambit3 Peak', 28: 'Suunto Spartan Sport', 29: 'Suunto Spartan Ultra',
+    34: 'Suunto 9 Baro', 35: 'Suunto 9', 36: 'Suunto 5', 40: 'Suunto 7',
+    42: 'Suunto 9 Peak', 56: 'Suunto 5 Peak', 67: 'Suunto Vertical 2',
+}
+
+
 def recording_device_model(decoded):
     creators = [entry for entry in decoded.get('file_ids', []) if entry.get('type') in ('activity', 4)]
     onboard = [entry for entry in decoded.get('device_infos', [])
@@ -217,10 +234,16 @@ def recording_device_model(decoded):
             model = value.strip()
             if 0 < len(model) <= 80 and model.isprintable():
                 return model
+        if entry.get('manufacturer') in (23, 'suunto'):
+            product = entry.get('product')
+            if type(product) is int and product in SUUNTO_DEVICE_MODELS:
+                return SUUNTO_DEVICE_MODELS[product]
     return None
 
 
 def read_device_model(fit_path):
+    if not fit_path.is_file():
+        return {'deviceModel': None}
     with TemporaryDirectory() as scratch:
         decoded = decode_fit(fit_path, Path(scratch) / 'decoded.json')
     return {'deviceModel': recording_device_model(decoded)}
@@ -305,7 +328,8 @@ def run(argv=None):
         elif args.command == 'device-model':
             response = read_device_model(args.fit)
         elif args.command == 'auth-status':
-            response = {'authorized': configuration_available(), 'timeZone': web_timezone().key}
+            revision = authorization_revision()
+            response = {'authorized': revision is not None, 'revision': revision, 'timeZone': web_timezone().key}
         elif args.command == 'settings-read':
             response = read_settings()
         else:

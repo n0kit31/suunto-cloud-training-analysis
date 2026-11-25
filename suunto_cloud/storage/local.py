@@ -1,6 +1,8 @@
 """Private paths and atomic writes, independent of authentication."""
 
 import hashlib
+from contextlib import contextmanager
+import fcntl
 import json
 import os
 from pathlib import Path
@@ -16,13 +18,30 @@ def config_path():
     return Path(configured) if configured else ROOT / 'config.json'
 
 
+def read_config():
+    path = config_path()
+    config = json.loads(path.read_text()) if path.is_file() else {}
+    if not isinstance(config, dict):
+        raise ValueError('Invalid Suunto configuration.')
+    if config.get('client_id') in (None, '', 'YOUR_SUUNTO_CLIENT_ID'):
+        generated = configured_auth_directory() / 'config.json'
+        if generated.is_file():
+            saved = json.loads(generated.read_text())
+            if not isinstance(saved, dict):
+                raise ValueError('Invalid private Suunto configuration.')
+            config = {**saved, **config, 'client_id': saved.get('client_id')}
+            if not config.get('redirect_uri'):
+                config['redirect_uri'] = saved.get('redirect_uri')
+    return config
+
+
 def user_timezone():
     name = os.environ.get('SUUNTO_TIMEZONE', '').strip()
     if not name:
-        path = config_path()
-        config = json.loads(path.read_text()) if path.is_file() else {}
-        if not isinstance(config, dict):
-            raise TimeZoneError('Time zone configuration requires a JSON object in config.json.')
+        try:
+            config = read_config()
+        except ValueError as error:
+            raise TimeZoneError(str(error)) from None
         name = config.get('timezone')
         if name is not None and not isinstance(name, str):
             raise TimeZoneError('The timezone setting must be an IANA time zone name or null.')
@@ -30,12 +49,38 @@ def user_timezone():
     return resolve_timezone(name)
 
 
-def private_directory():
+def configured_private_directory():
     configured = os.environ.get('SUUNTO_PRIVATE_DIR')
-    directory = Path(configured) if configured else ROOT / '.local'
+    return Path(configured) if configured else ROOT / '.local'
+
+
+def configured_auth_directory():
+    configured = os.environ.get('SUUNTO_AUTH_DIR')
+    return Path(configured) if configured else configured_private_directory()
+
+
+def ensure_private_directory(directory):
     directory.mkdir(mode=0o700, exist_ok=True)
     directory.chmod(0o700)
     return directory
+
+
+def private_directory():
+    return ensure_private_directory(configured_private_directory())
+
+
+def authentication_directory():
+    return ensure_private_directory(configured_auth_directory())
+
+
+@contextmanager
+def authentication_lock():
+    lock_path = authentication_directory() / 'auth.lock'
+    descriptor = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
+    with os.fdopen(descriptor, 'a') as lock:
+        os.fchmod(lock.fileno(), 0o600)
+        fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+        yield
 
 
 def cloud_artifact_stem(start, workout_key):

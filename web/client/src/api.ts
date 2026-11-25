@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 
 export type Status = {
   lastSyncedAt: number | null;
+  lastSyncResult: SyncResult | null;
   authorized: boolean | null;
   interpretationAvailability: Record<Provider, boolean>;
   timeZone?: string | null;
@@ -16,6 +17,8 @@ export type Status = {
 };
 
 export type SyncResult = {
+  id: number;
+  scheduledAt: number;
   status: 'queued' | 'running' | 'done' | 'failed';
   error: string | null;
   added: number;
@@ -59,6 +62,7 @@ export type Detail = Workout & {
   laps: Lap[];
   observations: string[];
   chart: boolean;
+  analysisVersion: number;
   deviceModel: string | null;
   interpretations: Record<Provider, {
     result: { text: string; createdAt: number; stale: boolean } | null;
@@ -88,6 +92,9 @@ const errorLabels: Record<string, string> = {
   'Suunto rate limit reached. Try again later.': 'Osiągnięto limit Suunto. Spróbuj ponownie później.',
   'Complete Suunto authorization and verify the API subscription.': 'Dokończ autoryzację Suunto i sprawdź subskrypcję API.',
   'Connect Suunto and try synchronizing again.': 'Dokończ autoryzację Suunto i ponów synchronizację.',
+  'Check the Suunto client ID, secret and subscription key.': 'Sprawdź identyfikator, sekret i klucz subskrypcji Suunto.',
+  'Suunto settings are temporarily unavailable. Try again.': 'Ustawienia Suunto są chwilowo niedostępne. Spróbuj ponownie.',
+  'This sync was not found.': 'Nie znaleziono tej synchronizacji.',
   'Suunto authorization or the API subscription needs attention.': 'Sprawdź autoryzację Suunto i subskrypcję API.',
   'Could not reach Suunto.': 'Nie udało się połączyć z Suunto.',
   'Suunto is temporarily unavailable.': 'Suunto jest chwilowo niedostępne.',
@@ -109,6 +116,7 @@ const errorLabels: Record<string, string> = {
   'Configure an interpretation model first.': 'Najpierw skonfiguruj model do interpretacji.',
   'Interpretation could not be generated. Try again later.': 'Nie udało się przygotować interpretacji. Spróbuj ponownie później.',
   'OpenAI API quota is unavailable. Check your API credit balance and spending limits.': 'Brak dostępnego limitu OpenAI API. Sprawdź saldo środków i limity wydatków na platformie OpenAI.',
+  'OpenAI rejected the API key. Check your key in OpenAI Platform and update it in app settings.': 'OpenAI odrzuciło klucz API. Sprawdź klucz na platformie OpenAI i zaktualizuj go w ustawieniach aplikacji.',
   'Claude API credit balance is too low. Check billing in Claude Console.': 'Saldo środków Claude API jest za niskie. Sprawdź rozliczenia w Claude Console.',
   'Claude rejected the API key. Check your key in Claude Console and update it in app settings.': 'Claude odrzuciło klucz API. Sprawdź klucz w Claude Console i zaktualizuj go w ustawieniach aplikacji.',
   'The workout analysis changed. Request a new interpretation.': 'Analiza treningu się zmieniła. Zleć nową interpretację.',

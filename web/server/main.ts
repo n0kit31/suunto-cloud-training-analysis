@@ -161,8 +161,8 @@ async function main() {
   async function settingsResponse(reply: FastifyReply, update?: SuuntoSettingsUpdate) {
     const result = await authSettings(update).catch(() => ({ status: 503, data: undefined }));
     if (result.data) return result.data;
-    if (result.status === 400) return failure(reply, 400, 'Sprawdź identyfikator, sekret i klucz subskrypcji Suunto.');
-    return failure(reply, 503, 'Ustawienia Suunto są chwilowo niedostępne. Spróbuj ponownie.');
+    if (result.status === 400) return failure(reply, 400, 'Check the Suunto client ID, secret and subscription key.');
+    return failure(reply, 503, 'Suunto settings are temporarily unavailable. Try again.');
   }
   app.get('/api/suunto/settings', (_request, reply) => settingsResponse(reply));
   app.post<{ Body: SuuntoSettingsUpdate }>('/api/suunto/settings', {
@@ -261,7 +261,7 @@ async function main() {
   app.get<{ Params: { id: string } }>('/api/sync/:id', (request, reply) => {
     const id = numeric(request.params.id, 0, 1, Number.MAX_SAFE_INTEGER);
     return (id === null ? undefined : store.syncResult(id)) ??
-      failure(reply, 404, 'Nie znaleziono tej synchronizacji.');
+      failure(reply, 404, 'This sync was not found.');
   });
   app.post('/api/import', async (request, reply) => {
     if (!request.isMultipart()) return failure(reply, 415, 'Choose one or more FIT files.');
