@@ -2,6 +2,7 @@ import { execFile } from 'node:child_process';
 import { mkdir, rm, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { setTimeout as pause } from 'node:timers/promises';
+import { fileURLToPath } from 'node:url';
 import { startAuthChannel } from './auth-channel.ts';
 import type { SuuntoSettings } from './auth-channel.ts';
 import type { Analysis, CloudIndex } from './contracts.ts';
@@ -15,6 +16,7 @@ import type { Job } from './store.ts';
 const overlap = 2 * 24 * 60 * 60 * 1_000;
 const leaseDuration = 18_000;
 const cloudInterval = 6_500;
+const bridgeScript = fileURLToPath(new URL('../../suunto_cloud/web_bridge.mjs', import.meta.url));
 const cloudErrors: Record<string, string> = {
   AUTH_REQUIRED: 'Connect Suunto and try synchronizing again.',
   RATE_LIMIT: 'Suunto has limited requests. Import will resume automatically.',
@@ -38,7 +40,7 @@ class JobError extends Error {
 
 function bridge<T>(args: string[], signal: AbortSignal, input?: string): Promise<T> {
   return new Promise((resolve, reject) => {
-    const child = execFile(process.env.SUUNTO_WEB_PYTHON || 'python3', ['-m', 'suunto_cloud.web_bridge', ...args], {
+    const child = execFile(process.execPath, [bridgeScript, ...args], {
       encoding: 'utf8',
       timeout: 30 * 60 * 1_000,
       maxBuffer: 32 * 1024 * 1024,
@@ -49,7 +51,7 @@ function bridge<T>(args: string[], signal: AbortSignal, input?: string): Promise
       try {
         result = JSON.parse(output);
       } catch {
-        reject(new JobError('ANALYSIS_FAILED', 'The Python analyzer did not return a result.'));
+        reject(new JobError('ANALYSIS_FAILED', 'The analyzer did not return a result.'));
         return;
       }
       if (error || result?.error) {
@@ -105,7 +107,7 @@ async function analyze(store: Store, job: Job, signal: AbortSignal) {
     if (!Number.isSafeInteger(result.summary?.startedAt) || typeof result.summary.sport !== 'string' ||
         !/^[a-f0-9]{64}$/.test(result.fitSha256) || !Array.isArray(result.observations) ||
         !Array.isArray(result.laps) || typeof result.chart !== 'boolean') {
-      throw new JobError('ANALYSIS_FAILED', 'The Python analyzer returned an invalid workout.');
+      throw new JobError('ANALYSIS_FAILED', 'The analyzer returned an invalid workout.');
     }
     if (!(await stat(join(workspace, 'source.fit'))).isFile() ||
         (result.chart && !(await stat(join(workspace, 'chart.html'))).isFile())) {

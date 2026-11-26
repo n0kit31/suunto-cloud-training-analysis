@@ -2,7 +2,7 @@
 
 The web app is designed for a single user on the computer running Docker.
 Fastify serves the React interface. A separate worker uses the existing
-Python analyzer and writes completed results to SQLite.
+Node.js analyzer and writes completed results to SQLite.
 
 ## Start
 
@@ -44,7 +44,7 @@ UID, GID, and auth directory settings you used to start the worker.
 
 ```sh
 docker compose run --rm --no-deps -p 127.0.0.1:8765:8765 \
-  -e SUUNTO_OAUTH_BIND_HOST=0.0.0.0 --entrypoint python3 worker -m suunto_cloud oauth
+  -e SUUNTO_OAUTH_BIND_HOST=0.0.0.0 --entrypoint node worker suunto_cloud/cli.mjs oauth
 ```
 
 Follow the displayed authorization link in your browser. The worker starts the

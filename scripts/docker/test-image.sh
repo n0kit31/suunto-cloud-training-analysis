@@ -9,31 +9,33 @@ docker build --target app --tag suunto-cloud-training-analysis:local .
 docker run --rm --network none suunto-cloud-training-analysis:local --help
 docker run --rm --network none suunto-cloud-training-analysis:local --version
 suunto_image_version=$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.version" }}' suunto-cloud-training-analysis:local)
-docker run --rm --network none --entrypoint python3 \
-    --env "SUUNTO_IMAGE_VERSION=$suunto_image_version" suunto-cloud-training-analysis:local -c '
-import json
-import os
-from pathlib import Path
-from zoneinfo import ZoneInfo
+docker run --rm --network none --entrypoint sh suunto-cloud-training-analysis:local \
+    -ec '! command -v python3 && ! command -v python && test -z "$(find /app -type f -name "*.py")"'
+docker run --rm --network none --entrypoint node \
+    --env "SUUNTO_IMAGE_VERSION=$suunto_image_version" suunto-cloud-training-analysis:local --input-type=module -e '
+import assert from "node:assert/strict";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
 
-from suunto_cloud import __version__
-
-root = Path("/app/suunto-cloud")
-node_license = Path("/usr/local/share/doc/node/LICENSE").read_text()
-assert "Copyright Node.js contributors" in node_license, "Node.js copyright notice is missing"
-assert "permission notice shall be included" in node_license, "Node.js license terms are missing"
-assert (root / "THIRD_PARTY_NOTICES.md").is_file(), "Third-party notices are missing"
-for package in ("fit-file-parser", "buffer", "base64-js", "ieee754"):
-    notices = (root / "node_modules" / package).glob("LICENSE*")
-    assert any(path.is_file() and path.stat().st_size > 0 for path in notices), f"License missing for {package}"
-assert __version__ == os.environ["SUUNTO_IMAGE_VERSION"], "Image version label does not match the application"
-assert json.loads((root / "package.json").read_text())["version"] == __version__, "Package version mismatch"
-assert os.geteuid() != 0, "Image must run as a non-root user"
-assert not (root / "config.json").exists(), "Local configuration found in image"
-assert not any((root / ".local").iterdir()), "Private runtime data found in image"
-assert not (root / ".git").exists(), "Git history found in image"
-assert not (root / "tests").exists(), "Test files found in application image"
-for name in ("UTC", "America/New_York", "Asia/Tokyo"):
-    assert ZoneInfo(name).key == name
-print("Image checks passed: third-party license notices, matching release versions, non-root user, timezone data, no private configuration or runtime data.")
+const root = "/app/suunto-cloud";
+const license = readFileSync("/usr/local/share/doc/node/LICENSE", "utf8");
+assert.match(license, /Copyright Node\.js contributors/);
+assert.match(license, /permission notice shall be included/);
+assert(statSync(join(root, "THIRD_PARTY_NOTICES.md")).isFile());
+for (const name of ["fit-file-parser", "buffer", "base64-js", "ieee754"]) {
+  const directory = join(root, "node_modules", name);
+  assert(readdirSync(directory).some(path => path.startsWith("LICENSE") && statSync(join(directory, path)).size > 0));
+}
+const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+const lock = JSON.parse(readFileSync(join(root, "package-lock.json"), "utf8"));
+assert.equal(manifest.version, process.env.SUUNTO_IMAGE_VERSION);
+assert.equal(lock.packages[""].version, manifest.version);
+assert.equal(lock.version, manifest.version);
+assert.notEqual(process.getuid(), 0);
+assert.deepEqual(readdirSync(join(root, ".local")), []);
+for (const name of ["config.json", ".git", "tests"]) assert(!existsSync(join(root, name)));
+for (const zone of ["UTC", "America/New_York", "Asia/Tokyo"]) {
+  assert.equal(new Intl.DateTimeFormat("en", { timeZone: zone }).resolvedOptions().timeZone, zone);
+}
+console.log("Image checks passed: Node-only runtime, licenses, release metadata, timezone data and private-data isolation.");
 '

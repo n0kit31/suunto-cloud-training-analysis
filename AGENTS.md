@@ -27,13 +27,11 @@
 
 - Application code is in `suunto_cloud/`, organized by responsibility;
   tests in `tests/` follow the same structure.
-- Calculations in `analysis/fit.py`, `analysis/metrics.py`, and
-  `analysis/packet.py` remain independent of network access, credentials,
+- Calculations in `analysis/fit.mjs`, `analysis/metrics.mjs`, and
+  `analysis/packet.mjs` remain independent of network access, credentials,
   and file storage.
-- Always run the application through Docker Compose for workout analyses.
-  The local skill uses `scripts/run-docker.sh` from its own directory.
-  Host Python remains available for development and tests; the root `sync.py`
-  provides compatibility with legacy commands.
+- Run workout analyses through Docker Compose. Use `npm test` for offline
+  development and `npm run test:compose` for synthetic integration tests.
 - Configuration and `.local/` remain in the repository directory; do not move
   them along with modules or create copies of credentials.
 

@@ -4,6 +4,13 @@ Notable changes to Suunto Cloud Training Analysis are recorded here.
 
 ## [Unreleased]
 
+### Changed
+
+- Run the web worker, Suunto synchronization, workout analysis, charts, and CLI
+  on Node.js 24. Verify import results against synthetic outputs from 1.4.0.
+- Run the host CLI with `node suunto_cloud/cli.mjs` and the sync shortcut with
+  `node sync.mjs`. Docker Compose keeps the same service and command names.
+
 ## [1.4.0] - 2026-11-25
 
 ### Added
