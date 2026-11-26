@@ -1,8 +1,15 @@
 {
   "name": "suunto-cloud-training-analysis",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "private": true,
-  "description": "Node.js dependencies for Suunto FIT decoding and GPX export",
+  "description": "Suunto Cloud workout analysis and reporting",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "test": "node --test 'tests/**/*.test.mjs'",
+    "test:compose": "node scripts/docker/test-web.mjs"
+  },
   "license": "GPL-3.0-or-later",
   "dependencies": {
     "fit-file-parser": "1.20.0"

@@ -28,13 +28,11 @@ generates the license notices for the browser bundle in
 
 ## Container runtime
 
-Node.js is copied from the official `node:24-bookworm-slim` image. Its matching
-license file, including notices for bundled third-party components, is copied
-with the executable to `/usr/local/share/doc/node/LICENSE`. See the
+The runtime uses the official `node:24-bookworm-slim` image. Its Node.js license,
+including bundled third-party notices, is copied to
+`/usr/local/share/doc/node/LICENSE` in the CLI and worker images. See the
 [upstream Node.js license](https://github.com/nodejs/node/blob/main/LICENSE).
 
-Python and operating-system packages come from the upstream
-`python:3.13-slim-bookworm` image and Debian packages. Their existing license
-notices are retained in the image.
+The Debian packages retain their original license notices in the image.
 
 The project license does not replace the licenses of these components.

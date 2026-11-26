@@ -6,8 +6,8 @@ For the web interface, see the [web app guide](web.md). For container setup and 
 
 For local execution:
 
-- Python 3.9+ on macOS or Linux, with time zone data available for the user's local time zone.
-- Node.js and the `fit-file-parser` package for FIT decoding.
+- Node.js 24 or newer and the `fit-file-parser` package.
+- The `flock` utility for commands that update shared authorization or run synchronization. Docker includes it.
 - Your own approved OAuth application and API subscription in [Suunto API Zone](https://apizone.suunto.com/how-to-start), subject to the [API access requirements](../README.md#independence-and-api-access).
 
 ## Local setup
@@ -26,8 +26,8 @@ application settings in API Zone. Then authorize your account and configure
 credentials:
 
 ```sh
-python3 -m suunto_cloud oauth
-python3 -m suunto_cloud access --configure
+node suunto_cloud/cli.mjs oauth
+node suunto_cloud/cli.mjs access --configure
 ```
 
 Enter credentials interactively using hidden input. Local configuration,
@@ -64,10 +64,11 @@ recorded local timestamps.
 
 ## Usage
 
-Download and analyze workouts from a selected date:
+After [setting up Docker and Suunto authorization](docker.md), download and
+analyze workouts from a selected date.
 
 ```sh
-python3 -m suunto_cloud sync --date 2026-01-15 --analysis --brief
+docker compose run --rm suunto sync --date 2026-01-15 --analysis --brief
 ```
 
 Dates use the [user's selected time zone](#time-zones); `--date` may be repeated.
@@ -149,7 +150,7 @@ modifying the manifest.
 Regenerate an existing chart without downloading data again:
 
 ```sh
-python3 -m suunto_cloud charts ../reports/suunto-2026-01-15-080000.json
+docker compose run --rm suunto charts /app/reports/suunto-2026-01-15-080000.json
 ```
 
 Reports add the average temperature from the watch sensor and Suunto's recovery
@@ -176,7 +177,7 @@ Use `sync --analysis --sleep-data PATH` for another snapshot, or add context to
 an existing chart without downloading FIT again:
 
 ```sh
-python3 -m suunto_cloud charts ../reports/suunto-2026-01-15-080000.json --sleep-data .local/sleep.json
+docker compose run --rm suunto charts /app/reports/suunto-2026-01-15-080000.json --sleep-data /app/suunto-cloud/.local/sleep.json
 ```
 
 The chart header and report show the last completed non-nap sleep within 24 h
@@ -231,8 +232,8 @@ gray. Its colors follow the 1–5 rating, independently of historical recovery
 comparisons. The tile also works without sleep data; no rating is inferred from
 HRV, pace, or heart rate. The report includes the recorded feeling as well.
 
-Help: `python3 -m suunto_cloud --help` or `python3 -m suunto_cloud sync --help`.
-The legacy `python3 sync.py ...` command still works through a compatibility wrapper.
+Get help with `node suunto_cloud/cli.mjs --help` or `node suunto_cloud/cli.mjs sync --help`.
+Use `node sync.mjs ...` for the sync shortcut.
 
 | Command | Purpose |
 | --- | --- |
@@ -248,7 +249,7 @@ The legacy `python3 sync.py ...` command still works through a compatibility wra
 | `access --configure` | Save credentials using hidden interactive input |
 
 Run commands as `docker compose run --rm suunto COMMAND`, or as
-`python3 -m suunto_cloud COMMAND` during local development.
+`node suunto_cloud/cli.mjs COMMAND` during local development.
 
 Local FIT imports use only information in the file. Cloud fields such as TSS
 and workout feeling remain unavailable, and charts require active timer
@@ -333,18 +334,19 @@ Code in `suunto_cloud/` is organized by responsibility:
 | `fit/` | Node.js FIT decoder and GPX exporter |
 
 Tests in `tests/` follow the same structure. Calculations are independent of API
-access and file storage. Commands are handled by `suunto_cloud/cli.py`.
+access and file storage. Commands are handled by `suunto_cloud/cli.mjs`.
 
 ## Tests
 
-The [CI workflow](../.github/workflows/ci.yml) runs the offline suite on Python 3.9
-and 3.13 with Node.js 24, and separately builds and verifies the Docker images.
+The [CI workflow](../.github/workflows/ci.yml) runs the offline suite on Node.js
+24 and separately builds and verifies the Docker images.
 It runs on pushes to `main` and `develop`, version tags (`v*`), pull requests,
 and manual dispatch. The CI badge
 reflects the GitHub Actions result and becomes available after the first run.
 
 ```sh
-python3 -m unittest discover -s tests -t . -v
+npm test
+npm run test:compose
 ```
 
 Tests use synthetic data and do not require Suunto credentials or API access.
@@ -352,8 +354,8 @@ The test-count badge reports discovered test cases; CI checks that it matches
 the suite. After adding or removing tests, regenerate it with:
 
 ```sh
-python3 scripts/update-test-badge.py
-python3 scripts/update-test-badge.py --check
+node scripts/update-test-badge.mjs
+node scripts/update-test-badge.mjs --check
 ```
 
 The [Docker image checks](../scripts/docker/test-image.sh) also run the suite in
@@ -374,11 +376,11 @@ personal reports out of commits and issue attachments.
 
 ## Releases
 
-[**1.4.0**](https://github.com/n0kit31/suunto-cloud-training-analysis/releases/tag/v1.4.0)
-adds the local workout library with Suunto Cloud sync, GPS maps synchronized
-with charts, and optional AI interpretations. See [CHANGELOG.md](../CHANGELOG.md)
-for release notes, and run `python3 -m suunto_cloud --version` to check the installed version.
+[**1.5.0**](https://github.com/n0kit31/suunto-cloud-training-analysis/releases/tag/v1.5.0)
+runs the CLI, Suunto synchronization and workout analysis on Node.js 24.
+See [CHANGELOG.md](../CHANGELOG.md) for release notes and run
+`docker compose run --rm suunto --version` to check the installed version.
 
 Stable releases are maintained on `main` and identified by version tags such
-as `v1.4.0`. Release changes are committed on `develop`, merged into `main`,
+as `v1.5.0`. Release changes are committed on `develop`, merged into `main`,
 and tagged from `main`. Development of subsequent iterations continues on `develop`.

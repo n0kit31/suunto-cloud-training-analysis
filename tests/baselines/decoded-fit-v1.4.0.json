@@ -1,0 +1,2081 @@
+{
+  "guided": {
+    "analysis": {
+      "session": {
+        "start_time": "2026-11-05T16:00:00.000Z",
+        "timestamp": "2026-11-05T16:02:30.000Z",
+        "sport": "running",
+        "sub_sport": "trail",
+        "avg_temperature": 6,
+        "recovery_time": 5400
+      },
+      "timezone": "Europe/Warsaw",
+      "timer": {
+        "pauses": [],
+        "active_segments": [
+          {
+            "start": "2026-11-05T16:00:00.000Z",
+            "end": "2026-11-05T16:02:30.000Z",
+            "seconds": 150
+          }
+        ],
+        "repeated_stop_events": [],
+        "pause_seconds_from_rounded_events": 0
+      },
+      "laps": [
+        {
+          "index": 1,
+          "trigger": "distance",
+          "start_local": "2026-11-05T17:00:00+01:00",
+          "end_local": "2026-11-05T17:02:30+01:00",
+          "distance_m": 420,
+          "active_seconds": 150,
+          "elapsed_seconds": null,
+          "pace_seconds_per_km": 357.14285714285717,
+          "avg_hr": 150,
+          "max_hr": 168,
+          "avg_power_w": null,
+          "ascent_m": null,
+          "descent_m": null
+        },
+        {
+          "index": 2,
+          "trigger": "fitness_equipment",
+          "start_local": "2026-11-05T17:00:00+01:00",
+          "end_local": "2026-11-05T17:01:00+01:00",
+          "distance_m": 240,
+          "active_seconds": 60,
+          "elapsed_seconds": null,
+          "pace_seconds_per_km": 250,
+          "avg_hr": 150,
+          "max_hr": 168,
+          "avg_power_w": null,
+          "ascent_m": null,
+          "descent_m": null
+        },
+        {
+          "index": 3,
+          "trigger": "fitness_equipment",
+          "start_local": "2026-11-05T17:01:00+01:00",
+          "end_local": "2026-11-05T17:02:30+01:00",
+          "distance_m": 180,
+          "active_seconds": 90,
+          "elapsed_seconds": null,
+          "pace_seconds_per_km": 500,
+          "avg_hr": 150,
+          "max_hr": 168,
+          "avg_power_w": null,
+          "ascent_m": null,
+          "descent_m": null
+        }
+      ],
+      "record_count": 150,
+      "active_hr_sample_count": 150,
+      "active_hr_arithmetic_mean": 146.65,
+      "hr_peak_records_active_only": [
+        {
+          "timestamp": "2026-11-05T16:00:00.000Z",
+          "distance": 0,
+          "heart_rate": 160,
+          "altitude": 50,
+          "speed": 4,
+          "power": 235
+        },
+        {
+          "timestamp": "2026-11-05T16:00:01.000Z",
+          "distance": 4,
+          "heart_rate": 160,
+          "altitude": 50.01,
+          "speed": 4,
+          "power": 234
+        },
+        {
+          "timestamp": "2026-11-05T16:00:02.000Z",
+          "distance": 8,
+          "heart_rate": 160,
+          "altitude": 50.02,
+          "speed": 4,
+          "power": 233
+        },
+        {
+          "timestamp": "2026-11-05T16:00:03.000Z",
+          "distance": 12,
+          "heart_rate": 160,
+          "altitude": 50.03,
+          "speed": 4,
+          "power": 232
+        },
+        {
+          "timestamp": "2026-11-05T16:00:04.000Z",
+          "distance": 16,
+          "heart_rate": 160,
+          "altitude": 50.04,
+          "speed": 4,
+          "power": 231
+        },
+        {
+          "timestamp": "2026-11-05T16:00:05.000Z",
+          "distance": 20,
+          "heart_rate": 160,
+          "altitude": 50.05,
+          "speed": 4,
+          "power": 230
+        },
+        {
+          "timestamp": "2026-11-05T16:00:06.000Z",
+          "distance": 24,
+          "heart_rate": 160,
+          "altitude": 50.06,
+          "speed": 4,
+          "power": 229
+        },
+        {
+          "timestamp": "2026-11-05T16:00:07.000Z",
+          "distance": 28,
+          "heart_rate": 160,
+          "altitude": 50.07,
+          "speed": 4,
+          "power": 228
+        },
+        {
+          "timestamp": "2026-11-05T16:00:08.000Z",
+          "distance": 32,
+          "heart_rate": 160,
+          "altitude": 50.08,
+          "speed": 4,
+          "power": 235
+        },
+        {
+          "timestamp": "2026-11-05T16:00:09.000Z",
+          "distance": 36,
+          "heart_rate": 160,
+          "altitude": 50.09,
+          "speed": 4,
+          "power": 234
+        },
+        {
+          "timestamp": "2026-11-05T16:00:10.000Z",
+          "distance": 40,
+          "heart_rate": 160,
+          "altitude": 50.1,
+          "speed": 4,
+          "power": 233
+        },
+        {
+          "timestamp": "2026-11-05T16:00:11.000Z",
+          "distance": 44,
+          "heart_rate": 160,
+          "altitude": 50.11,
+          "speed": 4,
+          "power": 232
+        },
+        {
+          "timestamp": "2026-11-05T16:00:12.000Z",
+          "distance": 48,
+          "heart_rate": 160,
+          "altitude": 50.12,
+          "speed": 4,
+          "power": 231
+        },
+        {
+          "timestamp": "2026-11-05T16:00:13.000Z",
+          "distance": 52,
+          "heart_rate": 160,
+          "altitude": 50.13,
+          "speed": 4,
+          "power": 230
+        },
+        {
+          "timestamp": "2026-11-05T16:00:14.000Z",
+          "distance": 56,
+          "heart_rate": 160,
+          "altitude": 50.14,
+          "speed": 4,
+          "power": 229
+        },
+        {
+          "timestamp": "2026-11-05T16:00:15.000Z",
+          "distance": 60,
+          "heart_rate": 160,
+          "altitude": 50.15,
+          "speed": 4,
+          "power": 228
+        },
+        {
+          "timestamp": "2026-11-05T16:00:16.000Z",
+          "distance": 64,
+          "heart_rate": 160,
+          "altitude": 50.16,
+          "speed": 4,
+          "power": 235
+        },
+        {
+          "timestamp": "2026-11-05T16:00:17.000Z",
+          "distance": 68,
+          "heart_rate": 160,
+          "altitude": 50.17,
+          "speed": 4,
+          "power": 234
+        },
+        {
+          "timestamp": "2026-11-05T16:00:18.000Z",
+          "distance": 72,
+          "heart_rate": 160,
+          "altitude": 50.18,
+          "speed": 4,
+          "power": 233
+        },
+        {
+          "timestamp": "2026-11-05T16:00:19.000Z",
+          "distance": 76,
+          "heart_rate": 160,
+          "altitude": 50.19,
+          "speed": 4,
+          "power": 232
+        },
+        {
+          "timestamp": "2026-11-05T16:00:20.000Z",
+          "distance": 80,
+          "heart_rate": 160,
+          "altitude": 50.2,
+          "speed": 4,
+          "power": 231
+        },
+        {
+          "timestamp": "2026-11-05T16:00:21.000Z",
+          "distance": 84,
+          "heart_rate": 160,
+          "altitude": 50.21,
+          "speed": 4,
+          "power": 230
+        },
+        {
+          "timestamp": "2026-11-05T16:00:22.000Z",
+          "distance": 88,
+          "heart_rate": 160,
+          "altitude": 50.22,
+          "speed": 4,
+          "power": 229
+        },
+        {
+          "timestamp": "2026-11-05T16:00:23.000Z",
+          "distance": 92,
+          "heart_rate": 160,
+          "altitude": 50.23,
+          "speed": 4,
+          "power": 228
+        },
+        {
+          "timestamp": "2026-11-05T16:00:24.000Z",
+          "distance": 96,
+          "heart_rate": 160,
+          "altitude": 50.24,
+          "speed": 4,
+          "power": 235
+        },
+        {
+          "timestamp": "2026-11-05T16:00:25.000Z",
+          "distance": 100,
+          "heart_rate": 160,
+          "altitude": 50.25,
+          "speed": 4,
+          "power": 234
+        },
+        {
+          "timestamp": "2026-11-05T16:00:26.000Z",
+          "distance": 104,
+          "heart_rate": 160,
+          "altitude": 50.26,
+          "speed": 4,
+          "power": 233
+        },
+        {
+          "timestamp": "2026-11-05T16:00:27.000Z",
+          "distance": 108,
+          "heart_rate": 160,
+          "altitude": 50.27,
+          "speed": 4,
+          "power": 232
+        },
+        {
+          "timestamp": "2026-11-05T16:00:28.000Z",
+          "distance": 112,
+          "heart_rate": 160,
+          "altitude": 50.28,
+          "speed": 4,
+          "power": 231
+        },
+        {
+          "timestamp": "2026-11-05T16:00:29.000Z",
+          "distance": 116,
+          "heart_rate": 160,
+          "altitude": 50.29,
+          "speed": 4,
+          "power": 230
+        },
+        {
+          "timestamp": "2026-11-05T16:00:30.000Z",
+          "distance": 120,
+          "heart_rate": 160,
+          "altitude": 50.3,
+          "speed": 4,
+          "power": 229
+        },
+        {
+          "timestamp": "2026-11-05T16:00:31.000Z",
+          "distance": 124,
+          "heart_rate": 160,
+          "altitude": 50.31,
+          "speed": 4,
+          "power": 228
+        },
+        {
+          "timestamp": "2026-11-05T16:00:32.000Z",
+          "distance": 128,
+          "heart_rate": 160,
+          "altitude": 50.32,
+          "speed": 4,
+          "power": 235
+        },
+        {
+          "timestamp": "2026-11-05T16:00:33.000Z",
+          "distance": 132,
+          "heart_rate": 160,
+          "altitude": 50.33,
+          "speed": 4,
+          "power": 234
+        },
+        {
+          "timestamp": "2026-11-05T16:00:34.000Z",
+          "distance": 136,
+          "heart_rate": 160,
+          "altitude": 50.34,
+          "speed": 4,
+          "power": 233
+        },
+        {
+          "timestamp": "2026-11-05T16:00:35.000Z",
+          "distance": 140,
+          "heart_rate": 160,
+          "altitude": 50.35,
+          "speed": 4,
+          "power": 232
+        },
+        {
+          "timestamp": "2026-11-05T16:00:36.000Z",
+          "distance": 144,
+          "heart_rate": 160,
+          "altitude": 50.36,
+          "speed": 4,
+          "power": 231
+        },
+        {
+          "timestamp": "2026-11-05T16:00:37.000Z",
+          "distance": 148,
+          "heart_rate": 160,
+          "altitude": 50.37,
+          "speed": 4,
+          "power": 230
+        },
+        {
+          "timestamp": "2026-11-05T16:00:38.000Z",
+          "distance": 152,
+          "heart_rate": 160,
+          "altitude": 50.38,
+          "speed": 4,
+          "power": 229
+        },
+        {
+          "timestamp": "2026-11-05T16:00:39.000Z",
+          "distance": 156,
+          "heart_rate": 160,
+          "altitude": 50.39,
+          "speed": 4,
+          "power": 228
+        },
+        {
+          "timestamp": "2026-11-05T16:00:40.000Z",
+          "distance": 160,
+          "heart_rate": 160,
+          "altitude": 50.4,
+          "speed": 4,
+          "power": 235
+        },
+        {
+          "timestamp": "2026-11-05T16:00:41.000Z",
+          "distance": 164,
+          "heart_rate": 160,
+          "altitude": 50.41,
+          "speed": 4,
+          "power": 234
+        },
+        {
+          "timestamp": "2026-11-05T16:00:42.000Z",
+          "distance": 168,
+          "heart_rate": 160,
+          "altitude": 50.42,
+          "speed": 4,
+          "power": 233
+        },
+        {
+          "timestamp": "2026-11-05T16:00:43.000Z",
+          "distance": 172,
+          "heart_rate": 160,
+          "altitude": 50.43,
+          "speed": 4,
+          "power": 232
+        },
+        {
+          "timestamp": "2026-11-05T16:00:44.000Z",
+          "distance": 176,
+          "heart_rate": 160,
+          "altitude": 50.44,
+          "speed": 4,
+          "power": 231
+        },
+        {
+          "timestamp": "2026-11-05T16:00:45.000Z",
+          "distance": 180,
+          "heart_rate": 160,
+          "altitude": 50.45,
+          "speed": 4,
+          "power": 230
+        },
+        {
+          "timestamp": "2026-11-05T16:00:46.000Z",
+          "distance": 184,
+          "heart_rate": 160,
+          "altitude": 50.46,
+          "speed": 4,
+          "power": 229
+        },
+        {
+          "timestamp": "2026-11-05T16:00:47.000Z",
+          "distance": 188,
+          "heart_rate": 160,
+          "altitude": 50.47,
+          "speed": 4,
+          "power": 228
+        },
+        {
+          "timestamp": "2026-11-05T16:00:48.000Z",
+          "distance": 192,
+          "heart_rate": 160,
+          "altitude": 50.48,
+          "speed": 4,
+          "power": 235
+        },
+        {
+          "timestamp": "2026-11-05T16:00:49.000Z",
+          "distance": 196,
+          "heart_rate": 160,
+          "altitude": 50.49,
+          "speed": 4,
+          "power": 234
+        },
+        {
+          "timestamp": "2026-11-05T16:00:50.000Z",
+          "distance": 200,
+          "heart_rate": 160,
+          "altitude": 50.5,
+          "speed": 4,
+          "power": 233
+        },
+        {
+          "timestamp": "2026-11-05T16:00:51.000Z",
+          "distance": 204,
+          "heart_rate": 160,
+          "altitude": 50.51,
+          "speed": 4,
+          "power": 232
+        },
+        {
+          "timestamp": "2026-11-05T16:00:52.000Z",
+          "distance": 208,
+          "heart_rate": 160,
+          "altitude": 50.52,
+          "speed": 4,
+          "power": 231
+        },
+        {
+          "timestamp": "2026-11-05T16:00:53.000Z",
+          "distance": 212,
+          "heart_rate": 160,
+          "altitude": 50.53,
+          "speed": 4,
+          "power": 230
+        },
+        {
+          "timestamp": "2026-11-05T16:00:54.000Z",
+          "distance": 216,
+          "heart_rate": 160,
+          "altitude": 50.54,
+          "speed": 4,
+          "power": 229
+        },
+        {
+          "timestamp": "2026-11-05T16:00:55.000Z",
+          "distance": 220,
+          "heart_rate": 160,
+          "altitude": 50.55,
+          "speed": 4,
+          "power": 228
+        },
+        {
+          "timestamp": "2026-11-05T16:00:56.000Z",
+          "distance": 224,
+          "heart_rate": 160,
+          "altitude": 50.56,
+          "speed": 4,
+          "power": 235
+        },
+        {
+          "timestamp": "2026-11-05T16:00:57.000Z",
+          "distance": 228,
+          "heart_rate": 160,
+          "altitude": 50.57,
+          "speed": 4,
+          "power": 234
+        },
+        {
+          "timestamp": "2026-11-05T16:00:58.000Z",
+          "distance": 232,
+          "heart_rate": 160,
+          "altitude": 50.58,
+          "speed": 4,
+          "power": 233
+        },
+        {
+          "timestamp": "2026-11-05T16:00:59.000Z",
+          "distance": 236,
+          "heart_rate": 160,
+          "altitude": 50.59,
+          "speed": 4,
+          "power": 232
+        },
+        {
+          "timestamp": "2026-11-05T16:01:00.000Z",
+          "distance": 240,
+          "heart_rate": 160,
+          "altitude": 50.6,
+          "speed": 2,
+          "power": 231
+        }
+      ],
+      "hrv_message_count": 0,
+      "rr_interval_count": 0,
+      "ddfa_sample_count": 0,
+      "gps_sample_count": 0,
+      "notes": [
+        "Timer events have whole-second timestamps; use session total_timer_time for exact duration.",
+        "Arithmetic sample HR is descriptive, not a substitute for the device weighted average.",
+        "No R-R artifact assessment or medical HRV analysis was performed."
+      ],
+      "additional_metrics": {
+        "method": "Arithmetic means of joint observed active samples; no interpolation. Cadence cycles/min x2; vertical oscillation mm/10; stance time ms; step length = 30 * speed_mps / cadence_cycles_per_min. HR changes use last observed values no older than 3 seconds; not a clinical HRR test.",
+        "active": {
+          "record_count": 150,
+          "field_sample_counts": {
+            "heart_rate": 150,
+            "speed": 150,
+            "power": 150,
+            "cadence": 150,
+            "stance_time": 150,
+            "vertical_oscillation": 150
+          },
+          "mechanics_paired_count": 150,
+          "mechanics": {
+            "cadence_steps_per_min": 188,
+            "ground_contact_ms": 252,
+            "vertical_oscillation_cm": 6,
+            "estimated_step_length_m": 0.88
+          }
+        },
+        "preferred_lap_kind": "guided",
+        "preferred_lap_indices": [
+          2,
+          3
+        ],
+        "lap_samples": [
+          {
+            "lap_index": 2,
+            "record_count": 60,
+            "field_sample_counts": {
+              "heart_rate": 60,
+              "speed": 60,
+              "power": 60,
+              "cadence": 60,
+              "stance_time": 60,
+              "vertical_oscillation": 60
+            },
+            "mechanics_paired_count": 60,
+            "mechanics": {
+              "cadence_steps_per_min": 200,
+              "ground_contact_ms": 210,
+              "vertical_oscillation_cm": 6,
+              "estimated_step_length_m": 1.2
+            }
+          },
+          {
+            "lap_index": 3,
+            "record_count": 90,
+            "field_sample_counts": {
+              "heart_rate": 90,
+              "speed": 90,
+              "power": 90,
+              "cadence": 90,
+              "stance_time": 90,
+              "vertical_oscillation": 90
+            },
+            "mechanics_paired_count": 90,
+            "mechanics": {
+              "cadence_steps_per_min": 180,
+              "ground_contact_ms": 280,
+              "vertical_oscillation_cm": 6,
+              "estimated_step_length_m": 0.6666666666666666
+            }
+          }
+        ],
+        "slower_next_lap_hr_changes": [
+          {
+            "work_lap_index": 2,
+            "slower_next_lap_index": 3,
+            "pause_in_next_lap": false,
+            "hr_at_work_end": {
+              "bpm": 160,
+              "age_seconds": 0
+            },
+            "hr_after_60_elapsed_seconds": {
+              "bpm": 130,
+              "age_seconds": 0
+            },
+            "hr_at_next_lap_end": {
+              "bpm": 115.5,
+              "age_seconds": 1
+            },
+            "hr_drop_after_60_seconds": 30
+          }
+        ],
+        "suuntoplus_channels": [
+          {
+            "field": "estimate",
+            "label": "Marathon time(est)",
+            "unit": "s",
+            "active_sample_count": 150,
+            "first_active_value": 14000,
+            "last_active_value": 14149,
+            "session_value": null
+          }
+        ],
+        "altitude_profile": {
+          "first_altitude_m": 50,
+          "last_altitude_m": 51.49,
+          "minimum_altitude_m": 50,
+          "maximum_altitude_m": 51.49,
+          "minimum_at_distance_m": 0,
+          "maximum_at_distance_m": 418
+        },
+        "steady_state_metrics": "Require comparable steady active segments; not inferred automatically.",
+        "rr_artifact_assessment": "Not performed; RR counts do not constitute an HRV interpretation."
+      }
+    },
+    "summary": {
+      "startedAt": 1793894400000,
+      "sport": "Trail running",
+      "distanceM": 420,
+      "activeSeconds": 150,
+      "avgHr": 150
+    },
+    "observations": [
+      "0.42 km in 2:30 of active time (5:57/km), with average / maximum heart rate 150 / 168 bpm.",
+      "HR-TSS 12.4; PTE 2.3.",
+      "Recorded workout feeling: 4/5.",
+      "Average workout temperature: 11.0 °C (watch sensor).",
+      "Suunto recovery time: 2 h 30 min (accumulated estimate) · Until 2026-11-05 19:32."
+    ],
+    "chartSha256": "56a11bf5bf5ef10c71fb0090fa48c921c48b5b7ecffaf6f349a57dcd04630984"
+  },
+  "paused": {
+    "analysis": {
+      "session": {
+        "start_time": "2026-11-05T16:00:00.000Z",
+        "timestamp": "2026-11-05T16:02:30.000Z",
+        "sport": "running",
+        "sub_sport": "trail",
+        "avg_temperature": 6,
+        "recovery_time": 5400
+      },
+      "timezone": "Europe/Warsaw",
+      "timer": {
+        "pauses": [
+          {
+            "start": "2026-11-05T16:01:30.000Z",
+            "end": "2026-11-05T16:02:00.000Z",
+            "seconds": 30
+          }
+        ],
+        "active_segments": [
+          {
+            "start": "2026-11-05T16:00:00.000Z",
+            "end": "2026-11-05T16:01:30.000Z",
+            "seconds": 90
+          },
+          {
+            "start": "2026-11-05T16:02:00.000Z",
+            "end": "2026-11-05T16:02:30.000Z",
+            "seconds": 30
+          }
+        ],
+        "repeated_stop_events": [
+          "2026-11-05T16:01:40.000Z"
+        ],
+        "pause_seconds_from_rounded_events": 30
+      },
+      "laps": [
+        {
+          "index": 1,
+          "trigger": "distance",
+          "start_local": "2026-11-05T17:00:00+01:00",
+          "end_local": "2026-11-05T17:02:30+01:00",
+          "distance_m": 420,
+          "active_seconds": 150,
+          "elapsed_seconds": null,
+          "pace_seconds_per_km": 357.14285714285717,
+          "avg_hr": 150,
+          "max_hr": 168,
+          "avg_power_w": null,
+          "ascent_m": null,
+          "descent_m": null
+        },
+        {
+          "index": 2,
+          "trigger": "fitness_equipment",
+          "start_local": "2026-11-05T17:00:00+01:00",
+          "end_local": "2026-11-05T17:01:00+01:00",
+          "distance_m": 240,
+          "active_seconds": 60,
+          "elapsed_seconds": null,
+          "pace_seconds_per_km": 250,
+          "avg_hr": 150,
+          "max_hr": 168,
+          "avg_power_w": null,
+          "ascent_m": null,
+          "descent_m": null
+        },
+        {
+          "index": 3,
+          "trigger": "fitness_equipment",
+          "start_local": "2026-11-05T17:01:00+01:00",
+          "end_local": "2026-11-05T17:02:30+01:00",
+          "distance_m": 180,
+          "active_seconds": 90,
+          "elapsed_seconds": null,
+          "pace_seconds_per_km": 500,
+          "avg_hr": 150,
+          "max_hr": 168,
+          "avg_power_w": null,
+          "ascent_m": null,
+          "descent_m": null
+        }
+      ],
+      "record_count": 150,
+      "active_hr_sample_count": 120,
+      "active_hr_arithmetic_mean": 148.875,
+      "hr_peak_records_active_only": [
+        {
+          "timestamp": "2026-11-05T16:00:00.000Z",
+          "distance": 0,
+          "heart_rate": 160,
+          "altitude": 50,
+          "speed": 4,
+          "power": 235
+        },
+        {
+          "timestamp": "2026-11-05T16:00:01.000Z",
+          "distance": 4,
+          "heart_rate": 160,
+          "altitude": 50.01,
+          "speed": 4,
+          "power": 234
+        },
+        {
+          "timestamp": "2026-11-05T16:00:02.000Z",
+          "distance": 8,
+          "heart_rate": 160,
+          "altitude": 50.02,
+          "speed": 4,
+          "power": 233
+        },
+        {
+          "timestamp": "2026-11-05T16:00:03.000Z",
+          "distance": 12,
+          "heart_rate": 160,
+          "altitude": 50.03,
+          "speed": 4,
+          "power": 232
+        },
+        {
+          "timestamp": "2026-11-05T16:00:04.000Z",
+          "distance": 16,
+          "heart_rate": 160,
+          "altitude": 50.04,
+          "speed": 4,
+          "power": 231
+        },
+        {
+          "timestamp": "2026-11-05T16:00:05.000Z",
+          "distance": 20,
+          "heart_rate": 160,
+          "altitude": 50.05,
+          "speed": 4,
+          "power": 230
+        },
+        {
+          "timestamp": "2026-11-05T16:00:06.000Z",
+          "distance": 24,
+          "heart_rate": 160,
+          "altitude": 50.06,
+          "speed": 4,
+          "power": 229
+        },
+        {
+          "timestamp": "2026-11-05T16:00:07.000Z",
+          "distance": 28,
+          "heart_rate": 160,
+          "altitude": 50.07,
+          "speed": 4,
+          "power": 228
+        },
+        {
+          "timestamp": "2026-11-05T16:00:08.000Z",
+          "distance": 32,
+          "heart_rate": 160,
+          "altitude": 50.08,
+          "speed": 4,
+          "power": 235
+        },
+        {
+          "timestamp": "2026-11-05T16:00:09.000Z",
+          "distance": 36,
+          "heart_rate": 160,
+          "altitude": 50.09,
+          "speed": 4,
+          "power": 234
+        },
+        {
+          "timestamp": "2026-11-05T16:00:10.000Z",
+          "distance": 40,
+          "heart_rate": 160,
+          "altitude": 50.1,
+          "speed": 4,
+          "power": 233
+        },
+        {
+          "timestamp": "2026-11-05T16:00:11.000Z",
+          "distance": 44,
+          "heart_rate": 160,
+          "altitude": 50.11,
+          "speed": 4,
+          "power": 232
+        },
+        {
+          "timestamp": "2026-11-05T16:00:12.000Z",
+          "distance": 48,
+          "heart_rate": 160,
+          "altitude": 50.12,
+          "speed": 4,
+          "power": 231
+        },
+        {
+          "timestamp": "2026-11-05T16:00:13.000Z",
+          "distance": 52,
+          "heart_rate": 160,
+          "altitude": 50.13,
+          "speed": 4,
+          "power": 230
+        },
+        {
+          "timestamp": "2026-11-05T16:00:14.000Z",
+          "distance": 56,
+          "heart_rate": 160,
+          "altitude": 50.14,
+          "speed": 4,
+          "power": 229
+        },
+        {
+          "timestamp": "2026-11-05T16:00:15.000Z",
+          "distance": 60,
+          "heart_rate": 160,
+          "altitude": 50.15,
+          "speed": 4,
+          "power": 228
+        },
+        {
+          "timestamp": "2026-11-05T16:00:16.000Z",
+          "distance": 64,
+          "heart_rate": 160,
+          "altitude": 50.16,
+          "speed": 4,
+          "power": 235
+        },
+        {
+          "timestamp": "2026-11-05T16:00:17.000Z",
+          "distance": 68,
+          "heart_rate": 160,
+          "altitude": 50.17,
+          "speed": 4,
+          "power": 234
+        },
+        {
+          "timestamp": "2026-11-05T16:00:18.000Z",
+          "distance": 72,
+          "heart_rate": 160,
+          "altitude": 50.18,
+          "speed": 4,
+          "power": 233
+        },
+        {
+          "timestamp": "2026-11-05T16:00:19.000Z",
+          "distance": 76,
+          "heart_rate": 160,
+          "altitude": 50.19,
+          "speed": 4,
+          "power": 232
+        },
+        {
+          "timestamp": "2026-11-05T16:00:20.000Z",
+          "distance": 80,
+          "heart_rate": 160,
+          "altitude": 50.2,
+          "speed": 4,
+          "power": 231
+        },
+        {
+          "timestamp": "2026-11-05T16:00:21.000Z",
+          "distance": 84,
+          "heart_rate": 160,
+          "altitude": 50.21,
+          "speed": 4,
+          "power": 230
+        },
+        {
+          "timestamp": "2026-11-05T16:00:22.000Z",
+          "distance": 88,
+          "heart_rate": 160,
+          "altitude": 50.22,
+          "speed": 4,
+          "power": 229
+        },
+        {
+          "timestamp": "2026-11-05T16:00:23.000Z",
+          "distance": 92,
+          "heart_rate": 160,
+          "altitude": 50.23,
+          "speed": 4,
+          "power": 228
+        },
+        {
+          "timestamp": "2026-11-05T16:00:24.000Z",
+          "distance": 96,
+          "heart_rate": 160,
+          "altitude": 50.24,
+          "speed": 4,
+          "power": 235
+        },
+        {
+          "timestamp": "2026-11-05T16:00:25.000Z",
+          "distance": 100,
+          "heart_rate": 160,
+          "altitude": 50.25,
+          "speed": 4,
+          "power": 234
+        },
+        {
+          "timestamp": "2026-11-05T16:00:26.000Z",
+          "distance": 104,
+          "heart_rate": 160,
+          "altitude": 50.26,
+          "speed": 4,
+          "power": 233
+        },
+        {
+          "timestamp": "2026-11-05T16:00:27.000Z",
+          "distance": 108,
+          "heart_rate": 160,
+          "altitude": 50.27,
+          "speed": 4,
+          "power": 232
+        },
+        {
+          "timestamp": "2026-11-05T16:00:28.000Z",
+          "distance": 112,
+          "heart_rate": 160,
+          "altitude": 50.28,
+          "speed": 4,
+          "power": 231
+        },
+        {
+          "timestamp": "2026-11-05T16:00:29.000Z",
+          "distance": 116,
+          "heart_rate": 160,
+          "altitude": 50.29,
+          "speed": 4,
+          "power": 230
+        },
+        {
+          "timestamp": "2026-11-05T16:00:30.000Z",
+          "distance": 120,
+          "heart_rate": 160,
+          "altitude": 50.3,
+          "speed": 4,
+          "power": 229
+        },
+        {
+          "timestamp": "2026-11-05T16:00:31.000Z",
+          "distance": 124,
+          "heart_rate": 160,
+          "altitude": 50.31,
+          "speed": 4,
+          "power": 228
+        },
+        {
+          "timestamp": "2026-11-05T16:00:32.000Z",
+          "distance": 128,
+          "heart_rate": 160,
+          "altitude": 50.32,
+          "speed": 4,
+          "power": 235
+        },
+        {
+          "timestamp": "2026-11-05T16:00:33.000Z",
+          "distance": 132,
+          "heart_rate": 160,
+          "altitude": 50.33,
+          "speed": 4,
+          "power": 234
+        },
+        {
+          "timestamp": "2026-11-05T16:00:34.000Z",
+          "distance": 136,
+          "heart_rate": 160,
+          "altitude": 50.34,
+          "speed": 4,
+          "power": 233
+        },
+        {
+          "timestamp": "2026-11-05T16:00:35.000Z",
+          "distance": 140,
+          "heart_rate": 160,
+          "altitude": 50.35,
+          "speed": 4,
+          "power": 232
+        },
+        {
+          "timestamp": "2026-11-05T16:00:36.000Z",
+          "distance": 144,
+          "heart_rate": 160,
+          "altitude": 50.36,
+          "speed": 4,
+          "power": 231
+        },
+        {
+          "timestamp": "2026-11-05T16:00:37.000Z",
+          "distance": 148,
+          "heart_rate": 160,
+          "altitude": 50.37,
+          "speed": 4,
+          "power": 230
+        },
+        {
+          "timestamp": "2026-11-05T16:00:38.000Z",
+          "distance": 152,
+          "heart_rate": 160,
+          "altitude": 50.38,
+          "speed": 4,
+          "power": 229
+        },
+        {
+          "timestamp": "2026-11-05T16:00:39.000Z",
+          "distance": 156,
+          "heart_rate": 160,
+          "altitude": 50.39,
+          "speed": 4,
+          "power": 228
+        },
+        {
+          "timestamp": "2026-11-05T16:00:40.000Z",
+          "distance": 160,
+          "heart_rate": 160,
+          "altitude": 50.4,
+          "speed": 4,
+          "power": 235
+        },
+        {
+          "timestamp": "2026-11-05T16:00:41.000Z",
+          "distance": 164,
+          "heart_rate": 160,
+          "altitude": 50.41,
+          "speed": 4,
+          "power": 234
+        },
+        {
+          "timestamp": "2026-11-05T16:00:42.000Z",
+          "distance": 168,
+          "heart_rate": 160,
+          "altitude": 50.42,
+          "speed": 4,
+          "power": 233
+        },
+        {
+          "timestamp": "2026-11-05T16:00:43.000Z",
+          "distance": 172,
+          "heart_rate": 160,
+          "altitude": 50.43,
+          "speed": 4,
+          "power": 232
+        },
+        {
+          "timestamp": "2026-11-05T16:00:44.000Z",
+          "distance": 176,
+          "heart_rate": 160,
+          "altitude": 50.44,
+          "speed": 4,
+          "power": 231
+        },
+        {
+          "timestamp": "2026-11-05T16:00:45.000Z",
+          "distance": 180,
+          "heart_rate": 160,
+          "altitude": 50.45,
+          "speed": 4,
+          "power": 230
+        },
+        {
+          "timestamp": "2026-11-05T16:00:46.000Z",
+          "distance": 184,
+          "heart_rate": 160,
+          "altitude": 50.46,
+          "speed": 4,
+          "power": 229
+        },
+        {
+          "timestamp": "2026-11-05T16:00:47.000Z",
+          "distance": 188,
+          "heart_rate": 160,
+          "altitude": 50.47,
+          "speed": 4,
+          "power": 228
+        },
+        {
+          "timestamp": "2026-11-05T16:00:48.000Z",
+          "distance": 192,
+          "heart_rate": 160,
+          "altitude": 50.48,
+          "speed": 4,
+          "power": 235
+        },
+        {
+          "timestamp": "2026-11-05T16:00:49.000Z",
+          "distance": 196,
+          "heart_rate": 160,
+          "altitude": 50.49,
+          "speed": 4,
+          "power": 234
+        },
+        {
+          "timestamp": "2026-11-05T16:00:50.000Z",
+          "distance": 200,
+          "heart_rate": 160,
+          "altitude": 50.5,
+          "speed": 4,
+          "power": 233
+        },
+        {
+          "timestamp": "2026-11-05T16:00:51.000Z",
+          "distance": 204,
+          "heart_rate": 160,
+          "altitude": 50.51,
+          "speed": 4,
+          "power": 232
+        },
+        {
+          "timestamp": "2026-11-05T16:00:52.000Z",
+          "distance": 208,
+          "heart_rate": 160,
+          "altitude": 50.52,
+          "speed": 4,
+          "power": 231
+        },
+        {
+          "timestamp": "2026-11-05T16:00:53.000Z",
+          "distance": 212,
+          "heart_rate": 160,
+          "altitude": 50.53,
+          "speed": 4,
+          "power": 230
+        },
+        {
+          "timestamp": "2026-11-05T16:00:54.000Z",
+          "distance": 216,
+          "heart_rate": 160,
+          "altitude": 50.54,
+          "speed": 4,
+          "power": 229
+        },
+        {
+          "timestamp": "2026-11-05T16:00:55.000Z",
+          "distance": 220,
+          "heart_rate": 160,
+          "altitude": 50.55,
+          "speed": 4,
+          "power": 228
+        },
+        {
+          "timestamp": "2026-11-05T16:00:56.000Z",
+          "distance": 224,
+          "heart_rate": 160,
+          "altitude": 50.56,
+          "speed": 4,
+          "power": 235
+        },
+        {
+          "timestamp": "2026-11-05T16:00:57.000Z",
+          "distance": 228,
+          "heart_rate": 160,
+          "altitude": 50.57,
+          "speed": 4,
+          "power": 234
+        },
+        {
+          "timestamp": "2026-11-05T16:00:58.000Z",
+          "distance": 232,
+          "heart_rate": 160,
+          "altitude": 50.58,
+          "speed": 4,
+          "power": 233
+        },
+        {
+          "timestamp": "2026-11-05T16:00:59.000Z",
+          "distance": 236,
+          "heart_rate": 160,
+          "altitude": 50.59,
+          "speed": 4,
+          "power": 232
+        },
+        {
+          "timestamp": "2026-11-05T16:01:00.000Z",
+          "distance": 240,
+          "heart_rate": 160,
+          "altitude": 50.6,
+          "speed": 2,
+          "power": 231
+        }
+      ],
+      "hrv_message_count": 0,
+      "rr_interval_count": 0,
+      "ddfa_sample_count": 0,
+      "gps_sample_count": 0,
+      "notes": [
+        "Timer events have whole-second timestamps; use session total_timer_time for exact duration.",
+        "Arithmetic sample HR is descriptive, not a substitute for the device weighted average.",
+        "No R-R artifact assessment or medical HRV analysis was performed."
+      ],
+      "additional_metrics": {
+        "method": "Arithmetic means of joint observed active samples; no interpolation. Cadence cycles/min x2; vertical oscillation mm/10; stance time ms; step length = 30 * speed_mps / cadence_cycles_per_min. HR changes use last observed values no older than 3 seconds; not a clinical HRR test.",
+        "active": {
+          "record_count": 120,
+          "field_sample_counts": {
+            "heart_rate": 120,
+            "speed": 120,
+            "power": 120,
+            "stance_time": 120,
+            "vertical_oscillation": 120,
+            "cadence": 119
+          },
+          "mechanics_paired_count": 119,
+          "mechanics": {
+            "cadence_steps_per_min": 189.91596638655463,
+            "ground_contact_ms": 245.2941176470588,
+            "vertical_oscillation_cm": 6,
+            "estimated_step_length_m": 0.9310924369747898
+          }
+        },
+        "preferred_lap_kind": "guided",
+        "preferred_lap_indices": [
+          2,
+          3
+        ],
+        "lap_samples": [
+          {
+            "lap_index": 2,
+            "record_count": 60,
+            "field_sample_counts": {
+              "heart_rate": 60,
+              "speed": 60,
+              "power": 60,
+              "stance_time": 60,
+              "vertical_oscillation": 60,
+              "cadence": 59
+            },
+            "mechanics_paired_count": 59,
+            "mechanics": {
+              "cadence_steps_per_min": 200,
+              "ground_contact_ms": 210,
+              "vertical_oscillation_cm": 6,
+              "estimated_step_length_m": 1.2
+            }
+          },
+          {
+            "lap_index": 3,
+            "record_count": 60,
+            "field_sample_counts": {
+              "heart_rate": 60,
+              "speed": 60,
+              "power": 60,
+              "cadence": 60,
+              "stance_time": 60,
+              "vertical_oscillation": 60
+            },
+            "mechanics_paired_count": 60,
+            "mechanics": {
+              "cadence_steps_per_min": 180,
+              "ground_contact_ms": 280,
+              "vertical_oscillation_cm": 6,
+              "estimated_step_length_m": 0.6666666666666666
+            }
+          }
+        ],
+        "slower_next_lap_hr_changes": [
+          {
+            "work_lap_index": 2,
+            "slower_next_lap_index": 3,
+            "pause_in_next_lap": true,
+            "hr_at_work_end": {
+              "bpm": 160,
+              "age_seconds": 0
+            },
+            "hr_after_60_elapsed_seconds": null,
+            "hr_at_next_lap_end": {
+              "bpm": 115.5,
+              "age_seconds": 1
+            },
+            "hr_drop_after_60_seconds": null
+          }
+        ],
+        "suuntoplus_channels": [
+          {
+            "field": "estimate",
+            "label": "Marathon time(est)",
+            "unit": "s",
+            "active_sample_count": 120,
+            "first_active_value": 14000,
+            "last_active_value": 14149,
+            "session_value": null
+          }
+        ],
+        "altitude_profile": {
+          "first_altitude_m": 50,
+          "last_altitude_m": 51.49,
+          "minimum_altitude_m": 50,
+          "maximum_altitude_m": 51.49,
+          "minimum_at_distance_m": 0,
+          "maximum_at_distance_m": 418
+        },
+        "steady_state_metrics": "Require comparable steady active segments; not inferred automatically.",
+        "rr_artifact_assessment": "Not performed; RR counts do not constitute an HRV interpretation."
+      }
+    },
+    "summary": {
+      "startedAt": 1793894400000,
+      "sport": "Trail running",
+      "distanceM": 420,
+      "activeSeconds": 120,
+      "avgHr": 150
+    },
+    "observations": [
+      "0.42 km in 2:00 of active time (4:46/km), with average / maximum heart rate 150 / 168 bpm.",
+      "HR-TSS 12.4; PTE 2.3.",
+      "Recorded workout feeling: 4/5.",
+      "Average workout temperature: 11.0 °C (watch sensor).",
+      "Suunto recovery time: 2 h 30 min (accumulated estimate) · Until 2026-11-05 19:32."
+    ],
+    "chartSha256": "2c023a490dab129fbcb212f113c6a97a58fe0b233be5882b059cb16cd053ab0c"
+  },
+  "nordic": {
+    "analysis": {
+      "session": {
+        "start_time": "2026-11-05T16:00:00.000Z",
+        "timestamp": "2026-11-05T16:02:30.000Z",
+        "sport": "generic",
+        "sub_sport": "trail",
+        "avg_temperature": 6,
+        "recovery_time": 5400
+      },
+      "timezone": "America/New_York",
+      "timer": {
+        "pauses": [],
+        "active_segments": [
+          {
+            "start": "2026-11-05T16:00:00.000Z",
+            "end": "2026-11-05T16:02:30.000Z",
+            "seconds": 150
+          }
+        ],
+        "repeated_stop_events": [],
+        "pause_seconds_from_rounded_events": 0
+      },
+      "laps": [
+        {
+          "index": 1,
+          "trigger": "distance",
+          "start_local": "2026-11-05T11:00:00-05:00",
+          "end_local": "2026-11-05T11:02:30-05:00",
+          "distance_m": 420,
+          "active_seconds": 150,
+          "elapsed_seconds": null,
+          "pace_seconds_per_km": 357.14285714285717,
+          "avg_hr": 150,
+          "max_hr": 168,
+          "avg_power_w": null,
+          "ascent_m": null,
+          "descent_m": null
+        }
+      ],
+      "record_count": 129,
+      "active_hr_sample_count": 129,
+      "active_hr_arithmetic_mean": 145.2906976744186,
+      "hr_peak_records_active_only": [
+        {
+          "timestamp": "2026-11-05T16:00:00.000Z",
+          "distance": 0,
+          "heart_rate": 160,
+          "altitude": 50,
+          "speed": 4,
+          "power": 235
+        },
+        {
+          "timestamp": "2026-11-05T16:00:01.000Z",
+          "distance": 4,
+          "heart_rate": 160,
+          "altitude": 50.01,
+          "speed": 4,
+          "power": 234
+        },
+        {
+          "timestamp": "2026-11-05T16:00:02.000Z",
+          "distance": 8,
+          "heart_rate": 160,
+          "altitude": 50.02,
+          "speed": 4,
+          "power": 233
+        },
+        {
+          "timestamp": "2026-11-05T16:00:03.000Z",
+          "distance": 12,
+          "heart_rate": 160,
+          "altitude": 50.03,
+          "speed": 4,
+          "power": 232
+        },
+        {
+          "timestamp": "2026-11-05T16:00:04.000Z",
+          "distance": 16,
+          "heart_rate": 160,
+          "altitude": 50.04,
+          "speed": 4,
+          "power": 231
+        },
+        {
+          "timestamp": "2026-11-05T16:00:05.000Z",
+          "distance": 20,
+          "heart_rate": 160,
+          "altitude": 50.05,
+          "speed": 4,
+          "power": 230
+        },
+        {
+          "timestamp": "2026-11-05T16:00:06.000Z",
+          "distance": 24,
+          "heart_rate": 160,
+          "altitude": 50.06,
+          "speed": 4,
+          "power": 229
+        },
+        {
+          "timestamp": "2026-11-05T16:00:07.000Z",
+          "distance": 28,
+          "heart_rate": 160,
+          "altitude": 50.07,
+          "speed": 4,
+          "power": 228
+        },
+        {
+          "timestamp": "2026-11-05T16:00:08.000Z",
+          "distance": 32,
+          "heart_rate": 160,
+          "speed": 4,
+          "power": 235
+        },
+        {
+          "timestamp": "2026-11-05T16:00:09.000Z",
+          "distance": 36,
+          "heart_rate": 160,
+          "altitude": 50.09,
+          "speed": 4,
+          "power": 234
+        },
+        {
+          "timestamp": "2026-11-05T16:00:10.000Z",
+          "distance": 40,
+          "heart_rate": 160,
+          "altitude": 50.1,
+          "speed": 4,
+          "power": 233
+        },
+        {
+          "timestamp": "2026-11-05T16:00:11.000Z",
+          "distance": 44,
+          "heart_rate": 160,
+          "altitude": 50.11,
+          "speed": 4,
+          "power": 232
+        },
+        {
+          "timestamp": "2026-11-05T16:00:12.000Z",
+          "distance": 48,
+          "heart_rate": 160,
+          "altitude": 50.12,
+          "speed": 4,
+          "power": 231
+        },
+        {
+          "timestamp": "2026-11-05T16:00:13.000Z",
+          "distance": 52,
+          "heart_rate": 160,
+          "altitude": 50.13,
+          "speed": 4,
+          "power": 230
+        },
+        {
+          "timestamp": "2026-11-05T16:00:14.000Z",
+          "distance": 56,
+          "heart_rate": 160,
+          "altitude": 50.14,
+          "speed": 4,
+          "power": 229
+        },
+        {
+          "timestamp": "2026-11-05T16:00:15.000Z",
+          "distance": 60,
+          "heart_rate": 160,
+          "altitude": 50.15,
+          "speed": 4,
+          "power": 228
+        },
+        {
+          "timestamp": "2026-11-05T16:00:16.000Z",
+          "distance": 64,
+          "heart_rate": 160,
+          "altitude": 50.16,
+          "speed": 4,
+          "power": 235
+        },
+        {
+          "timestamp": "2026-11-05T16:00:17.000Z",
+          "distance": 68,
+          "heart_rate": 160,
+          "altitude": 50.17,
+          "speed": 4,
+          "power": 234
+        },
+        {
+          "timestamp": "2026-11-05T16:00:18.000Z",
+          "distance": 72,
+          "heart_rate": 160,
+          "altitude": 50.18,
+          "speed": 4,
+          "power": 233
+        },
+        {
+          "timestamp": "2026-11-05T16:00:19.000Z",
+          "distance": 76,
+          "heart_rate": 160,
+          "altitude": 50.19,
+          "speed": 4,
+          "power": 232
+        },
+        {
+          "timestamp": "2026-11-05T16:00:20.000Z",
+          "distance": 80,
+          "heart_rate": 160,
+          "altitude": 50.2,
+          "speed": 4,
+          "power": 231
+        },
+        {
+          "timestamp": "2026-11-05T16:00:21.000Z",
+          "distance": 84,
+          "heart_rate": 160,
+          "altitude": 50.21,
+          "speed": 4,
+          "power": 230
+        },
+        {
+          "timestamp": "2026-11-05T16:00:22.000Z",
+          "distance": 88,
+          "heart_rate": 160,
+          "altitude": 50.22,
+          "speed": 4,
+          "power": 229
+        },
+        {
+          "timestamp": "2026-11-05T16:00:23.000Z",
+          "distance": 88,
+          "heart_rate": 160,
+          "altitude": 50.23,
+          "speed": 4,
+          "power": 228
+        },
+        {
+          "timestamp": "2026-11-05T16:00:24.000Z",
+          "distance": 96,
+          "heart_rate": 160,
+          "altitude": 50.24,
+          "speed": 4,
+          "power": 235
+        },
+        {
+          "timestamp": "2026-11-05T16:00:25.000Z",
+          "distance": 100,
+          "heart_rate": 160,
+          "altitude": 50.25,
+          "speed": 4,
+          "power": 234
+        },
+        {
+          "timestamp": "2026-11-05T16:00:26.000Z",
+          "distance": 104,
+          "heart_rate": 160,
+          "altitude": 50.26,
+          "speed": 4,
+          "power": 233
+        },
+        {
+          "timestamp": "2026-11-05T16:00:27.000Z",
+          "distance": 108,
+          "heart_rate": 160,
+          "altitude": 50.27,
+          "speed": 4,
+          "power": 232
+        },
+        {
+          "timestamp": "2026-11-05T16:00:28.000Z",
+          "distance": 112,
+          "heart_rate": 160,
+          "altitude": 50.28,
+          "speed": 4,
+          "power": 231
+        },
+        {
+          "timestamp": "2026-11-05T16:00:29.000Z",
+          "distance": 116,
+          "heart_rate": 160,
+          "altitude": 50.29,
+          "speed": 4,
+          "power": 230
+        },
+        {
+          "timestamp": "2026-11-05T16:00:30.000Z",
+          "distance": 120,
+          "heart_rate": 160,
+          "altitude": 50.3,
+          "speed": 4,
+          "power": 229
+        },
+        {
+          "timestamp": "2026-11-05T16:00:31.000Z",
+          "distance": 124,
+          "heart_rate": 160,
+          "altitude": 50.31,
+          "speed": 4,
+          "power": 228
+        },
+        {
+          "timestamp": "2026-11-05T16:00:32.000Z",
+          "distance": 128,
+          "heart_rate": 160,
+          "altitude": 50.32,
+          "speed": 4,
+          "power": 235
+        },
+        {
+          "timestamp": "2026-11-05T16:00:33.000Z",
+          "distance": 132,
+          "heart_rate": 160,
+          "altitude": 50.33,
+          "speed": 4,
+          "power": 234
+        },
+        {
+          "timestamp": "2026-11-05T16:00:34.000Z",
+          "distance": 136,
+          "heart_rate": 160,
+          "altitude": 50.34,
+          "speed": 4,
+          "power": 233
+        },
+        {
+          "timestamp": "2026-11-05T16:00:35.000Z",
+          "distance": 140,
+          "heart_rate": 160,
+          "altitude": 50.35,
+          "speed": 4,
+          "power": 232
+        },
+        {
+          "timestamp": "2026-11-05T16:00:36.000Z",
+          "distance": 144,
+          "heart_rate": 160,
+          "altitude": 50.36,
+          "speed": 4,
+          "power": 231
+        },
+        {
+          "timestamp": "2026-11-05T16:00:37.000Z",
+          "distance": 148,
+          "heart_rate": 160,
+          "altitude": 50.37,
+          "speed": 4,
+          "power": 230
+        },
+        {
+          "timestamp": "2026-11-05T16:00:38.000Z",
+          "distance": 152,
+          "heart_rate": 160,
+          "altitude": 50.38,
+          "speed": 4,
+          "power": 229
+        },
+        {
+          "timestamp": "2026-11-05T16:00:39.000Z",
+          "distance": 156,
+          "heart_rate": 160,
+          "altitude": 50.39,
+          "speed": 4,
+          "power": 228
+        },
+        {
+          "timestamp": "2026-11-05T16:00:40.000Z",
+          "distance": 160,
+          "heart_rate": 160,
+          "altitude": 50.4,
+          "speed": 4,
+          "power": 235
+        },
+        {
+          "timestamp": "2026-11-05T16:00:41.000Z",
+          "distance": 164,
+          "heart_rate": 160,
+          "altitude": 50.41,
+          "speed": 4,
+          "power": 234
+        },
+        {
+          "timestamp": "2026-11-05T16:00:42.000Z",
+          "distance": 168,
+          "heart_rate": 160,
+          "altitude": 50.42,
+          "speed": 4,
+          "power": 233
+        },
+        {
+          "timestamp": "2026-11-05T16:00:43.000Z",
+          "distance": 172,
+          "heart_rate": 160,
+          "altitude": 50.43,
+          "speed": 4,
+          "power": 232
+        },
+        {
+          "timestamp": "2026-11-05T16:00:44.000Z",
+          "distance": 176,
+          "heart_rate": 160,
+          "altitude": 50.44,
+          "speed": 4,
+          "power": 231
+        },
+        {
+          "timestamp": "2026-11-05T16:00:45.000Z",
+          "distance": 180,
+          "heart_rate": 160,
+          "altitude": 50.45,
+          "speed": 4,
+          "power": 230
+        },
+        {
+          "timestamp": "2026-11-05T16:00:46.000Z",
+          "distance": 184,
+          "heart_rate": 160,
+          "altitude": 50.46,
+          "speed": 4,
+          "power": 229
+        },
+        {
+          "timestamp": "2026-11-05T16:00:47.000Z",
+          "distance": 188,
+          "heart_rate": 160,
+          "altitude": 50.47,
+          "speed": 4,
+          "power": 228
+        },
+        {
+          "timestamp": "2026-11-05T16:00:48.000Z",
+          "distance": 192,
+          "heart_rate": 160,
+          "altitude": 50.48,
+          "speed": 4,
+          "power": 235
+        },
+        {
+          "timestamp": "2026-11-05T16:00:49.000Z",
+          "distance": 196,
+          "heart_rate": 160,
+          "altitude": 50.49,
+          "speed": 4,
+          "power": 234
+        },
+        {
+          "timestamp": "2026-11-05T16:00:50.000Z",
+          "distance": 200,
+          "heart_rate": 160,
+          "altitude": 50.5,
+          "speed": 4,
+          "power": 233
+        },
+        {
+          "timestamp": "2026-11-05T16:00:51.000Z",
+          "distance": 204,
+          "heart_rate": 160,
+          "altitude": 50.51,
+          "speed": 4,
+          "power": 232
+        },
+        {
+          "timestamp": "2026-11-05T16:00:52.000Z",
+          "distance": 208,
+          "heart_rate": 160,
+          "altitude": 50.52,
+          "speed": 4,
+          "power": 231
+        },
+        {
+          "timestamp": "2026-11-05T16:00:53.000Z",
+          "distance": 212,
+          "heart_rate": 160,
+          "altitude": 50.53,
+          "speed": 4,
+          "power": 230
+        },
+        {
+          "timestamp": "2026-11-05T16:00:54.000Z",
+          "distance": 216,
+          "heart_rate": 160,
+          "altitude": 50.54,
+          "speed": 4,
+          "power": 229
+        },
+        {
+          "timestamp": "2026-11-05T16:00:55.000Z",
+          "distance": 220,
+          "heart_rate": 160,
+          "altitude": 50.55,
+          "speed": 4,
+          "power": 228
+        },
+        {
+          "timestamp": "2026-11-05T16:00:56.000Z",
+          "distance": 224,
+          "heart_rate": 160,
+          "altitude": 50.56,
+          "speed": 4,
+          "power": 235
+        },
+        {
+          "timestamp": "2026-11-05T16:00:57.000Z",
+          "distance": 228,
+          "heart_rate": 160,
+          "altitude": 50.57,
+          "speed": 4,
+          "power": 234
+        },
+        {
+          "timestamp": "2026-11-05T16:00:58.000Z",
+          "distance": 232,
+          "heart_rate": 160,
+          "altitude": 50.58,
+          "speed": 4,
+          "power": 233
+        },
+        {
+          "timestamp": "2026-11-05T16:00:59.000Z",
+          "distance": 236,
+          "heart_rate": 160,
+          "altitude": 50.59,
+          "speed": 4,
+          "power": 232
+        }
+      ],
+      "hrv_message_count": 0,
+      "rr_interval_count": 0,
+      "ddfa_sample_count": 0,
+      "gps_sample_count": 0,
+      "notes": [
+        "Timer events have whole-second timestamps; use session total_timer_time for exact duration.",
+        "Arithmetic sample HR is descriptive, not a substitute for the device weighted average.",
+        "No R-R artifact assessment or medical HRV analysis was performed."
+      ],
+      "additional_metrics": {
+        "method": "Arithmetic means of joint observed active samples; no interpolation. Cadence cycles/min x2; vertical oscillation mm/10; stance time ms; step length = 30 * speed_mps / cadence_cycles_per_min. HR changes use last observed values no older than 3 seconds; not a clinical HRR test.",
+        "active": {
+          "record_count": 129,
+          "field_sample_counts": {
+            "heart_rate": 129,
+            "speed": 129,
+            "power": 129,
+            "cadence": 129,
+            "stance_time": 129,
+            "vertical_oscillation": 129
+          },
+          "mechanics_paired_count": 129,
+          "mechanics": {
+            "cadence_steps_per_min": 189.30232558139534,
+            "ground_contact_ms": 247.4418604651163,
+            "vertical_oscillation_cm": 6,
+            "estimated_step_length_m": 0.9147286821705426
+          }
+        },
+        "preferred_lap_kind": "other",
+        "preferred_lap_indices": [
+          1
+        ],
+        "lap_samples": [
+          {
+            "lap_index": 1,
+            "record_count": 129,
+            "field_sample_counts": {
+              "heart_rate": 129,
+              "speed": 129,
+              "power": 129,
+              "cadence": 129,
+              "stance_time": 129,
+              "vertical_oscillation": 129
+            },
+            "mechanics_paired_count": 129,
+            "mechanics": {
+              "cadence_steps_per_min": 189.30232558139534,
+              "ground_contact_ms": 247.4418604651163,
+              "vertical_oscillation_cm": 6,
+              "estimated_step_length_m": 0.9147286821705426
+            }
+          }
+        ],
+        "slower_next_lap_hr_changes": [],
+        "suuntoplus_channels": [
+          {
+            "field": "estimate",
+            "label": "Marathon time(est)",
+            "unit": "s",
+            "active_sample_count": 129,
+            "first_active_value": 14000,
+            "last_active_value": 14149,
+            "session_value": null
+          }
+        ],
+        "altitude_profile": {
+          "first_altitude_m": 50,
+          "last_altitude_m": 51.49,
+          "minimum_altitude_m": 50,
+          "maximum_altitude_m": 51.49,
+          "minimum_at_distance_m": 0,
+          "maximum_at_distance_m": 418
+        },
+        "steady_state_metrics": "Require comparable steady active segments; not inferred automatically.",
+        "rr_artifact_assessment": "Not performed; RR counts do not constitute an HRV interpretation."
+      }
+    },
+    "summary": {
+      "startedAt": 1793894400000,
+      "sport": "Nordic walking",
+      "distanceM": 420,
+      "activeSeconds": 150,
+      "avgHr": 150
+    },
+    "observations": [
+      "0.42 km in 2:30 of active time (5:57/km), with average / maximum heart rate 150 / 168 bpm.",
+      "HR-TSS 12.4; PTE 2.3.",
+      "Recorded workout feeling: 4/5.",
+      "Average workout temperature: 11.0 °C (watch sensor).",
+      "Suunto recovery time: 2 h 30 min (accumulated estimate) · Until 2026-11-05 13:32."
+    ],
+    "chartSha256": "60f628664a7fdc75fa42f75b84c6de9af899738f91e236d41a36101cfe91c6e8"
+  },
+  "empty": {
+    "analysis": {
+      "session": {
+        "sport": "running"
+      },
+      "timezone": "UTC",
+      "timer": {
+        "pauses": [],
+        "active_segments": [],
+        "repeated_stop_events": [],
+        "pause_seconds_from_rounded_events": 0
+      },
+      "laps": [],
+      "record_count": 0,
+      "active_hr_sample_count": 0,
+      "active_hr_arithmetic_mean": null,
+      "hr_peak_records_active_only": [],
+      "hrv_message_count": 0,
+      "rr_interval_count": 0,
+      "ddfa_sample_count": 0,
+      "gps_sample_count": 0,
+      "notes": [
+        "Timer events have whole-second timestamps; use session total_timer_time for exact duration.",
+        "Arithmetic sample HR is descriptive, not a substitute for the device weighted average.",
+        "No R-R artifact assessment or medical HRV analysis was performed."
+      ],
+      "additional_metrics": {
+        "method": "Arithmetic means of joint observed active samples; no interpolation. Cadence cycles/min x2; vertical oscillation mm/10; stance time ms; step length = 30 * speed_mps / cadence_cycles_per_min. HR changes use last observed values no older than 3 seconds; not a clinical HRR test.",
+        "active": {
+          "record_count": 0,
+          "field_sample_counts": {},
+          "mechanics_paired_count": 0
+        },
+        "preferred_lap_kind": "other",
+        "preferred_lap_indices": [],
+        "lap_samples": [],
+        "slower_next_lap_hr_changes": [],
+        "suuntoplus_channels": [],
+        "altitude_profile": null,
+        "steady_state_metrics": "Require comparable steady active segments; not inferred automatically.",
+        "rr_artifact_assessment": "Not performed; RR counts do not constitute an HRV interpretation."
+      }
+    },
+    "summary": {
+      "startedAt": 1793894400000,
+      "sport": "Trail running",
+      "distanceM": 420,
+      "activeSeconds": 150,
+      "avgHr": 150
+    },
+    "observations": [
+      "0.42 km in 2:30 of active time (5:57/km), with average / maximum heart rate 150 / 168 bpm.",
+      "HR-TSS 12.4; PTE 2.3.",
+      "Recorded workout feeling: 4/5.",
+      "Average workout temperature: 11.0 °C (watch sensor).",
+      "Suunto recovery time: 2 h 30 min (accumulated estimate) · Until 2026-11-05 18:32."
+    ],
+    "chartSha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+  }
+}

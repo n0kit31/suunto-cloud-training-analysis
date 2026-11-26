@@ -2,9 +2,8 @@
 
 [![CI](https://github.com/n0kit31/suunto-cloud-training-analysis/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/n0kit31/suunto-cloud-training-analysis/actions/workflows/ci.yml)
 [![Test count](docs/badges/tests.svg)](docs/cli.md#tests)
-[![Release: 1.4.0](https://img.shields.io/badge/release-1.4.0-blue)](CHANGELOG.md)
+[![Release: 1.5.0](https://img.shields.io/badge/release-1.5.0-blue)](CHANGELOG.md)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](LICENSE)
-[![Python: 3.9+](https://img.shields.io/badge/Python-3.9%2B-3776AB?logo=python&logoColor=white)](docs/cli.md#requirements)
 [![Node.js: 24](https://img.shields.io/badge/Node.js-24-339933?logo=nodedotjs&logoColor=white)](Dockerfile)
 [![React: 19](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)](web/package.json)
 [![Fastify: 5](https://img.shields.io/badge/Fastify-5-202020?logo=fastify&logoColor=white)](web/package.json)
@@ -56,10 +55,26 @@ The screenshots use synthetic FIT workouts and routes. Map data ©
 | --- | --- |
 | ![Blue route position synchronized with the heart-rate chart](docs/screenshots/workout-route-cursor.png) | ![Suunto, OpenAI, and Claude settings](docs/screenshots/app-settings.png) |
 
-## CLI and documentation
+## CLI
 
-The CLI supports FIT analysis, GPX export, Markdown and JSON reports, and
-portable HTML and SVG charts.
+The CLI runs on Node.js 24 inside Docker. Follow the [Docker setup guide](docs/docker.md#setup)
+to prepare the mounted directories before running these commands from the checkout.
+
+| Task | Command |
+| --- | --- |
+| Build the CLI image | `docker compose build suunto` |
+| Show help | `docker compose run --rm suunto --help` |
+| Import a local FIT file with charts | `docker compose run --rm -T suunto import-fit /app/suunto-cloud/.local/workout.fit --charts` |
+| Download and analyze a day with charts | `docker compose run --rm suunto sync --date 2026-01-15 --analysis --brief --charts` |
+
+Place `workout.fit` in `.local/` for the offline example. For cloud sync,
+replace the example date with your workout date and follow the [Suunto authorization guide](docs/docker.md#authorization).
+Reports go to `../reports/` and charts to `../visualizations/`.
+
+For local development, install dependencies with `npm ci --ignore-scripts`
+and show help with `node suunto_cloud/cli.mjs --help`.
+
+## Documentation
 
 - [Docker setup, OAuth, and FIT import](docs/docker.md)
 - [CLI commands, time zones, and recovery metrics](docs/cli.md#usage)

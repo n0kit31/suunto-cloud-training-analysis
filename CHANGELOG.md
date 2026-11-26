@@ -4,6 +4,15 @@ Notable changes to Suunto Cloud Training Analysis are recorded here.
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-11-26
+
+### Changed
+
+- Run the web worker, Suunto synchronization, workout analysis, charts, and CLI
+  on Node.js 24. Verify import results against synthetic outputs from 1.4.0.
+- Run the host CLI with `node suunto_cloud/cli.mjs` and the sync shortcut with
+  `node sync.mjs`. Docker Compose keeps the same service and command names.
+
 ## [1.4.0] - 2026-11-25
 
 ### Added
@@ -134,7 +143,8 @@ Suunto workouts, with local reports and portable charts.
 - Credentials, OAuth tokens, raw workout files, and personal reports remain outside the release.
 - Licensed under GNU GPL v3 or later (`GPL-3.0-or-later`).
 
-[Unreleased]: https://github.com/n0kit31/suunto-cloud-training-analysis/compare/v1.4.0...develop
+[Unreleased]: https://github.com/n0kit31/suunto-cloud-training-analysis/compare/v1.5.0...develop
+[1.5.0]: https://github.com/n0kit31/suunto-cloud-training-analysis/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/n0kit31/suunto-cloud-training-analysis/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/n0kit31/suunto-cloud-training-analysis/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/n0kit31/suunto-cloud-training-analysis/compare/v1.1.1...v1.2.0
