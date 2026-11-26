@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/n0kit31/suunto-cloud-training-analysis/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/n0kit31/suunto-cloud-training-analysis/actions/workflows/ci.yml)
 [![Test count](docs/badges/tests.svg)](docs/cli.md#tests)
-[![Release: 1.4.0](https://img.shields.io/badge/release-1.4.0-blue)](CHANGELOG.md)
+[![Release: 1.5.0](https://img.shields.io/badge/release-1.5.0-blue)](CHANGELOG.md)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](LICENSE)
 [![Node.js: 24](https://img.shields.io/badge/Node.js-24-339933?logo=nodedotjs&logoColor=white)](Dockerfile)
 [![React: 19](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)](web/package.json)

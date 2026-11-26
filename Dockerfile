@@ -10,7 +10,7 @@ RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund
 FROM node:24-bookworm-slim AS runtime
 
 LABEL org.opencontainers.image.title="Suunto Cloud Training Analysis" \
-      org.opencontainers.image.version="1.4.0" \
+      org.opencontainers.image.version="1.5.0" \
       org.opencontainers.image.licenses="GPL-3.0-or-later"
 
 COPY --from=node-dependencies /usr/local/LICENSE /usr/local/share/doc/node/LICENSE
