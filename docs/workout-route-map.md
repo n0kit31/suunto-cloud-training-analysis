@@ -15,7 +15,7 @@ OSM's public raster service is best-effort, offers no SLA, and can block access 
 
 ## Fit with the current app
 
-The worker already retains the source FIT for analyzed workouts. The GPX exporter demonstrates validation of decoded latitude and longitude and segmentation on timer resumes. Workout detail currently receives metrics, laps, and chart availability. Reuse the FIT decoding path to derive minimal route geometry locally and deliver it through the app's existing local access and no-store policies. Use retained FITs for older workouts where available, and show a route-unavailable state for indoor workouts or activities without enough valid GPS points. Keep the geometry out of AI requests and public examples. [FIT analysis bridge](../suunto_cloud/web_bridge.py) · [GPX exporter](../suunto_cloud/fit/export_gpx.cjs) · [Workout detail](../web/client/src/WorkoutDetail.tsx) · [Web app data handling](web.md)
+The worker already retains the source FIT for analyzed workouts. The GPX exporter demonstrates validation of decoded latitude and longitude and segmentation on timer resumes. Workout detail currently receives metrics, laps, and chart availability. Reuse the FIT decoding path to derive minimal route geometry locally and deliver it through the app's existing local access and no-store policies. Use retained FITs for older workouts where available, and show a route-unavailable state for indoor workouts or activities without enough valid GPS points. Keep the geometry out of AI requests and public examples. [FIT analysis bridge](../suunto_cloud/web_bridge.mjs) · [GPX exporter](../suunto_cloud/fit/export_gpx.cjs) · [Workout detail](../web/client/src/WorkoutDetail.tsx) · [Web app data handling](web.md)
 
 ## Estimated effort and operating costs
 

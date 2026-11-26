@@ -1,9 +1,8 @@
 # Docker
 
-The image includes Python 3.13, Node.js 24, and FIT decoder dependencies.
-The host only needs Docker Desktop or Docker Engine with Compose; Python and
-Node.js are not required. The container provides the same CLI commands as
-local execution.
+The image includes Node.js 24 and FIT decoder dependencies.
+The host only needs Docker Desktop or Docker Engine with Compose. The
+container provides the same CLI commands as local execution.
 
 Cloud API commands require an approved API application and credentials
 supplied by the installation's operator. See
@@ -32,7 +31,7 @@ ownership. The image's default UID/GID is `1000:1000`.
 ## Build and usage
 
 ```sh
-docker compose build
+docker compose build suunto
 docker compose run --rm suunto --help
 docker compose run --rm suunto sync --date 2026-01-15 --analysis --brief
 ```

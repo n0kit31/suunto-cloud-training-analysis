@@ -128,6 +128,8 @@ const errorLabels: Record<string, string> = {
   'The workout could not be analyzed.': 'Nie udało się przeanalizować treningu.',
   'The Python analyzer did not return a result.': 'Analizator nie zwrócił wyniku.',
   'The Python analyzer returned an invalid workout.': 'Analizator zwrócił nieprawidłowe dane treningu.',
+  'The analyzer did not return a result.': 'Analizator nie zwrócił wyniku.',
+  'The analyzer returned an invalid workout.': 'Analizator zwrócił nieprawidłowe dane treningu.',
   'Suunto returned an invalid activity list.': 'Suunto zwróciło nieprawidłową listę aktywności.',
   'Unexpected upload field.': 'Nieoczekiwane pole w przesyłanych danych.',
   'This workout has been replaced by its matching Suunto activity.': 'Ten trening połączono z odpowiadającą mu aktywnością Suunto.',

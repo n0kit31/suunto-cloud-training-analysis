@@ -17,6 +17,14 @@ function decodeBuffer(buffer) {
   return data;
 }
 
+function decodeJson(buffer) {
+  try {
+    return JSON.parse(JSON.stringify(decodeBuffer(buffer)));
+  } catch {
+    throw new TypeError('FIT decoding failed. Check the input file and the FIT decoder dependencies.');
+  }
+}
+
 async function decode(input, output) {
   if (path.resolve(input) === path.resolve(output)) throw new Error('Input and output files must differ.');
   const data = decodeBuffer(fs.readFileSync(input));
@@ -24,7 +32,7 @@ async function decode(input, output) {
   return data;
 }
 
-module.exports = { decode, decodeBuffer };
+module.exports = { decode, decodeBuffer, decodeJson };
 if (require.main === module) {
   const [input, output] = process.argv.slice(2);
   if (!input || !output) {
